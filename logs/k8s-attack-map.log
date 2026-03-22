@@ -1,0 +1,271 @@
+2026-03-22 05:31:55.021 DEBUG [main] i.g.S.k8sattackmap.Main - Verbose logging enabled.
+2026-03-22 05:31:55.024 INFO  [main] i.g.S.k8sattackmap.Main - No Kubernetes JSON path provided. Using kubectl to extract cluster data...
+2026-03-22 05:31:55.025 INFO  [main] i.g.S.k.ingestion.KubectlExtractor - Fetching cluster state from Kubectl...
+2026-03-22 05:45:13.021 DEBUG [main] i.g.S.k8sattackmap.Main - Verbose logging enabled.
+2026-03-22 05:45:13.022 INFO  [main] i.g.S.k8sattackmap.Main - Using provided Kubernetes JSON file: /home/saptarshi/K8sAttackMap-prototype/new-raw-cluster-state.json
+2026-03-22 05:45:13.113 DEBUG [main] i.g.S.k.ingestion.K8sJsonParser - Parsing Kubernetes JSON data with 221 items.
+2026-03-22 05:45:13.114 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Extracting workloads and scanning container images via Trivy on-the-fly...
+2026-03-22 05:45:13.115 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image nginx:1.14.2
+2026-03-22 05:45:16.520 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image postgres:14
+2026-03-22 05:45:19.280 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/coredns/coredns:v1.13.1
+2026-03-22 05:45:20.229 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/etcd:3.6.6-0
+2026-03-22 05:45:21.007 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-apiserver:v1.35.1
+2026-03-22 05:45:21.742 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-controller-manager:v1.35.1
+2026-03-22 05:45:22.492 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-proxy:v1.35.1
+2026-03-22 05:45:23.262 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-scheduler:v1.35.1
+2026-03-22 05:45:24.079 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image gcr.io/k8s-minikube/storage-provisioner:v5
+2026-03-22 05:45:26.945 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Successfully parsed 221 resources and scanned 9 unique container images.
+2026-03-22 05:45:26.948 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding nodes...
+2026-03-22 05:45:26.949 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding edges...
+2026-03-22 05:45:26.949 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-controller-manager" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 05:45:26.949 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:leader-election-controller" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 05:45:26.949 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-scheduler" -bound_to-> "Role:kube-system:system::leader-locking-kube-scheduler"
+2026-03-22 05:45:26.949 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:cloud-provider" -bound_to-> "Role:kube-system:system:controller:cloud-provider"
+2026-03-22 05:45:26.949 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:route-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:route-controller"
+2026-03-22 05:45:26.949 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:selinux-warning-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:selinux-warning-controller"
+2026-03-22 05:45:26.949 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:service-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:service-controller"
+2026-03-22 05:45:26.949 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-dns" -bound_to-> "ClusterRole:cluster-scoped:system:kube-dns"
+2026-03-22 05:45:26.949 INFO  [main] i.g.S.k.graph.ClusterGraph - Graph constructed with 234 nodes and 94 edges.
+2026-03-22 05:45:26.950 INFO  [main] i.g.S.k8sattackmap.Main - No explicit source/target provided. Running Auto-Discovery Heuristics...
+2026-03-22 05:45:26.951 INFO  [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Identified 6 potential entry points and 1 potential crown jewels.
+2026-03-22 05:45:26.951 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: Pod:default:pod-x, Type: Pod
+2026-03-22 05:45:26.951 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: Pod:default:production-db, Type: Pod
+2026-03-22 05:45:26.951 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: ServiceAccount:default:default, Type: ServiceAccount
+2026-03-22 05:45:26.951 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: ServiceAccount:default:webapp-sa, Type: ServiceAccount
+2026-03-22 05:45:26.951 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: ServiceAccount:kube-node-lease:default, Type: ServiceAccount
+2026-03-22 05:45:26.951 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: User:cluster-scoped:dev-1, Type: User
+2026-03-22 05:45:26.951 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Target Node - ID: Pod:default:production-db, Type: Pod
+2026-03-22 05:45:26.953 WARN  [main] i.g.S.k.algorithm.Dijkstra - ⚠ WARNING: Attack Path Detected
+2026-03-22 05:45:26.953 WARN  [main] i.g.S.k.algorithm.Dijkstra - Source: cluster-scoped/User:cluster-scoped:dev-1 (User)
+2026-03-22 05:45:26.953 WARN  [main] i.g.S.k.algorithm.Dijkstra - Target: default/Pod:default:production-db (Pod)
+2026-03-22 05:45:26.953 WARN  [main] i.g.S.k.algorithm.Dijkstra - Total Hops: 2
+2026-03-22 05:45:26.954 WARN  [main] i.g.S.k.algorithm.Dijkstra - Path Risk Score: 16.5 (CRITICAL)
+2026-03-22 05:45:26.954 WARN  [main] i.g.S.k.algorithm.Dijkstra - Path Details:
+2026-03-22 05:45:26.954 WARN  [main] i.g.S.k.algorithm.Dijkstra -    User:cluster-scoped:dev-1 --[bound_to]--> Role:default:db-admin-role
+2026-03-22 05:45:26.954 WARN  [main] i.g.S.k.algorithm.Dijkstra -    Role:default:db-admin-role --[can_access]--> Pod:default:production-db
+2026-03-22 05:45:26.954 ERROR [main] i.g.S.k8sattackmap.Main - Critical Attack Path Detected!
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - --------------------------------------------------
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - Source: User:cluster-scoped:dev-1
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - Target: Pod:default:production-db
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - Total Hops: 2
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - Total Attacker Friction: 3.5
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - Path Risk Score: 16.5 (CRITICAL)
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - Execution Steps:
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main -   Step 1: [User:cluster-scoped:dev-1] --(bound_to)--> [Role:default:db-admin-role]
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main -   Step 2: [Role:default:db-admin-role] --(can_access)--> [Pod:default:production-db]
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - --------------------------------------------------
+2026-03-22 05:45:26.954 INFO  [main] i.g.S.k8sattackmap.Main - Running blast radius analysis for the discovered attack path...
+2026-03-22 05:45:26.955 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - Starting BFS from node: User:cluster-scoped:dev-1 with max hops: 3
+2026-03-22 05:45:26.955 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - BFS completed. Total affected nodes within 3 hops: 6
+2026-03-22 05:45:26.955 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - Affected nodes: [cluster-scoped/User:cluster-scoped:dev-1 (User), default/Role:default:db-admin-role (Role), default/Pod:default:pod-x (Pod), default/ServiceAccount:default:webapp-sa (ServiceAccount), default/Pod:default:production-db (Pod), default/ServiceAccount:default:default (ServiceAccount)]
+2026-03-22 05:45:26.955 INFO  [main] i.g.S.k8sattackmap.Main - Estimated Blast Radius (6 nodes within 3 hops):
+2026-03-22 05:45:26.955 INFO  [main] i.g.S.k8sattackmap.Main -    - User:cluster-scoped:dev-1
+2026-03-22 05:45:26.956 INFO  [main] i.g.S.k8sattackmap.Main -    - Role:default:db-admin-role
+2026-03-22 05:45:26.956 INFO  [main] i.g.S.k8sattackmap.Main -    - Pod:default:pod-x
+2026-03-22 05:45:26.956 INFO  [main] i.g.S.k8sattackmap.Main -    - ServiceAccount:default:webapp-sa
+2026-03-22 05:45:26.956 INFO  [main] i.g.S.k8sattackmap.Main -    - Pod:default:production-db
+2026-03-22 05:45:26.956 INFO  [main] i.g.S.k8sattackmap.Main -    - ServiceAccount:default:default
+2026-03-22 05:46:17.511 DEBUG [main] i.g.S.k8sattackmap.Main - Verbose logging enabled.
+2026-03-22 05:46:17.511 INFO  [main] i.g.S.k8sattackmap.Main - Using provided Kubernetes JSON file: /home/saptarshi/K8sAttackMap-prototype/new-raw-cluster-state.json
+2026-03-22 05:46:17.596 DEBUG [main] i.g.S.k.ingestion.K8sJsonParser - Parsing Kubernetes JSON data with 221 items.
+2026-03-22 05:46:17.597 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Extracting workloads and scanning container images via Trivy on-the-fly...
+2026-03-22 05:46:17.598 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image nginx:1.14.2
+2026-03-22 05:46:20.420 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image postgres:14
+2026-03-22 05:46:23.489 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/coredns/coredns:v1.13.1
+2026-03-22 05:46:24.259 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/etcd:3.6.6-0
+2026-03-22 05:46:25.012 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-apiserver:v1.35.1
+2026-03-22 05:46:25.739 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-controller-manager:v1.35.1
+2026-03-22 05:46:26.495 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-proxy:v1.35.1
+2026-03-22 05:46:27.266 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-scheduler:v1.35.1
+2026-03-22 05:46:28.021 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image gcr.io/k8s-minikube/storage-provisioner:v5
+2026-03-22 05:46:31.124 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Successfully parsed 221 resources and scanned 9 unique container images.
+2026-03-22 05:46:42.518 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding nodes...
+2026-03-22 05:47:51.369 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding edges...
+2026-03-22 05:49:10.957 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-controller-manager" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 05:49:10.957 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:leader-election-controller" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 05:49:10.957 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-scheduler" -bound_to-> "Role:kube-system:system::leader-locking-kube-scheduler"
+2026-03-22 05:49:10.957 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:cloud-provider" -bound_to-> "Role:kube-system:system:controller:cloud-provider"
+2026-03-22 05:49:10.958 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:route-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:route-controller"
+2026-03-22 05:49:10.958 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:selinux-warning-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:selinux-warning-controller"
+2026-03-22 05:49:10.958 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:service-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:service-controller"
+2026-03-22 05:49:10.958 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-dns" -bound_to-> "ClusterRole:cluster-scoped:system:kube-dns"
+2026-03-22 05:50:38.021 INFO  [main] i.g.S.k.graph.ClusterGraph - Graph constructed with 234 nodes and 94 edges.
+2026-03-22 05:50:57.150 INFO  [main] i.g.S.k8sattackmap.Main - No explicit source/target provided. Running Auto-Discovery Heuristics...
+2026-03-22 05:50:57.153 INFO  [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Identified 6 potential entry points and 1 potential crown jewels.
+2026-03-22 05:50:57.153 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: Pod:default:pod-x, Type: Pod
+2026-03-22 05:50:57.153 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: Pod:default:production-db, Type: Pod
+2026-03-22 05:50:57.153 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: ServiceAccount:default:default, Type: ServiceAccount
+2026-03-22 05:50:57.153 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: ServiceAccount:default:webapp-sa, Type: ServiceAccount
+2026-03-22 05:50:57.153 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: ServiceAccount:kube-node-lease:default, Type: ServiceAccount
+2026-03-22 05:50:57.153 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Source Node - ID: User:cluster-scoped:dev-1, Type: User
+2026-03-22 05:50:57.153 DEBUG [main] i.g.S.k.s.ThreatBoundaryAnalyzer - Potential Target Node - ID: Pod:default:production-db, Type: Pod
+2026-03-22 05:50:57.159 WARN  [main] i.g.S.k.algorithm.Dijkstra - ⚠ WARNING: Attack Path Detected
+2026-03-22 05:50:57.159 WARN  [main] i.g.S.k.algorithm.Dijkstra - Source: cluster-scoped/User:cluster-scoped:dev-1 (User)
+2026-03-22 05:50:57.159 WARN  [main] i.g.S.k.algorithm.Dijkstra - Target: default/Pod:default:production-db (Pod)
+2026-03-22 05:50:57.159 WARN  [main] i.g.S.k.algorithm.Dijkstra - Total Hops: 2
+2026-03-22 05:50:57.160 WARN  [main] i.g.S.k.algorithm.Dijkstra - Path Risk Score: 16.5 (CRITICAL)
+2026-03-22 05:50:57.160 WARN  [main] i.g.S.k.algorithm.Dijkstra - Path Details:
+2026-03-22 05:50:57.160 WARN  [main] i.g.S.k.algorithm.Dijkstra -    User:cluster-scoped:dev-1 --[bound_to]--> Role:default:db-admin-role
+2026-03-22 05:50:57.160 WARN  [main] i.g.S.k.algorithm.Dijkstra -    Role:default:db-admin-role --[can_access]--> Pod:default:production-db
+2026-03-22 05:50:57.160 ERROR [main] i.g.S.k8sattackmap.Main - Critical Attack Path Detected!
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main - --------------------------------------------------
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main - Source: User:cluster-scoped:dev-1
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main - Target: Pod:default:production-db
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main - Total Hops: 2
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main - Total Attacker Friction: 3.5
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main - Path Risk Score: 16.5 (CRITICAL)
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main - Execution Steps:
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main -   Step 1: [User:cluster-scoped:dev-1] --(bound_to)--> [Role:default:db-admin-role]
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main -   Step 2: [Role:default:db-admin-role] --(can_access)--> [Pod:default:production-db]
+2026-03-22 05:50:57.160 INFO  [main] i.g.S.k8sattackmap.Main - --------------------------------------------------
+2026-03-22 05:50:57.161 INFO  [main] i.g.S.k8sattackmap.Main - Running blast radius analysis for the discovered attack path...
+2026-03-22 05:50:57.162 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - Starting BFS from node: User:cluster-scoped:dev-1 with max hops: 3
+2026-03-22 05:50:57.162 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - BFS completed. Total affected nodes within 3 hops: 6
+2026-03-22 05:50:57.162 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - Affected nodes: [cluster-scoped/User:cluster-scoped:dev-1 (User), default/Role:default:db-admin-role (Role), default/Pod:default:pod-x (Pod), default/ServiceAccount:default:webapp-sa (ServiceAccount), default/Pod:default:production-db (Pod), default/ServiceAccount:default:default (ServiceAccount)]
+2026-03-22 05:50:57.162 INFO  [main] i.g.S.k8sattackmap.Main - Estimated Blast Radius (6 nodes within 3 hops):
+2026-03-22 05:50:57.163 INFO  [main] i.g.S.k8sattackmap.Main -    - User:cluster-scoped:dev-1
+2026-03-22 05:50:57.163 INFO  [main] i.g.S.k8sattackmap.Main -    - Role:default:db-admin-role
+2026-03-22 05:50:57.163 INFO  [main] i.g.S.k8sattackmap.Main -    - Pod:default:pod-x
+2026-03-22 05:50:57.163 INFO  [main] i.g.S.k8sattackmap.Main -    - ServiceAccount:default:webapp-sa
+2026-03-22 05:50:57.163 INFO  [main] i.g.S.k8sattackmap.Main -    - Pod:default:production-db
+2026-03-22 05:50:57.163 INFO  [main] i.g.S.k8sattackmap.Main -    - ServiceAccount:default:default
+2026-03-22 05:51:14.236 DEBUG [main] i.g.S.k8sattackmap.Main - Verbose logging enabled.
+2026-03-22 05:51:14.236 INFO  [main] i.g.S.k8sattackmap.Main - Using provided Kubernetes JSON file: /home/saptarshi/K8sAttackMap-prototype/new-raw-cluster-state.json
+2026-03-22 05:51:14.330 DEBUG [main] i.g.S.k.ingestion.K8sJsonParser - Parsing Kubernetes JSON data with 221 items.
+2026-03-22 05:51:14.330 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Extracting workloads and scanning container images via Trivy on-the-fly...
+2026-03-22 05:51:14.332 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image nginx:1.14.2
+2026-03-22 05:51:17.491 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image postgres:14
+2026-03-22 05:51:20.374 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/coredns/coredns:v1.13.1
+2026-03-22 05:51:21.197 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/etcd:3.6.6-0
+2026-03-22 05:51:21.986 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-apiserver:v1.35.1
+2026-03-22 05:51:22.752 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-controller-manager:v1.35.1
+2026-03-22 05:51:23.495 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-proxy:v1.35.1
+2026-03-22 05:51:24.233 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-scheduler:v1.35.1
+2026-03-22 05:51:25.003 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image gcr.io/k8s-minikube/storage-provisioner:v5
+2026-03-22 05:51:27.806 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Successfully parsed 221 resources and scanned 9 unique container images.
+2026-03-22 05:51:27.811 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding nodes...
+2026-03-22 05:51:27.812 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding edges...
+2026-03-22 05:51:27.812 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-controller-manager" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 05:51:27.812 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:leader-election-controller" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 05:51:27.812 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-scheduler" -bound_to-> "Role:kube-system:system::leader-locking-kube-scheduler"
+2026-03-22 05:51:27.812 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:cloud-provider" -bound_to-> "Role:kube-system:system:controller:cloud-provider"
+2026-03-22 05:51:27.812 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:route-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:route-controller"
+2026-03-22 05:51:27.812 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:selinux-warning-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:selinux-warning-controller"
+2026-03-22 05:51:27.812 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:service-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:service-controller"
+2026-03-22 05:51:27.812 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-dns" -bound_to-> "ClusterRole:cluster-scoped:system:kube-dns"
+2026-03-22 05:51:27.812 INFO  [main] i.g.S.k.graph.ClusterGraph - Graph constructed with 234 nodes and 94 edges.
+2026-03-22 05:53:01.649 ERROR [main] i.g.S.k8sattackmap.Main - Specified source node 'User:cluster-scoped:dev1' not found in the graph.
+2026-03-22 05:53:14.477 DEBUG [main] i.g.S.k8sattackmap.Main - Verbose logging enabled.
+2026-03-22 05:53:14.478 INFO  [main] i.g.S.k8sattackmap.Main - Using provided Kubernetes JSON file: /home/saptarshi/K8sAttackMap-prototype/new-raw-cluster-state.json
+2026-03-22 05:53:14.572 DEBUG [main] i.g.S.k.ingestion.K8sJsonParser - Parsing Kubernetes JSON data with 221 items.
+2026-03-22 05:53:14.572 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Extracting workloads and scanning container images via Trivy on-the-fly...
+2026-03-22 05:53:14.574 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image nginx:1.14.2
+2026-03-22 05:53:17.404 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image postgres:14
+2026-03-22 05:53:20.464 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/coredns/coredns:v1.13.1
+2026-03-22 05:53:21.430 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/etcd:3.6.6-0
+2026-03-22 05:53:22.185 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-apiserver:v1.35.1
+2026-03-22 05:53:22.956 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-controller-manager:v1.35.1
+2026-03-22 05:53:23.706 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-proxy:v1.35.1
+2026-03-22 05:53:24.494 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-scheduler:v1.35.1
+2026-03-22 05:53:25.380 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image gcr.io/k8s-minikube/storage-provisioner:v5
+2026-03-22 05:53:28.023 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Successfully parsed 221 resources and scanned 9 unique container images.
+2026-03-22 05:53:28.027 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding nodes...
+2026-03-22 05:53:28.028 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding edges...
+2026-03-22 05:53:28.028 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-controller-manager" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 05:53:28.028 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:leader-election-controller" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 05:53:28.028 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-scheduler" -bound_to-> "Role:kube-system:system::leader-locking-kube-scheduler"
+2026-03-22 05:53:28.028 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:cloud-provider" -bound_to-> "Role:kube-system:system:controller:cloud-provider"
+2026-03-22 05:53:28.028 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:route-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:route-controller"
+2026-03-22 05:53:28.028 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:selinux-warning-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:selinux-warning-controller"
+2026-03-22 05:53:28.028 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:service-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:service-controller"
+2026-03-22 05:53:28.028 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-dns" -bound_to-> "ClusterRole:cluster-scoped:system:kube-dns"
+2026-03-22 05:53:28.028 INFO  [main] i.g.S.k.graph.ClusterGraph - Graph constructed with 234 nodes and 94 edges.
+2026-03-22 05:53:34.802 INFO  [main] i.g.S.k8sattackmap.Main - Running attack path analysis for specified source and target...
+2026-03-22 05:53:34.807 WARN  [main] i.g.S.k.algorithm.Dijkstra - ⚠ WARNING: Attack Path Detected
+2026-03-22 05:53:34.807 WARN  [main] i.g.S.k.algorithm.Dijkstra - Source: cluster-scoped/User:cluster-scoped:dev-1 (User)
+2026-03-22 05:53:34.808 WARN  [main] i.g.S.k.algorithm.Dijkstra - Target: default/Pod:default:production-db (Pod)
+2026-03-22 05:53:34.808 WARN  [main] i.g.S.k.algorithm.Dijkstra - Total Hops: 2
+2026-03-22 05:53:34.809 WARN  [main] i.g.S.k.algorithm.Dijkstra - Path Risk Score: 16.5 (CRITICAL)
+2026-03-22 05:53:34.809 WARN  [main] i.g.S.k.algorithm.Dijkstra - Path Details:
+2026-03-22 05:53:34.809 WARN  [main] i.g.S.k.algorithm.Dijkstra -    User:cluster-scoped:dev-1 --[bound_to]--> Role:default:db-admin-role
+2026-03-22 05:53:34.809 WARN  [main] i.g.S.k.algorithm.Dijkstra -    Role:default:db-admin-role --[can_access]--> Pod:default:production-db
+2026-03-22 05:53:34.809 ERROR [main] i.g.S.k8sattackmap.Main - Critical Attack Path Detected!
+2026-03-22 05:53:34.809 INFO  [main] i.g.S.k8sattackmap.Main - --------------------------------------------------
+2026-03-22 05:53:34.809 INFO  [main] i.g.S.k8sattackmap.Main - Source: User:cluster-scoped:dev-1
+2026-03-22 05:53:34.809 INFO  [main] i.g.S.k8sattackmap.Main - Target: Pod:default:production-db
+2026-03-22 05:53:34.809 INFO  [main] i.g.S.k8sattackmap.Main - Total Hops: 2
+2026-03-22 05:53:34.810 INFO  [main] i.g.S.k8sattackmap.Main - Total Attacker Friction: 3.5
+2026-03-22 05:53:34.810 INFO  [main] i.g.S.k8sattackmap.Main - Path Risk Score: 16.5 (CRITICAL)
+2026-03-22 05:53:34.810 INFO  [main] i.g.S.k8sattackmap.Main - Execution Steps:
+2026-03-22 05:53:34.810 INFO  [main] i.g.S.k8sattackmap.Main -   Step 1: [User:cluster-scoped:dev-1] --(bound_to)--> [Role:default:db-admin-role]
+2026-03-22 05:53:34.810 INFO  [main] i.g.S.k8sattackmap.Main -   Step 2: [Role:default:db-admin-role] --(can_access)--> [Pod:default:production-db]
+2026-03-22 05:53:34.810 INFO  [main] i.g.S.k8sattackmap.Main - --------------------------------------------------
+2026-03-22 05:53:34.810 INFO  [main] i.g.S.k8sattackmap.Main - Running blast radius analysis for the discovered attack path...
+2026-03-22 05:53:34.811 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - Starting BFS from node: User:cluster-scoped:dev-1 with max hops: 3
+2026-03-22 05:53:34.812 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - BFS completed. Total affected nodes within 3 hops: 6
+2026-03-22 05:53:34.812 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - Affected nodes: [cluster-scoped/User:cluster-scoped:dev-1 (User), default/Role:default:db-admin-role (Role), default/Pod:default:pod-x (Pod), default/ServiceAccount:default:webapp-sa (ServiceAccount), default/Pod:default:production-db (Pod), default/ServiceAccount:default:default (ServiceAccount)]
+2026-03-22 05:53:34.812 INFO  [main] i.g.S.k8sattackmap.Main - Estimated Blast Radius (6 nodes within 3 hops):
+2026-03-22 05:53:34.812 INFO  [main] i.g.S.k8sattackmap.Main -    - User:cluster-scoped:dev-1
+2026-03-22 05:53:34.812 INFO  [main] i.g.S.k8sattackmap.Main -    - Role:default:db-admin-role
+2026-03-22 05:53:34.812 INFO  [main] i.g.S.k8sattackmap.Main -    - Pod:default:pod-x
+2026-03-22 05:53:34.812 INFO  [main] i.g.S.k8sattackmap.Main -    - ServiceAccount:default:webapp-sa
+2026-03-22 05:53:34.812 INFO  [main] i.g.S.k8sattackmap.Main -    - Pod:default:production-db
+2026-03-22 05:53:34.812 INFO  [main] i.g.S.k8sattackmap.Main -    - ServiceAccount:default:default
+2026-03-22 06:51:27.430 DEBUG [main] i.g.S.k8sattackmap.Main - Verbose logging enabled.
+2026-03-22 06:51:27.431 INFO  [main] i.g.S.k8sattackmap.Main - Using provided Kubernetes JSON file: /home/saptarshi/K8sAttackMap-prototype/new-raw-cluster-state.json
+2026-03-22 06:51:27.522 DEBUG [main] i.g.S.k.ingestion.K8sJsonParser - Parsing Kubernetes JSON data with 221 items.
+2026-03-22 06:51:27.522 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Extracting workloads and scanning container images via Trivy on-the-fly...
+2026-03-22 06:51:27.524 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image nginx:1.14.2
+2026-03-22 06:51:42.175 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image postgres:14
+2026-03-22 06:51:44.936 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/coredns/coredns:v1.13.1
+2026-03-22 06:51:45.872 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/etcd:3.6.6-0
+2026-03-22 06:51:46.670 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-apiserver:v1.35.1
+2026-03-22 06:51:47.525 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-controller-manager:v1.35.1
+2026-03-22 06:51:48.305 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-proxy:v1.35.1
+2026-03-22 06:51:49.166 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image registry.k8s.io/kube-scheduler:v1.35.1
+2026-03-22 06:51:49.940 DEBUG [main] i.g.S.k.security.TrivyScanner - Scanning image gcr.io/k8s-minikube/storage-provisioner:v5
+2026-03-22 06:51:52.590 INFO  [main] i.g.S.k.ingestion.K8sJsonParser - Successfully parsed 221 resources and scanned 9 unique container images.
+2026-03-22 06:51:52.593 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding nodes...
+2026-03-22 06:51:52.594 INFO  [main] i.g.S.k.graph.ClusterGraph - Building graph: Adding edges...
+2026-03-22 06:51:52.594 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-controller-manager" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 06:51:52.594 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:leader-election-controller" -bound_to-> "Role:kube-system:system::leader-locking-kube-controller-manager"
+2026-03-22 06:51:52.594 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-scheduler" -bound_to-> "Role:kube-system:system::leader-locking-kube-scheduler"
+2026-03-22 06:51:52.594 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:cloud-provider" -bound_to-> "Role:kube-system:system:controller:cloud-provider"
+2026-03-22 06:51:52.594 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:route-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:route-controller"
+2026-03-22 06:51:52.594 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:selinux-warning-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:selinux-warning-controller"
+2026-03-22 06:51:52.594 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:service-controller" -bound_to-> "ClusterRole:cluster-scoped:system:controller:service-controller"
+2026-03-22 06:51:52.594 DEBUG [main] i.g.S.k.graph.ClusterGraph - Skipping edge with missing node(s): "ServiceAccount:kube-system:kube-dns" -bound_to-> "ClusterRole:cluster-scoped:system:kube-dns"
+2026-03-22 06:51:52.595 INFO  [main] i.g.S.k.graph.ClusterGraph - Graph constructed with 234 nodes and 94 edges.
+2026-03-22 06:51:52.596 INFO  [main] i.g.S.k8sattackmap.Main - Running attack path analysis for specified source and target...
+2026-03-22 06:51:52.598 WARN  [main] i.g.S.k.algorithm.Dijkstra - ⚠ WARNING: Attack Path Detected
+2026-03-22 06:51:52.598 WARN  [main] i.g.S.k.algorithm.Dijkstra - Source: cluster-scoped/User:cluster-scoped:dev-1 (User)
+2026-03-22 06:51:52.598 WARN  [main] i.g.S.k.algorithm.Dijkstra - Target: default/Pod:default:production-db (Pod)
+2026-03-22 06:51:52.598 WARN  [main] i.g.S.k.algorithm.Dijkstra - Total Hops: 2
+2026-03-22 06:51:52.599 WARN  [main] i.g.S.k.algorithm.Dijkstra - Path Risk Score: 16.5 (CRITICAL)
+2026-03-22 06:51:52.599 WARN  [main] i.g.S.k.algorithm.Dijkstra - Path Details:
+2026-03-22 06:51:52.599 WARN  [main] i.g.S.k.algorithm.Dijkstra -    User:cluster-scoped:dev-1 --[bound_to]--> Role:default:db-admin-role
+2026-03-22 06:51:52.599 WARN  [main] i.g.S.k.algorithm.Dijkstra -    Role:default:db-admin-role --[can_access]--> Pod:default:production-db
+2026-03-22 06:51:52.600 ERROR [main] i.g.S.k8sattackmap.Main - Critical Attack Path Detected!
+2026-03-22 06:51:52.600 INFO  [main] i.g.S.k8sattackmap.Main - --------------------------------------------------
+2026-03-22 06:51:52.600 INFO  [main] i.g.S.k8sattackmap.Main - Source: User:cluster-scoped:dev-1
+2026-03-22 06:51:52.600 INFO  [main] i.g.S.k8sattackmap.Main - Target: Pod:default:production-db
+2026-03-22 06:51:52.600 INFO  [main] i.g.S.k8sattackmap.Main - Total Hops: 2
+2026-03-22 06:51:52.601 INFO  [main] i.g.S.k8sattackmap.Main - Total Attacker Friction: 3.5
+2026-03-22 06:51:52.601 INFO  [main] i.g.S.k8sattackmap.Main - Path Risk Score: 16.5 (CRITICAL)
+2026-03-22 06:51:52.601 INFO  [main] i.g.S.k8sattackmap.Main - Execution Steps:
+2026-03-22 06:51:52.601 INFO  [main] i.g.S.k8sattackmap.Main -   Step 1: [User:cluster-scoped:dev-1] --(bound_to)--> [Role:default:db-admin-role]
+2026-03-22 06:51:52.601 INFO  [main] i.g.S.k8sattackmap.Main -   Step 2: [Role:default:db-admin-role] --(can_access)--> [Pod:default:production-db]
+2026-03-22 06:51:52.601 INFO  [main] i.g.S.k8sattackmap.Main - --------------------------------------------------
+2026-03-22 06:51:52.601 INFO  [main] i.g.S.k8sattackmap.Main - Running blast radius analysis for the discovered attack path...
+2026-03-22 06:51:52.602 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - Starting BFS from node: User:cluster-scoped:dev-1 with max hops: 3
+2026-03-22 06:51:52.602 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - BFS completed. Total affected nodes within 3 hops: 6
+2026-03-22 06:51:52.602 DEBUG [main] i.g.S.k8sattackmap.algorithm.BFS - Affected nodes: [cluster-scoped/User:cluster-scoped:dev-1 (User), default/Role:default:db-admin-role (Role), default/Pod:default:pod-x (Pod), default/ServiceAccount:default:webapp-sa (ServiceAccount), default/Pod:default:production-db (Pod), default/ServiceAccount:default:default (ServiceAccount)]
+2026-03-22 06:51:52.602 INFO  [main] i.g.S.k8sattackmap.Main - Estimated Blast Radius (6 nodes within 3 hops):
+2026-03-22 06:51:52.602 INFO  [main] i.g.S.k8sattackmap.Main -    - User:cluster-scoped:dev-1
+2026-03-22 06:51:52.602 INFO  [main] i.g.S.k8sattackmap.Main -    - Role:default:db-admin-role
+2026-03-22 06:51:52.602 INFO  [main] i.g.S.k8sattackmap.Main -    - Pod:default:pod-x
+2026-03-22 06:51:52.602 INFO  [main] i.g.S.k8sattackmap.Main -    - ServiceAccount:default:webapp-sa
+2026-03-22 06:51:52.602 INFO  [main] i.g.S.k8sattackmap.Main -    - Pod:default:production-db
+2026-03-22 06:51:52.602 INFO  [main] i.g.S.k8sattackmap.Main -    - ServiceAccount:default:default
+2026-03-22 06:51:52.602 INFO  [main] i.g.S.k8sattackmap.Main - Generating remediation recommendations based on the discovered attack paths...
+2026-03-22 06:51:52.603 INFO  [main] i.g.S.k8sattackmap.Main - 🛡️ SMART REMEDIATION: Revoke, restrict, or delete the RBAC permissions of [Role:default:db-admin-role] to instantly eliminate 1 attack paths.
