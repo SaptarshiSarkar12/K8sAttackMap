@@ -34,6 +34,12 @@ public class AppConstants {
     public static final String USES_SA = "uses_sa";
     public static final String BOUND_TO = "bound_to";
     public static final String CAN_ACCESS = "can_access";
+    public static final String HTML_TEMPLATE_RESOURCE_PATH = "/templates/html-template.html";
+    public static final String PDF_TEMPLATE_RESOURCE_PATH = "/templates/report-template.html";
+    public static final String OUTPUT_HTML_FILENAME = "k8s-threat-map.html";
+    public static final String OUTPUT_PDF_FILENAME = "k8s-threat-report.pdf";
+    public static String TEMPLATE_HTML;
+    public static String TEMPLATE_PDF;
 
     private static String formatVersion() {
         String color;

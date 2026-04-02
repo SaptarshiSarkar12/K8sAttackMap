@@ -3,6 +3,8 @@ package io.github.SaptarshiSarkar12.k8sattackmap.ingestion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +56,52 @@ public class KubectlExtractor {
         } catch (Exception e) {
             log.error("Exception while executing kubectl: {}", e.getMessage(), e);
             return null;
+        }
+    }
+
+    public static String getClusterContext() {
+        final String unknown = "Unknown/Offline Environment";
+        ProcessBuilder processBuilder = new ProcessBuilder("kubectl", "config", "current-context").redirectErrorStream(true);
+
+        try (Process process = processBuilder.start();
+             BufferedReader outputReader = new BufferedReader(process.inputReader(StandardCharsets.UTF_8))) {
+
+            if (!process.waitFor(5, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return unknown;
+            }
+
+            int exitCode = process.exitValue();
+            String context = outputReader.readLine();
+
+            if (exitCode != 0 || context == null || context.trim().isEmpty()) {
+                log.warn("Could not determine cluster context. kubectl exit code: {}, output: {}", exitCode, context);
+                return unknown;
+            }
+
+            context = context.trim();
+
+            if (context.startsWith("arn:aws:eks:")) {
+                return context.substring(context.lastIndexOf("/") + 1);
+            }
+
+            if (context.startsWith("gke_")) {
+                String[] parts = context.split("_");
+                return parts[parts.length - 1];
+            }
+
+            if (context.startsWith("kind-")) {
+                return context.replace("kind-", "") + " (Local)";
+            }
+
+            if (context.equals("minikube")) {
+                return "Minikube (Local Development)";
+            }
+
+            return context;
+        } catch (Exception e) {
+            log.error("Exception while fetching cluster context: {}", e.getMessage(), e);
+            return unknown;
         }
     }
 }

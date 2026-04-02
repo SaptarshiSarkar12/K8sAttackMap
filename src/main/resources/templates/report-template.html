@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Security Audit Report</title>
+    <style>
+        /* PDF Print Formatting */
+        @page {
+            size: A4 portrait;
+            margin: 1in;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            color: #1a202c;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 5px;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        /* Utility Classes */
+        .text-center {
+            text-align: center;
+        }
+
+        .text-red {
+            color: #e53e3e;
+        }
+
+        .text-green {
+            color: #38a169;
+        }
+
+        .metric-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2b6cb0;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #1a202c;
+            color: #a0aec0;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            white-space: pre-wrap
+        }
+
+        /* Inline code styling */
+        code {
+            background-color: #edf2f7; /* light gray background */
+            color: #2b6cb0; /* blue text for emphasis */
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 90%; /* slightly smaller than body text */
+            padding: 2px 4px;
+            border-radius: 4px;
+            white-space: pre-wrap; /* ensures wrapping in PDF */
+        }
+
+        /* Table Formatting */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border: 1px solid #cbd5e0;
+            padding: 12px;
+            text-align: left;
+            word-break: break-all;
+        }
+
+        th {
+            background-color: #edf2f7;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="text-center">
+    <h1>K8sAttackMap Security Audit</h1>
+    <p style="margin-bottom: 5px;"><strong>Generated on:</strong> {{REPORT_DATE}}</p>
+    <p style="margin-top: 0; color: #718096;"><strong>Target Environment:</strong> {{CLUSTER_CONTEXT}}</p>
+</div>
+
+<h2>1. Executive Summary</h2>
+<p>This automated threat model analyzed the Kubernetes RBAC configurations, pod deployments, and access policies to map
+    potential paths of compromise.</p>
+
+<table style="border:none; margin-top: 30px;">
+    <tr>
+        <td style="border:none;">
+            <div class="metric-box">
+                <div class="metric-value text-red">{{RISK_GRADE}}</div>
+                <div>Overall Cluster Risk Score</div>
+            </div>
+        </td>
+        <td style="border:none;">
+            <div class="metric-box">
+                <div class="metric-value">{{TOTAL_PATHS}}</div>
+                <div>Critical Attack Paths Found</div>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<div style="margin-top: 30px;">
+    <h3>High-Level Findings</h3>
+    <ul>
+        <li><strong>Entry Points Detected:</strong> {{ENTRY_POINTS_COUNT}} pods with vulnerabilities or external
+            exposure.
+        </li>
+        <li><strong>RBAC Escalation Loops:</strong> {{LOOP_COUNT}} circular permission loops detected.</li>
+        <li><strong>Choke Point ROI:</strong> Fixing a single architectural misconfiguration can sever <strong>{{CHOKE_POINT_IMPACT}}%</strong>
+            of all known attack paths.
+        </li>
+    </ul>
+</div>
+
+<div class="page-break"></div>
+<h2>2. Actionable Remediation Plan</h2>
+<p>To maximize security improvement with minimal engineering friction, address the following architectural "Choke
+    Point".</p>
+
+<div style="border-left: 4px solid #3182ce; padding-left: 15px; margin-top: 20px;">
+    <h3 style="border-bottom: none;">Primary Choke Point: <span class="text-red">{{CHOKE_POINT_ID}}</span></h3>
+    <p>This single node acts as a bridge for the majority of privilege escalation vectors in the cluster.</p>
+
+    <h4>Action Required:</h4>
+    <p>Sever this connection to restrict lateral movement. If this role is actively used by legitimate workloads,
+        <strong>do not delete it</strong>. Instead, apply the Principle of Least Privilege by restricting its allowed
+        <code>verbs</code> or <code>resources</code>.</p>
+
+    <div class="code-block">
+        # Option A: Full Removal (Highest Security)
+        $ kubectl delete {{CHOKE_POINT_TYPE}} {{CHOKE_POINT_NAME}} -n {{CHOKE_POINT_NAMESPACE}}
+
+        # Option B: Audit Permissions (Safest for Uptime)
+        $ kubectl describe {{CHOKE_POINT_TYPE}} {{CHOKE_POINT_NAME}} -n {{CHOKE_POINT_NAMESPACE}}
+    </div>
+</div>
+
+<div class="page-break"></div>
+<h2>3. Critical Attack Path Analysis</h2>
+<p>The following sequence represents the path of least resistance for an attacker aiming to compromise the cluster's
+    Crown Jewels.</p>
+
+<table style="margin-top: 20px;">
+    <thead>
+    <tr>
+        <th>Hop</th>
+        <th>Source Node</th>
+        <th>Vector (Action)</th>
+        <th>Target Node</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ATTACK_PATH_ROWS}}
+    </tbody>
+</table>
+
+<div class="page-break"></div>
+<h2>4. Privilege Escalation Loops</h2>
+<p>The following circular dependencies represent misconfigurations where permissions loop back on themselves, allowing
+    an attacker to maintain persistent, escalating access. These must be broken.</p>
+
+<table style="margin-top: 20px;">
+    <thead>
+    <tr>
+        <th style="width: 10%;">Loop ID</th>
+        <th>Circular Path (Nodes Involved)</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ESCALATION_LOOPS_ROWS}}
+    </tbody>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K8sAttackMap - Threat Intelligence</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/layout-base/layout-base.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cose-base/cose-base.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose/cytoscape-fcose.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #0d1117; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #c9d1d9; overflow: hidden; }
+        #cy { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        #ui-layer { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(22, 27, 34, 0.85); border: 1px solid #30363d; border-radius: 8px; padding: 15px 25px; backdrop-filter: blur(10px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        h1 { margin: 0 0 10px 0; font-size: 20px; color: #58a6ff; display: flex; align-items: center; gap: 10px; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; }
+        .color-box { width: 14px; height: 14px; border-radius: 3px; margin-right: 10px; }
+        .toggle-group { margin-top: 15px; padding-top: 15px; border-top: 1px solid #30363d; display: flex; flex-direction: column; gap: 10px; }
+        .toggle-label { font-size: 13px; display: flex; align-items: center; cursor: pointer; color: #c9d1d9; }
+
+        #custom-tooltip { position: absolute; display: none; background: #161b22; border: 1px solid #30363d; color: #c9d1d9; padding: 12px; border-radius: 6px; font-size: 13px; z-index: 100; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.8); max-width: 300px; line-height: 1.5; }
+        .tooltip-title { color: #58a6ff; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        .tooltip-alert { color: #ff7b72; font-weight: bold; margin-top: 5px; }
+        .tooltip-blast { color: #ffa657; font-weight: bold; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <h1>🛡️ K8sAttackMap</h1>
+    <div class="legend-item"><div class="color-box" style="background: #2ea043;"></div> Entry Point (Hover for Blast Radius)</div>
+    <div class="legend-item"><div class="color-box" style="background: #ff7b72;"></div> Critical Attack Path</div>
+    <div class="legend-item"><div class="color-box" style="background: #8b949e;"></div> Suggested Remediation (Choke Point)</div>
+
+    <div class="toggle-group">
+        <label class="toggle-label"><input type="checkbox" id="orphanToggle" style="margin-right: 8px; cursor: pointer;"> Show Isolated Nodes (Zero Connections)</label>
+        <label class="toggle-label"><input type="checkbox" id="focusToggle" style="margin-right: 8px; cursor: pointer;"> Dim Background (Highlight Critical Threats)</label>
+    </div>
+</div>
+
+<div id="custom-tooltip"></div>
+<div id="cy"></div>
+
+<script>
+    // Data injected by Java Backend
+    const graphData = /*%GRAPH_DATA%*/;
+    const elements = typeof graphData === 'object' ? graphData : { nodes: [], edges: [] };
+
+    // Initialize Cytoscape
+    const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: elements,
+        style: [
+            { selector: 'node', style: { 'background-color': '#1f6feb', 'label': 'data(label)', 'color': '#c9d1d9', 'font-size': '10px', 'text-wrap': 'wrap', 'text-valign': 'bottom', 'text-margin-y': 5, 'width': 25, 'height': 25 } },
+            { selector: 'edge', style: { 'width': 1.5, 'line-color': '#30363d', 'target-arrow-color': '#30363d', 'target-arrow-shape': 'triangle', 'curve-style': 'bezier', 'label': 'data(label)', 'font-size': '8px', 'color': '#8b949e', 'text-rotation': 'autorotate', 'text-background-opacity': 1, 'text-background-color': '#0d1117' } },
+            { selector: '.critical-path', style: { 'line-color': '#ff7b72', 'target-arrow-color': '#ff7b72', 'width': 3, 'color': '#ff7b72', 'font-weight': 'bold', 'z-index': 10 } },
+            { selector: 'node.critical-path', style: { 'border-color': '#ff7b72', 'border-width': 3 } },
+            { selector: '.entry-node', style: { 'border-color': '#2ea043', 'border-width': 3, 'shape': 'hexagon', 'width': 30, 'height': 30 } },
+            { selector: '.choke-point', style: { 'background-color': '#8b949e', 'border-width': 0, 'width': 35, 'height': 35, 'background-image': "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d1117' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E", 'background-fit': 'contain', 'z-index': 100 } },
+            { selector: '.blink-off', style: { 'opacity': 0.4 } },
+            { selector: '.blasted', style: { 'underlay-color': '#ffa657', 'underlay-padding': 8, 'underlay-opacity': 0.8, 'background-color': '#ffa657', 'border-color': '#ffa657' } }
+        ]
+    });
+
+    // Blinking Effect for Choke Point
+    setInterval(() => cy.nodes('.choke-point').toggleClass('blink-off'), 800);
+
+    // UI Toggles & Physics Layout
+    const orphanNodes = cy.nodes().filter(node => node.degree() === 0);
+    cy.remove(orphanNodes);
+
+    const focusToggle = document.getElementById('focusToggle');
+
+    const runPhysicsLayout = () => {
+        cy.layout({
+            name: 'fcose', quality: 'proof', randomize: true, animate: true, animationDuration: 1200,
+            nodeRepulsion: 8000, idealEdgeLength: 150, edgeElasticity: 0.25, packComponents: true, step: "all"
+        }).run();
+    };
+
+    const applyFocusEffect = () => {
+        const backgroundElements = cy.elements().not('.critical-path').not('.entry-node').not('.choke-point');
+        if (focusToggle.checked) {
+            backgroundElements.animate({ style: { 'opacity': 0.25, 'text-opacity': 0.25 } }, { duration: 500 });
+        } else {
+            backgroundElements.animate({ style: { 'opacity': 1, 'text-opacity': 1 } }, { duration: 500 });
+        }
+    };
+
+    focusToggle.addEventListener('change', applyFocusEffect);
+
+    document.getElementById('orphanToggle').addEventListener('change', function(e) {
+        if (e.target.checked) {
+            cy.add(orphanNodes);
+            orphanNodes.style(focusToggle.checked ? { 'opacity': 0.25, 'text-opacity': 0.25 } : { 'opacity': 1, 'text-opacity': 1 });
+        } else {
+            cy.remove(orphanNodes);
+        }
+        runPhysicsLayout();
+    });
+
+    // Initial Load
+    runPhysicsLayout();
+
+    // Tooltip & Blast Radius Hover
+    const tooltip = document.getElementById('custom-tooltip');
+
+    cy.on('mouseover', 'node', function(event) {
+        const data = event.target.data();
+        let html = `<div class="tooltip-title">${data.id}</div><b>Type:</b> ${data.type.toUpperCase()}<br>`;
+        if (data.isEntry) html += `<div class="tooltip-blast">🔥 Entry Point (Configured Max Hops: 5)</div>`;
+        if (data.isChokePoint) html += `<div class="tooltip-alert">⚠️ RECOMMENDED CHOKE POINT</div>Severing this node drastically reduces the blast radius.`;
+
+        tooltip.innerHTML = html;
+        tooltip.style.display = 'block';
+
+        if (data.isEntry && data.blastRadiusIds) {
+            data.blastRadiusIds.forEach(id => {
+                const targetNode = cy.getElementById(id);
+                if (targetNode) targetNode.addClass('blasted');
+            });
+        }
+    });
+
+    cy.on('mousemove', event => {
+        tooltip.style.left = (event.originalEvent.pageX + 15) + 'px';
+        tooltip.style.top = (event.originalEvent.pageY + 15) + 'px';
+    });
+
+    cy.on('mouseout', 'node', event => {
+        tooltip.style.display = 'none';
+        if (event.target.data('isEntry')) cy.nodes('.blasted').removeClass('blasted');
+    });
+</script>
+</body>
+</html>

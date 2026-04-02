@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 public class CommandParser {
@@ -19,7 +21,7 @@ public class CommandParser {
     private String targetNode; // TODO: Allow multiple target nodes
     private int maxHops = 3;
     private boolean verbose;
-    private String[] outputFormats;
+    private final Set<String> outputFormats = new HashSet<>();
     private static final Logger log = LoggerFactory.getLogger(CommandParser.class);
 
     public boolean parse(String[] args) {
@@ -46,7 +48,15 @@ public class CommandParser {
                 }
             }
             if (cmd.hasOption("output")) {
-                this.outputFormats = cmd.getOptionValues("output");
+                String[] formats = cmd.getOptionValues("output");
+                for (String format : formats) {
+                    String fmt = format.trim().toLowerCase();
+                    if (fmt.equals("html") || fmt.equals("pdf")) {
+                        outputFormats.add(fmt);
+                    } else {
+                        log.warn("Unsupported output format specified: {}. Supported formats are 'html' and 'pdf'. Ignoring this value.", format);
+                    }
+                }
             }
             if (cmd.hasOption("max-hops")) {
                 this.maxHops = Integer.parseInt(cmd.getOptionValue("max-hops"));
