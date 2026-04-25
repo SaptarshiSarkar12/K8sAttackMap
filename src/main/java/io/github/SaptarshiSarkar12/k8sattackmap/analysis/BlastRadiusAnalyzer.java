@@ -176,31 +176,31 @@ public class BlastRadiusAnalyzer {
 
         if (type.equals("secret") || id.startsWith("secret:")) {
             fallbackScore += 6;
-            reasons.add("Secret entity (fallback)");
+            reasons.add("Secret entity");
         }
         if (type.contains("clusterrolebinding") || id.startsWith("clusterrolebinding:")) {
             fallbackScore += 7;
-            reasons.add("Cluster-wide RBAC binding (fallback)");
+            reasons.add("Cluster-wide RBAC binding");
         }
         if (type.contains("rolebinding") || id.startsWith("rolebinding:")) {
             fallbackScore += 5;
-            reasons.add("Namespace RBAC binding (fallback)");
+            reasons.add("Namespace RBAC binding");
         }
         if (type.contains("serviceaccount") || id.startsWith("serviceaccount:")) {
             fallbackScore += 4;
-            reasons.add("ServiceAccount identity surface (fallback)");
+            reasons.add("ServiceAccount identity surface");
         }
         if (id.contains("cluster-admin") || id.contains("system:masters")) {
             fallbackScore += 8;
-            reasons.add("Administrative privilege indicator (fallback)");
+            reasons.add("Administrative privilege indicator");
         }
         if (containsAny(id, "prod", "production", "vault", "db", "database", "payment", "auth")) {
             fallbackScore += 4;
-            reasons.add("Critical workload or sensitive data (fallback)");
+            reasons.add("Critical workload or sensitive data");
         }
         if (containsAny(id, "ingress", "loadbalancer", "nodeport", "public", "external")) {
             fallbackScore += 3;
-            reasons.add("External exposure (fallback)");
+            reasons.add("External exposure");
         }
 
         // if facts matched, keep fallback from dominating

@@ -33,9 +33,14 @@ public class AnalysisOrchestrator {
         List<BlastRadiusResult> blastRadiusResults = BlastRadiusAnalyzer.analyzeMultiple(input.clusterGraph(), pathSourceNodes, input.maxHops());
         progress.success("Blast Radius Analysis Completed. " + blastRadiusResults.size() + " results generated.");
 
+        progress.stage("Detecting Privilege Escalation Loops...");
+        List<List<GraphNode>> privilegeLoops = PrivilegeLoopDetector.findEscalationLoops(input.clusterGraph());
+        progress.success("Privilege Loop Detection Completed. " + privilegeLoops.size() + " loop(s) found.");
+
         progress.stage("Generating Remediation Plans...");
         List<RemediationPlan> remediationPlans = ChokePointRemediationAdvisor.buildPlans(chokePointResult, 5);
         progress.success("Remediation Plan Generation Completed. " + remediationPlans.size() + " plans created.");
-        return new AnalysisResult(pathDiscoveryResult, blastRadiusResults, chokePointResult, remediationPlans);
+
+        return new AnalysisResult(pathDiscoveryResult, blastRadiusResults, chokePointResult, privilegeLoops, remediationPlans);
     }
 }

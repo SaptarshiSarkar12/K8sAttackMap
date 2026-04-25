@@ -16,10 +16,8 @@ public class PrivilegeLoopDetector {
     private static final Logger log = LoggerFactory.getLogger(PrivilegeLoopDetector.class);
 
     public static List<List<GraphNode>> findEscalationLoops(Graph<GraphNode, GraphEdge> originalGraph) {
-        log.info("Finding Escalation Loops...");
-
-        // 1. Flatten the graph to remove parallel edges
-        // Johnson's Algorithm crashes if there are multiple edges between the exact same nodes.
+        // Flatten the graph to remove parallel edges
+        // Johnson's Algorithm implementation crashes if there are multiple edges between the exact same nodes.
         Graph<GraphNode, DefaultEdge> simpleGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         for (GraphNode node : originalGraph.vertexSet()) {
@@ -39,41 +37,21 @@ public class PrivilegeLoopDetector {
         int e = simpleGraph.edgeSet().size();
         List<List<GraphNode>> cycles;
 
-        // 2. Circuit Breaker: If the graph is insanely dense (average degree > 50),
-        // it might be a trap. Fall back to Tarjan's to prevent out-of-memory errors.
-        if (v > 100 && (e / v) > 50) {
-            log.error("🚨 Graph is too dense for deep cycle analysis. Falling back to Tarjan's algorithm.");
+        double avgDegree = v > 0 ? (double) e / v : 0.0;
+        double density = v > 1 ? (double) e / (v * (v - 1)) : 0.0;
+
+        log.debug("Graph has {} vertices and {} edges (average degree: {}).", v, e, avgDegree);
+        log.debug("Graph density: {}.", density);
+
+        if (v > 100 && avgDegree > 50.0) {
+            log.debug("Switching to Tarjan's algorithm for cycle detection due to graph density.");
             TarjanSimpleCycles<GraphNode, DefaultEdge> tarjan = new TarjanSimpleCycles<>(simpleGraph);
             cycles = tarjan.findSimpleCycles();
         } else {
-            log.info("🔄 Running Johnson's Algorithm (Graph looks sparse enough)...");
+            log.debug("Proceeding with Johnson's algorithm for cycle detection.");
             JohnsonSimpleCycles<GraphNode, DefaultEdge> johnson = new JohnsonSimpleCycles<>(simpleGraph);
             cycles = johnson.findSimpleCycles();
         }
-
-        // 3. Log the results
-        if (cycles.isEmpty()) {
-            log.info("✅ No privilege escalation loops detected in the cluster.");
-        } else {
-            log.warn("⚠️ CRITICAL: Found {} privilege escalation loops!", cycles.size());
-
-            // Print the first few loops for debugging/logging
-            int displayLimit = Math.min(cycles.size(), 5);
-            for (int i = 0; i < displayLimit; i++) {
-                List<GraphNode> loop = cycles.get(i);
-                StringBuilder loopString = new StringBuilder();
-                for (GraphNode node : loop) {
-                    loopString.append(node.getId()).append(" -> ");
-                }
-                // Complete the visual loop back to the start
-                loopString.append(loop.getFirst().getId());
-                log.warn("   Loop {}: {}", (i + 1), loopString);
-            }
-            if (cycles.size() > displayLimit) {
-                log.warn("   ... and {} more loops hidden for brevity.", (cycles.size() - displayLimit));
-            }
-        }
-
         return cycles;
     }
 }

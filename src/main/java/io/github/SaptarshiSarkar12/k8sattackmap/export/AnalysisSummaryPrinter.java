@@ -19,10 +19,12 @@ public class AnalysisSummaryPrinter {
         PathDiscoveryResult pathResult = result.pathDiscoveryResult();
         ChokePointResult chokeResult = result.chokePointResult();
         List<BlastRadiusResult> blastResults = result.blastRadiusResults();
+        List<List<GraphNode>> privilegeLoops = result.privilegeLoops();
 
-        printExecutiveSummary(pathResult, chokeResult, blastResults, log); // CHECKED
+        printExecutiveSummary(pathResult, chokeResult, privilegeLoops, blastResults, log); // CHECKED
         printAttackPathAnalysis(graph, pathResult, log, verbose); // CHECKED
         printChokePointAnalysis(chokeResult, log);
+        printPrivilegeLoopAnalysis(privilegeLoops, log);
         printBlastRadiusAnalysis(blastResults, log);
         printPodVulnerabilityDetails(podCVEIds, log);
         printRemediationPlans(result.remediationPlans(), log);
@@ -35,10 +37,11 @@ public class AnalysisSummaryPrinter {
         System.out.println("=".repeat(80) + RESET);
     }
 
-    private static void printExecutiveSummary(PathDiscoveryResult pathResult, ChokePointResult chokeResult, List<BlastRadiusResult> blastResults, Logger log) {
+    private static void printExecutiveSummary(PathDiscoveryResult pathResult, ChokePointResult chokeResult, List<List<GraphNode>> privilegeLoops, List<BlastRadiusResult> blastResults, Logger log) {
         log.info(CYAN + "--- EXECUTIVE OVERVIEW ---" + RESET);
         log.info("  • Discovered Attack Paths: {}", pathResult.allPossiblePaths().size());
         log.info("  • Critical Choke Points:    {}", chokeResult.rankedChokePoints().size());
+        log.info("  • Privilege Escalation Loops: {}", privilegeLoops.size());
 
         long criticalAssets = blastResults.stream()
                 .mapToLong(r -> r.severityCounts().getOrDefault(ImpactSeverity.CRITICAL, 0L))
@@ -108,6 +111,68 @@ public class AnalysisSummaryPrinter {
         System.out.println();
     }
 
+    private static void printPrivilegeLoopAnalysis(List<List<GraphNode>> privilegeLoops, Logger log) {
+        log.info(CYAN + "--- PRIVILEGE ESCALATION LOOPS ---" + RESET);
+
+        if (privilegeLoops == null || privilegeLoops.isEmpty()) {
+            log.info("  • No privilege escalation loops detected.");
+            System.out.println();
+            return;
+        }
+
+        log.info("  • Total loops detected: {}", privilegeLoops.size());
+
+        int loopIndex = 1;
+        for (List<GraphNode> loop : privilegeLoops) {
+            if (loop == null || loop.isEmpty()) {
+                continue;
+            }
+
+            // Build a readable loop path: A -> B -> C -> A
+            List<String> nodeIds = loop.stream()
+                    .map(GraphNode::getId)
+                    .toList();
+
+            String loopPath = String.join(" -> ", nodeIds);
+            if (nodeIds.size() > 1) {
+                loopPath += " -> " + nodeIds.getFirst();
+            }
+
+            // Quick risk hints from loop composition
+            boolean hasBinding = loop.stream().anyMatch(n -> {
+                String t = n.getType() == null ? "" : n.getType().toLowerCase();
+                return t.contains("rolebinding") || t.contains("clusterrolebinding");
+            });
+            boolean hasRole = loop.stream().anyMatch(n -> {
+                String t = n.getType() == null ? "" : n.getType().toLowerCase();
+                return t.equals("role") || t.equals("clusterrole");
+            });
+            boolean hasServiceAccount = loop.stream().anyMatch(n -> {
+                String t = n.getType() == null ? "" : n.getType().toLowerCase();
+                return t.equals("serviceaccount");
+            });
+
+            String severityHint;
+            if (hasBinding && hasRole && hasServiceAccount) {
+                severityHint = "HIGH";
+            } else if (hasBinding && hasRole) {
+                severityHint = "MEDIUM";
+            } else {
+                severityHint = "LOW";
+            }
+
+            if (privilegeLoops.size() > 1) {
+                log.info("  {}. Severity={} | Nodes={}", loopIndex++, severityHint, loop.size());
+            } else {
+                log.info("     Severity={} | Nodes={}", severityHint, loop.size());
+            }
+            log.info("     Path: {}", loopPath);
+        }
+
+        log.info("  • Recommended action: break at least one binding edge per loop to prevent cyclic privilege escalation.");
+        System.out.println();
+    }
+
     private static void printBlastRadiusAnalysis(List<BlastRadiusResult> blastResults, Logger log) {
         if (blastResults.isEmpty()) return;
 
@@ -162,7 +227,7 @@ public class AnalysisSummaryPrinter {
             return;
         }
 
-        // Sort: CVSS desc (from pod id/name hints if unavailable -> 0), then CVE count desc, then pod id
+        // Sort CVSS desc (from pod id/name hints if unavailable -> 0), then CVE count desc, then pod id
         vulnerablePods = new ArrayList<>(vulnerablePods);
         vulnerablePods.sort(
                 Comparator.<Map.Entry<String, List<String>>>comparingInt(e -> e.getValue().size()).reversed()
@@ -200,7 +265,7 @@ public class AnalysisSummaryPrinter {
 
             if (!plan.enforceCommands().isEmpty()) {
                 log.info("  " + BOLD + "Enforcement Command:" + RESET);
-                log.info("    " + YELLOW + "{}" + RESET, plan.enforceCommands().getFirst());
+                plan.enforceCommands().forEach(cmd -> log.info(YELLOW + "     {}"  + RESET, cmd));
             }
 
             if (plan.containsDestructiveAction()) {

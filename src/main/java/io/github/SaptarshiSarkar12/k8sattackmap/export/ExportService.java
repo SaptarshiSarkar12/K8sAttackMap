@@ -13,7 +13,7 @@ public final class ExportService {
 //            PdfReportEngine.generateReport(result, graph, sourceNodes, maxHops);
         }
         if (outputFormats.contains("cytoscape")) {
-//            CytoscapeExporter.exportToCytoscape(result, graph);
+//            CytoscapeExporter.exportToJson(graph, analysisResult, podCVEIds, entryNodes, maxBlastHops);
         }
     }
 }
