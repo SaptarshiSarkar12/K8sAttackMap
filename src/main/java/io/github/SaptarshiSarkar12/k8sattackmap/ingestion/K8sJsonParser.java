@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphData;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
+import io.github.SaptarshiSarkar12.k8sattackmap.model.SecurityFacts;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.TrivyScanner;
+import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +20,7 @@ import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.*;
 public class K8sJsonParser {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(K8sJsonParser.class);
-    private static final Map<String, Double> imageRiskCache = new HashMap<>(); // Cache for image risk scores to avoid redundant Trivy scans
+    private static final Map<String, ScanResult> imageRiskCache = new HashMap<>(); // Cache for image risk scores to avoid redundant Trivy scans
 
     public static ClusterGraphData parse(Reader reader) {
         List<GraphEdge> edges = new ArrayList<>();
@@ -35,7 +37,7 @@ public class K8sJsonParser {
             log.debug("Parsing Kubernetes JSON data with {} items.", itemsSize);
             List<GraphNode> nodes = new ArrayList<>(itemsSize);
             List<ParsedItem> parsedItems = new ArrayList<>();
-            buildNodesAndIndex(items, nodes, parsedItems, nodesByKindAndNs, nodesByKindAndName);
+            Map<String, List<String>> podCVEIds = buildNodesAndIndex(items, nodes, parsedItems, nodesByKindAndNs, nodesByKindAndName);
             for (ParsedItem item : parsedItems) {
                 processEdgesForItem(item, edges, nodes, nodesByKindAndNs, nodesByKindAndName, syntheticNodeIds);
             }
@@ -43,6 +45,7 @@ public class K8sJsonParser {
             ClusterGraphData graphData = new ClusterGraphData();
             graphData.setNodes(nodes);
             graphData.setEdges(edges);
+            graphData.setPodCVEIds(podCVEIds);
             return graphData;
         } catch (IOException e) {
             log.error("Failed to parse Kubernetes JSON data {}", e.getMessage(), e);
@@ -130,38 +133,190 @@ public class K8sJsonParser {
         }
     }
 
-    private static void buildNodesAndIndex(JsonNode items, List<GraphNode> nodes, List<ParsedItem> parsedItems, Map<String, List<String>> nodesByKindAndNs, Map<String, List<String>> nodesByKindAndName) {
+    private static Map<String, List<String>> buildNodesAndIndex(JsonNode items, List<GraphNode> nodes, List<ParsedItem> parsedItems, Map<String, List<String>> nodesByKindAndNs, Map<String, List<String>> nodesByKindAndName) {
         log.info("Extracting workloads and scanning container images via Trivy on-the-fly...");
+        Map<String, List<String>> podCVEIds = new HashMap<>();
         for (JsonNode item : items) {
-            double maxRiskScore = 0.0;
+            double maxCvssScore = 0.0;
+            Set<String> cveIds = new HashSet<>();
             if (item.path("kind").asText().equals("Pod")) {
-                JsonNode containers = item.path("spec").path("containers");
-                if (containers.isArray()) {
-                    for (JsonNode container : containers) {
-                        String image = container.path("image").asText();
-                        if (!image.isEmpty()) {
-                            double riskScore = imageRiskCache.computeIfAbsent(image, TrivyScanner::scanImage);
-                            if (riskScore > maxRiskScore) {
-                                maxRiskScore = riskScore;
+                JsonNode specContainers = item.path("spec").path("containers");
+                JsonNode containerStatuses = item.path("status").path("containerStatuses");
+                if (specContainers.isArray()) {
+                    for (JsonNode container : specContainers) {
+                        String containerName = container.path("name").asText();
+                        String imageRef = container.path("image").asText();
+                        if (containerStatuses.isArray()) {
+                            for (JsonNode status : containerStatuses) {
+                                if (status.path("name").asText().equals(containerName)) {
+                                    String imageId = status.path("imageID").asText();
+                                    if (imageId != null && !imageId.isEmpty()) {
+                                        if (imageId.contains("://")) {
+                                            imageId = imageId.substring(imageId.indexOf("://") + 3);
+                                        }
+                                        imageRef = imageId;
+                                    }
+                                    break;
+                                }
                             }
+                        }
+                        if (imageRef != null && !imageRef.isEmpty()) {
+                            ScanResult scanResult = imageRiskCache.computeIfAbsent(imageRef, TrivyScanner::scanImage);
+                            cveIds.addAll(scanResult.cveIds());
+                            double riskScore = scanResult.cvssScore();
+                            if (riskScore > maxCvssScore) maxCvssScore = riskScore;
                         }
                     }
                 }
             }
             ParsedItem parsed = parseItemMetadata(item);
+            String sourceId = parsed.sourceId();
             parsedItems.add(parsed);
             GraphNode node = new GraphNode();
-            node.setId(parsed.sourceId());
+            node.setId(sourceId);
             node.setType(parsed.kind());
             node.setNamespace(parsed.namespace());
-            node.setRiskScore(maxRiskScore);
+            node.setRiskScore(maxCvssScore);
+            node.setSecurityFacts(extractSecurityFacts(parsed.kind(), parsed.raw()));
             nodes.add(node);
-            // Index by Kind+Namespace for wildcard RBAC rules (e.g., "Secret:default")
-            String kindNsKey = buildKindNsKey(parsed.kind(), parsed.namespace());
-            nodesByKindAndNs.computeIfAbsent(kindNsKey, _ -> new ArrayList<>()).add(parsed.sourceId());
-            // Index by Kind+Name for named-resource RBAC rules (e.g., "Secret:my-secret")
-            String kindNameKey = buildKindNameKey(parsed.kind(), parsed.name());
-            nodesByKindAndName.computeIfAbsent(kindNameKey, _ -> new ArrayList<>()).add(parsed.sourceId());
+            podCVEIds.put(sourceId, new ArrayList<>(cveIds));
+            nodesByKindAndNs.computeIfAbsent(buildKindNsKey(parsed.kind(), parsed.namespace()), _ -> new ArrayList<>()).add(parsed.sourceId());
+            nodesByKindAndName.computeIfAbsent(buildKindNameKey(parsed.kind(), parsed.name()), _ -> new ArrayList<>()).add(parsed.sourceId());
+        }
+        return podCVEIds;
+    }
+
+    private static SecurityFacts extractSecurityFacts(String kind, JsonNode item) {
+        SecurityFacts facts = new SecurityFacts();
+        String kindLower = kind.toLowerCase();
+
+        switch (kindLower) {
+            case "role", "clusterrole" -> extractRbacFacts(item, facts);
+            case "pod" -> extractPodFacts(item, facts);
+            case "serviceaccount" -> extractServiceAccountFacts(item, facts);
+            case "secret" -> extractSecretFacts(item, facts);
+            case "node" -> facts.setNodeLevelSurface(true);
+            default -> {
+                // no-op
+            }
+        }
+
+        return facts;
+    }
+
+    private static void extractRbacFacts(JsonNode item, SecurityFacts facts) {
+        JsonNode rules = item.path("rules");
+        if (!rules.isArray()) return;
+
+        for (JsonNode rule : rules) {
+            JsonNode verbs = rule.path("verbs");
+            JsonNode resources = rule.path("resources");
+            JsonNode apiGroups = rule.path("apiGroups");
+
+            if (containsWildcard(verbs)) facts.setRbacWildcardVerb(true);
+            if (containsWildcard(resources)) facts.setRbacWildcardResource(true);
+            if (containsWildcard(apiGroups)) facts.setRbacWildcardApiGroup(true);
+
+            collectLowercaseStrings(verbs, facts.getRbacVerbs());
+            collectLowercaseStrings(resources, facts.getRbacResources());
+            collectLowercaseStrings(apiGroups, facts.getRbacApiGroups());
+        }
+
+        List<String> verbs = facts.getRbacVerbs();
+        facts.setRbacHasEscalate(verbs.contains("escalate"));
+        facts.setRbacHasBind(verbs.contains("bind"));
+        facts.setRbacHasImpersonate(verbs.contains("impersonate"));
+    }
+
+    private static void extractPodFacts(JsonNode item, SecurityFacts facts) {
+        JsonNode spec = item.path("spec");
+
+        facts.setHostPID(spec.path("hostPID").asBoolean(false));
+        facts.setHostNetwork(spec.path("hostNetwork").asBoolean(false));
+        facts.setHostIPC(spec.path("hostIPC").asBoolean(false));
+
+        if (spec.has("automountServiceAccountToken")) {
+            facts.setServiceAccountTokenAutomount(spec.path("automountServiceAccountToken").asBoolean(false));
+        }
+
+        JsonNode volumes = spec.path("volumes");
+        if (volumes.isArray()) {
+            for (JsonNode volume : volumes) {
+                if (!volume.path("hostPath").isMissingNode()) {
+                    facts.setHostPathMounted(true);
+                    break;
+                }
+            }
+        }
+
+        extractContainerSecurityFacts(spec.path("containers"), facts);
+        extractContainerSecurityFacts(spec.path("initContainers"), facts);
+        extractContainerSecurityFacts(spec.path("ephemeralContainers"), facts);
+    }
+
+    private static void extractContainerSecurityFacts(JsonNode containers, SecurityFacts facts) {
+        if (!containers.isArray()) return;
+
+        for (JsonNode container : containers) {
+            JsonNode sc = container.path("securityContext");
+            if (sc.isMissingNode()) continue;
+
+            if (sc.path("privileged").asBoolean(false)) {
+                facts.setPrivilegedContainer(true);
+            }
+            if (sc.path("allowPrivilegeEscalation").asBoolean(false)) {
+                facts.setAllowPrivilegeEscalation(true);
+            }
+
+            if (sc.has("runAsUser") && sc.path("runAsUser").asInt(-1) == 0) {
+                facts.setRunAsRoot(true);
+            }
+
+            JsonNode capsAdd = sc.path("capabilities").path("add");
+            if (capsAdd.isArray()) {
+                for (JsonNode cap : capsAdd) {
+                    String value = cap.asText("").toLowerCase();
+                    if (!value.isBlank() && !facts.getAddedCapabilities().contains(value)) {
+                        facts.getAddedCapabilities().add(value);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void extractServiceAccountFacts(JsonNode item, SecurityFacts facts) {
+        JsonNode automount = item.path("automountServiceAccountToken");
+        if (!automount.isMissingNode()) {
+            facts.setServiceAccountTokenAutomount(automount.asBoolean(false));
+        }
+    }
+
+    private static void extractSecretFacts(JsonNode item, SecurityFacts facts) {
+        String secretType = item.path("type").asText("");
+        facts.setSecretType(secretType);
+
+        String lower = secretType.toLowerCase();
+        if (lower.contains("service-account-token") || lower.contains("kubernetes.io/tls")
+                || lower.contains("dockerconfigjson") || lower.contains("basic-auth")) {
+            facts.setCredentialMaterial(true);
+        }
+    }
+
+    private static boolean containsWildcard(JsonNode arrayNode) {
+        if (!arrayNode.isArray()) return false;
+        for (JsonNode n : arrayNode) {
+            if ("*".equals(n.asText())) return true;
+        }
+        return false;
+    }
+
+    private static void collectLowercaseStrings(JsonNode arrayNode, List<String> out) {
+        if (!arrayNode.isArray()) return;
+        for (JsonNode n : arrayNode) {
+            String value = n.asText("").toLowerCase();
+            if (!value.isBlank() && !out.contains(value)) {
+                out.add(value);
+            }
         }
     }
 

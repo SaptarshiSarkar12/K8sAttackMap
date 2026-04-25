@@ -1,22 +1,23 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.ingestion;
+package io.github.SaptarshiSarkar12.k8sattackmap.security.trivy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TrivyJsonParser {
     private static final Logger log = LoggerFactory.getLogger(TrivyJsonParser.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    public static double parse(String trivyJson) {
+    public static ScanResult parse(String trivyJson) {
         try {
             JsonNode root = MAPPER.readTree(trivyJson);
             JsonNode results = root.path("Results");
             if (results.isMissingNode() || !results.isArray() || results.isEmpty()) {
-                return 0.0;
+                return new ScanResult(0.0, null);
             }
 
             String imageFamily = "unknown";
@@ -28,31 +29,37 @@ public class TrivyJsonParser {
                 imageFamily = "bitnami";
             }
             double maxScore = 0.0;
+            List<String> allCveIds = new ArrayList<>();
             for (JsonNode result : results) {
                 JsonNode vulnerabilities = result.path("Vulnerabilities");
                 if (!vulnerabilities.isMissingNode()) {
-                    double score = calculateRiskScore(vulnerabilities, imageFamily);
+                    ScanResult scanResult = getScanResult(vulnerabilities, imageFamily);
+                    allCveIds.addAll(scanResult.cveIds());
+                    double score = scanResult.cvssScore();
                     if (score > maxScore) {
                         maxScore = score;
                     }
                 }
             }
-            return maxScore;
+            return new ScanResult(maxScore, allCveIds);
         } catch (Exception e) {
             log.error("Error parsing Trivy JSON: {}", e.getMessage(), e);
-            return 0.0;
+            return new ScanResult(0.0, null);
         }
     }
 
-    private static double calculateRiskScore(JsonNode vulnerabilities, String imageFamily) {
+    private static ScanResult getScanResult(JsonNode vulnerabilities, String imageFamily) {
         double maxScore = 0.0;
+        List<String> cveIds = new ArrayList<>();
         for (JsonNode vuln : vulnerabilities) {
+            JsonNode vulnerabilityId = vuln.path("VulnerabilityID");
             JsonNode cvss = vuln.path("CVSS");
             if (!cvss.isMissingNode()) {
                 maxScore = Math.max(maxScore, getCVSSScore(cvss, imageFamily));
             }
+            cveIds.add(vulnerabilityId.asText());
         }
-        return maxScore;
+        return new ScanResult(maxScore, cveIds);
     }
 
     private static double getCVSSScore(JsonNode cvss, String imageFamily) {

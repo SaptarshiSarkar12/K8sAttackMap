@@ -16,20 +16,20 @@ import java.util.Set;
 
 @Getter
 public class CommandParser {
+    private static final Logger log = LoggerFactory.getLogger(CommandParser.class);
+    private final Set<String> outputFormats = new HashSet<>();
     private Path k8sJsonPath;
-    private String sourceNode; // Todo: Allow multiple source nodes
-    private String targetNode; // TODO: Allow multiple target nodes
+    private Set<String> sourceNodes = new HashSet<>();
+    private Set<String> targetNodes = new HashSet<>();
     private int maxHops = 3;
     private boolean verbose;
-    private final Set<String> outputFormats = new HashSet<>();
-    private static final Logger log = LoggerFactory.getLogger(CommandParser.class);
 
     public boolean parse(String[] args) {
         Options options = new Options();
         options.addOption("h", "help", false, "Print this message");
         options.addOption("v", "version", false, "Print version");
-        options.addOption("s", "source-node", true, "Source node for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Pod:default:web\"");
-        options.addOption("t", "target-node", true, "Target node for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Secret:default:my-secret\"");
+        options.addOption("s", "source-node", true, "Comma-separated list of source node IDs for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Pod:default:web\"");
+        options.addOption("t", "target-node", true, "Comma-separated list of target node IDs for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Secret:default:my-secret\"");
         options.addOption("k", "k8s-json", true, "Path to Kubernetes cluster configuration JSON file");
         options.addOption(Option.builder("m").longOpt("max-hops").hasArg().desc("Maximum number of hops for finding affected components for a compromised node (default: 3)").type(Integer.class).get());
         options.addOption(Option.builder("o").longOpt("output").hasArgs().valueSeparator(',').desc("Comma-separated list of output formats ('html' for D3.js map, 'pdf' for report)").get());
@@ -37,8 +37,20 @@ public class CommandParser {
         CommandLineParser parser = new DefaultParser();
         try {
             CommandLine cmd = parser.parse(options, args);
-            this.sourceNode = cmd.getOptionValue("source-node");
-            this.targetNode = cmd.getOptionValue("target-node");
+            if (cmd.hasOption("help")) {
+                printHelp(options);
+                return false;
+            }
+            if (cmd.hasOption("version")) {
+                System.out.println(AppConstants.APP_NAME + " " + AppConstants.APP_VERSION);
+                return false;
+            }
+            if (cmd.hasOption("source-node")) {
+                this.sourceNodes = parseCommaSeparatedValues(cmd.getOptionValue("source-node"));
+            }
+            if (cmd.hasOption("target-node")) {
+                this.targetNodes = parseCommaSeparatedValues(cmd.getOptionValue("target-node"));
+            }
             this.verbose = cmd.hasOption("verbose");
             if (cmd.hasOption("k8s-json")) {
                 try {
@@ -61,20 +73,23 @@ public class CommandParser {
             if (cmd.hasOption("max-hops")) {
                 this.maxHops = Integer.parseInt(cmd.getOptionValue("max-hops"));
             }
-            if (cmd.hasOption("help")) {
-                printHelp(options);
-                return false;
-            }
-            if (cmd.hasOption("version")) {
-                System.out.println(AppConstants.APP_NAME + " " + AppConstants.APP_VERSION);
-                return false;
-            }
         } catch (ParseException e) {
             log.error("Error parsing command-line arguments: {}", e.getMessage(), e);
             printHelp(options);
             return false;
         }
         return true;
+    }
+
+    private Set<String> parseCommaSeparatedValues(String input) {
+        Set<String> values = new HashSet<>();
+        if (input != null && !input.trim().isEmpty()) {
+            String[] parts = input.split(",");
+            for (String part : parts) {
+                values.add(part.trim());
+            }
+        }
+        return values;
     }
 
     private void printHelp(Options options) {

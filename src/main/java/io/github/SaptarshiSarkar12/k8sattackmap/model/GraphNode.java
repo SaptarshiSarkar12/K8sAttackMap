@@ -14,6 +14,7 @@ public class GraphNode {
     private String namespace;
     @JsonProperty("risk_score")
     private double riskScore;
+    private SecurityFacts securityFacts = new SecurityFacts();
 
     public double getIntrinsicFriction() {
         List<String> passiveResources = List.of(

@@ -1,7 +1,8 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.security;
 
-import io.github.SaptarshiSarkar12.k8sattackmap.ingestion.TrivyCache;
-import io.github.SaptarshiSarkar12.k8sattackmap.ingestion.TrivyJsonParser;
+import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.ScanResult;
+import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.TrivyCache;
+import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.TrivyJsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,26 +13,26 @@ public class TrivyScanner {
     private static final Logger log = LoggerFactory.getLogger(TrivyScanner.class);
     private static final TrivyCache trivyCache = new TrivyCache();
 
-    public static double scanImage(String imageName) {
-        if (imageName == null || imageName.isEmpty()) {
+    public static ScanResult scanImage(String imageRef) {
+        if (imageRef == null || imageRef.isEmpty()) {
             log.warn("Image name is null or empty. Returning default risk score of 0.0.");
-            return 0.0;
+            return new ScanResult(0.0, null);
         }
-        Double cvssScore = trivyCache.getCachedScore(imageName);
-        if (cvssScore != null) {
-            log.debug("CACHE HIT: Found CVSS {} for image {}", cvssScore, imageName);
-            return cvssScore;
+        ScanResult cachedResult = trivyCache.getCachedResult(imageRef);
+        if (cachedResult != null) {
+            log.debug("CACHE HIT: Found CVSS {} for image {}", cachedResult.cvssScore(), imageRef);
+            return cachedResult;
         }
-        log.debug("CACHE MISS: Running Trivy scan for {}...", imageName);
-        String trivyJson = getTrivyJson(imageName);
+        log.debug("CACHE MISS: Running Trivy scan for {}...", imageRef);
+        String trivyJson = getTrivyJson(imageRef);
         if (trivyJson == null) {
-            log.warn("Trivy scan failed for image {}. Returning default risk score of 0.0.", imageName);
-            return 0.0;
+            log.warn("Trivy scan failed for image {}. Returning default risk score of 0.0.", imageRef);
+            return new ScanResult(0.0, null);
         }
-        cvssScore = TrivyJsonParser.parse(trivyJson);
-        trivyCache.saveScoreToCache(imageName, cvssScore);
-        log.debug("💾 Saved CVSS {} for {} to cache.", cvssScore, imageName);
-        return cvssScore;
+        ScanResult scanResult = TrivyJsonParser.parse(trivyJson);
+        trivyCache.saveResultToCache(imageRef, scanResult);
+        log.debug("💾 Saved CVSS {} for {} to cache.", scanResult.cvssScore(), imageRef);
+        return scanResult;
     }
 
     private static String getTrivyJson(String imageName) {

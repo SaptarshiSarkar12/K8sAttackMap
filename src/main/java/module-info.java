@@ -10,4 +10,6 @@ module K8sAttackMap {
     requires openhtmltopdf.core;
 
     exports io.github.SaptarshiSarkar12.k8sattackmap.util to ch.qos.logback.core;
+    exports io.github.SaptarshiSarkar12.k8sattackmap.model;
+    exports io.github.SaptarshiSarkar12.k8sattackmap.security.trivy to com.fasterxml.jackson.databind;
 }

@@ -14,7 +14,6 @@ public class CliPrefixConverter extends ClassicConverter {
 
         return switch (level.toInt()) {
             case Level.ERROR_INT -> BOLD_RED + "✖ ERROR: " + msg + RESET;
-            case Level.WARN_INT -> YELLOW + "⚠ WARN:  " + msg + RESET;
             case Level.DEBUG_INT -> GRAY + "⚙ DEBUG: " + msg + RESET;
             default -> msg;
         };

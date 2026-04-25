@@ -1,4 +1,4 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.algorithm;
+package io.github.SaptarshiSarkar12.k8sattackmap.analysis;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;

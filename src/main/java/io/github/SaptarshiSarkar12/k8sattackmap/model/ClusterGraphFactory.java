@@ -1,8 +1,5 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.graph;
+package io.github.SaptarshiSarkar12.k8sattackmap.model;
 
-import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphData;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DirectedWeightedMultigraph;
 import org.slf4j.Logger;
@@ -11,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ClusterGraph {
-    private static final Logger log = LoggerFactory.getLogger(ClusterGraph.class);
+public class ClusterGraphFactory {
+    private static final Logger log = LoggerFactory.getLogger(ClusterGraphFactory.class);
 
     public static Graph<GraphNode, GraphEdge> buildGraph(ClusterGraphData data) {
         Graph<GraphNode, GraphEdge> clusterGraph = new DirectedWeightedMultigraph<>(GraphEdge.class);
