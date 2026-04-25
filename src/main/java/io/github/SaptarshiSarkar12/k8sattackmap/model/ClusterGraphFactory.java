@@ -19,6 +19,7 @@ public class ClusterGraphFactory {
             clusterGraph.addVertex(node);
             nodeLookup.put(node.getId(), node);
         }
+        data.setNodeLookup(nodeLookup);
 
         log.info("Building graph: Adding edges...");
         int edgeCount = 0;

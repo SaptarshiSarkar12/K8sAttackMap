@@ -1,9 +1,10 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.analysis;
+package io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation;
 
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.ImpactedAsset;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 
-import static io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisStringUtils.containsAny;
-import static io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisStringUtils.safeLower;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.containsAny;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
 public class ImpactRemediationAdvisor {
     private ImpactRemediationAdvisor() {

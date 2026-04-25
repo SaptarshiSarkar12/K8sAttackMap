@@ -1,33 +1,43 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.export;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.*;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.BlastRadiusResult;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.ImpactSeverity;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.ChokePointResult;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.PathDiscoveryResult;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.ImpactRemediationAdvisor;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.RemediationPlan;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.RankedChokePoint;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.RankedChokePoint;
+import io.github.SaptarshiSarkar12.k8sattackmap.util.RiskConfig;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.ConsoleColors.*;
 
 public class AnalysisSummaryPrinter {
-    public static void print(Graph<GraphNode, GraphEdge> graph, AnalysisResult result, Map<String, List<String>> podCVEIds, Logger log, boolean verbose) {
-        printHeader();
+    private static final Logger log = LoggerFactory.getLogger(AnalysisSummaryPrinter.class);
 
+    public static void print(Graph<GraphNode, GraphEdge> graph, AnalysisResult result, Map<String, List<String>> podCVEIds, boolean showAllPaths) {
+        printHeader();
         PathDiscoveryResult pathResult = result.pathDiscoveryResult();
         ChokePointResult chokeResult = result.chokePointResult();
         List<BlastRadiusResult> blastResults = result.blastRadiusResults();
         List<List<GraphNode>> privilegeLoops = result.privilegeLoops();
 
-        printExecutiveSummary(pathResult, chokeResult, privilegeLoops, blastResults, log); // CHECKED
-        printAttackPathAnalysis(graph, pathResult, log, verbose); // CHECKED
-        printChokePointAnalysis(chokeResult, log);
-        printPrivilegeLoopAnalysis(privilegeLoops, log);
-        printBlastRadiusAnalysis(blastResults, log);
-        printPodVulnerabilityDetails(podCVEIds, log);
-        printRemediationPlans(result.remediationPlans(), log);
+        printExecutiveSummary(pathResult, chokeResult, privilegeLoops, blastResults);
+        printAttackPathAnalysis(graph, pathResult, showAllPaths);
+        printChokePointAnalysis(chokeResult);
+        printPrivilegeLoopAnalysis(privilegeLoops);
+        printBlastRadiusAnalysis(blastResults);
+        printPodVulnerabilityDetails(podCVEIds);
+        printRemediationPlans(result.remediationPlans());
         printFooter();
     }
 
@@ -37,10 +47,10 @@ public class AnalysisSummaryPrinter {
         System.out.println("=".repeat(80) + RESET);
     }
 
-    private static void printExecutiveSummary(PathDiscoveryResult pathResult, ChokePointResult chokeResult, List<List<GraphNode>> privilegeLoops, List<BlastRadiusResult> blastResults, Logger log) {
+    private static void printExecutiveSummary(PathDiscoveryResult pathResult, ChokePointResult chokeResult, List<List<GraphNode>> privilegeLoops, List<BlastRadiusResult> blastResults) {
         log.info(CYAN + "--- EXECUTIVE OVERVIEW ---" + RESET);
         log.info("  • Discovered Attack Paths: {}", pathResult.allPossiblePaths().size());
-        log.info("  • Critical Choke Points:    {}", chokeResult.rankedChokePoints().size());
+        log.info("  • Critical Choke Points: {}", chokeResult.rankedChokePoints().size());
         log.info("  • Privilege Escalation Loops: {}", privilegeLoops.size());
 
         long criticalAssets = blastResults.stream()
@@ -50,49 +60,103 @@ public class AnalysisSummaryPrinter {
         System.out.println();
     }
 
-    private static void printAttackPathAnalysis(Graph<GraphNode, GraphEdge> graph, PathDiscoveryResult pathResult, Logger log, boolean verbose) {
+    private static void printAttackPathAnalysis(Graph<GraphNode, GraphEdge> graph, PathDiscoveryResult pathResult, boolean showAllPaths) {
         log.info(CYAN + "--- ATTACK PATH ANALYSIS ---" + RESET);
 
         GraphPath<GraphNode, GraphEdge> mostDangerous = pathResult.mostDangerousPath();
         Map<GraphEdge, Double> edgeRiskScores = pathResult.edgeRiskScores();
-        if (mostDangerous != null) {
-            log.info(BOLD_RED + "[!] MOST DANGEROUS PATH IDENTIFIED:" + RESET);
-            log.info("    Path: {} → {}", mostDangerous.getStartVertex().getId(), mostDangerous.getEndVertex().getId());
-            double rawScore = (10.0 * mostDangerous.getLength()) - mostDangerous.getWeight();
-            String severity = getPathSeverity(rawScore, mostDangerous.getLength());
-            log.info("    Risk Score: {} ({})", String.format("%.1f", rawScore), severity);
-            log.info("    Hops:        {}", mostDangerous.getLength());
-            log.info("    Path Details:");
-            for (GraphEdge edge : mostDangerous.getEdgeList()) {
-                GraphNode edgeSource = graph.getEdgeSource(edge);
-                GraphNode edgeTarget = graph.getEdgeTarget(edge);
-                log.info("       {} --[{}]--> {} (Edge Weight: {})",
-                        edgeSource.getId(), edge.getRelationship(), edgeTarget.getId(),
-                        String.format("%.1f", 10.0 - edgeRiskScores.getOrDefault(edge, 0.0)));
+
+        if (mostDangerous == null) {
+            log.info("  No attack paths discovered.");
+            System.out.println();
+            return;
+        }
+
+        // Always show the most dangerous path
+        log.info(BOLD_RED + "[!] MOST DANGEROUS PATH IDENTIFIED:" + RESET);
+        printSinglePath(graph, mostDangerous, edgeRiskScores, true, true);
+
+        if (!showAllPaths) {
+            log.info("  (Use --show-all-paths to display all discovered paths grouped by source → target)");
+            System.out.println();
+            return;
+        }
+
+        // Group allPossiblePaths by (source id, target id) pair
+        // and within each group keep the Dijkstra path tagged as shortest
+        Map<String, GraphPath<GraphNode, GraphEdge>> shortestByPair = pathResult.dijkstraPaths().stream()
+                .collect(Collectors.toMap(
+                        AnalysisSummaryPrinter::pairKey,
+                        p -> p,
+                        (a, b) -> a   // if duplicate key, keep first
+                ));
+
+        // Group all paths by pair key, preserving insertion order for readability
+        Map<String, List<GraphPath<GraphNode, GraphEdge>>> grouped = new LinkedHashMap<>();
+        for (GraphPath<GraphNode, GraphEdge> path : pathResult.allPossiblePaths()) {
+            grouped.computeIfAbsent(pairKey(path), k -> new ArrayList<>()).add(path);
+        }
+
+        if (grouped.isEmpty()) {
+            System.out.println();
+            return;
+        }
+
+        log.info(YELLOW + "All Discovered Paths:" + RESET);
+        int pairIndex = 1;
+        for (Map.Entry<String, List<GraphPath<GraphNode, GraphEdge>>> entry : grouped.entrySet()) {
+            List<GraphPath<GraphNode, GraphEdge>> paths = entry.getValue();
+            GraphPath<GraphNode, GraphEdge> representative = paths.getFirst();
+            String sourceId = representative.getStartVertex().getId();
+            String targetId = representative.getEndVertex().getId();
+
+            log.info("  [{}/{}] {} → {}  ({} path(s))", pairIndex++, grouped.size(), sourceId, targetId, paths.size());
+
+            // Sort paths within each group: shortest (fewest hops) first, then by risk score desc
+            paths.sort(Comparator
+                    .comparingInt(GraphPath<GraphNode, GraphEdge>::getLength)
+                    .thenComparingDouble(p -> -((10.0 * p.getLength()) - p.getWeight())));
+
+            GraphPath<GraphNode, GraphEdge> dijkstraPath = shortestByPair.get(entry.getKey());
+
+            for (GraphPath<GraphNode, GraphEdge> path : paths) {
+                boolean isShortest = path.equals(dijkstraPath);
+                printSinglePath(graph, path, edgeRiskScores, isShortest, false);
             }
         }
 
-        if (verbose) {
-            log.info(YELLOW + "All Discovered Paths (Verbose):" + RESET);
-            for (GraphPath<GraphNode, GraphEdge> path : pathResult.allPossiblePaths()) {
-                double rawScore = (10.0 * path.getLength()) - path.getWeight();
-                String severity = getPathSeverity(rawScore, path.getLength());
-                log.info("  Path: {} → {} | Hops: {} | Risk Score: {} ({})",
-                        path.getStartVertex().getId(), path.getEndVertex().getId(),
-                        path.getLength(), String.format("%.1f", rawScore), severity);
-                for (GraphEdge edge : path.getEdgeList()) {
-                    GraphNode edgeSource = graph.getEdgeSource(edge);
-                    GraphNode edgeTarget = graph.getEdgeTarget(edge);
-                    log.info("     {} --[{}]--> {} (Edge Weight: {})",
-                            edgeSource.getId(), edge.getRelationship(), edgeTarget.getId(),
-                            String.format("%.1f", 10.0 - edgeRiskScores.getOrDefault(edge, 0.0)));
-                }
-            }
-        }
         System.out.println();
     }
 
-    private static void printChokePointAnalysis(ChokePointResult chokeResult, Logger log) {
+    private static void printSinglePath(Graph<GraphNode, GraphEdge> graph, GraphPath<GraphNode, GraphEdge> path, Map<GraphEdge, Double> edgeRiskScores, boolean markAsShortest, boolean markAsMostDangerous) {
+        double rawScore = (10.0 * path.getLength()) - path.getWeight();
+        String severity = getPathSeverity(rawScore, path.getLength());
+        String tag = markAsMostDangerous ? RED + " [MOST DANGEROUS]" + RESET :
+                (markAsShortest ? GREEN + " [SHORTEST]" + RESET : "");
+
+        log.info("     Hops: {} | Risk: {} ({}){}",
+                path.getLength(),
+                String.format("%.1f", rawScore),
+                severity,
+                tag);
+
+        for (GraphEdge edge : path.getEdgeList()) {
+            GraphNode src = graph.getEdgeSource(edge);
+            GraphNode tgt = graph.getEdgeTarget(edge);
+            log.info("       {} --[{}]--> {}  (weight: {})",
+                    src.getId(),
+                    edge.getRelationship(),
+                    tgt.getId(),
+                    String.format("%.1f", 10.0 - edgeRiskScores.getOrDefault(edge, 0.0)));
+        }
+    }
+
+
+    private static String pairKey(GraphPath<GraphNode, GraphEdge> path) {
+        return path.getStartVertex().getId() + " → " + path.getEndVertex().getId();
+    }
+
+    private static void printChokePointAnalysis(ChokePointResult chokeResult) {
         List<RankedChokePoint> ranked = chokeResult.rankedChokePoints();
         if (ranked == null || ranked.isEmpty()) {
             return;
@@ -111,7 +175,7 @@ public class AnalysisSummaryPrinter {
         System.out.println();
     }
 
-    private static void printPrivilegeLoopAnalysis(List<List<GraphNode>> privilegeLoops, Logger log) {
+    private static void printPrivilegeLoopAnalysis(List<List<GraphNode>> privilegeLoops) {
         log.info(CYAN + "--- PRIVILEGE ESCALATION LOOPS ---" + RESET);
 
         if (privilegeLoops == null || privilegeLoops.isEmpty()) {
@@ -128,10 +192,7 @@ public class AnalysisSummaryPrinter {
                 continue;
             }
 
-            // Build a readable loop path: A -> B -> C -> A
-            List<String> nodeIds = loop.stream()
-                    .map(GraphNode::getId)
-                    .toList();
+            List<String> nodeIds = loop.stream().map(GraphNode::getId).toList();
 
             String loopPath = String.join(" -> ", nodeIds);
             if (nodeIds.size() > 1) {
@@ -173,11 +234,12 @@ public class AnalysisSummaryPrinter {
         System.out.println();
     }
 
-    private static void printBlastRadiusAnalysis(List<BlastRadiusResult> blastResults, Logger log) {
+    private static void printBlastRadiusAnalysis(List<BlastRadiusResult> blastResults) {
         if (blastResults.isEmpty()) return;
 
         log.info(CYAN + "--- BLAST RADIUS HIGHLIGHTS ---" + RESET);
         for (BlastRadiusResult br : blastResults) {
+            if (br.totalImpacted() == 0) continue;
             GraphNode source = br.source();
             String nodeId = source.getId();
             String nodeType = source.getType();
@@ -192,28 +254,26 @@ public class AnalysisSummaryPrinter {
                 log.info("Source: [{}] type={} (Radius: {} hops)", nodeId, nodeType, br.radius());
             }
 
-            br.rankedImpactedAssets().stream()
-                    .limit(3)
-                    .forEach(asset -> {
-                        GraphNode node = asset.node();
-                        String assetId = node.getId();
-                        String assetType = node.getType();
-                        if (assetType.equals("Pod")) {
-                            log.info("  {} [{}] severity={} (Hops: {}, CVSS={})",
-                                    BOLD_RED + "!!" + RESET, assetId, asset.severity(), asset.hopsFromSource(),
-                                    node.getRiskScore());
-                        } else {
-                            log.info("  {} [{}] severity={} (Hops: {})",
-                                    BOLD_RED + "!!" + RESET, assetId, asset.severity(), asset.hopsFromSource());
-                        }
-                        log.info("     Reason: {}", String.join(", ", asset.riskReasons()));
-                        log.info("     Action: {}", ImpactRemediationAdvisor.recommendAction(asset));
-                    });
+            br.rankedImpactedAssets().forEach(asset -> {
+                GraphNode node = asset.node();
+                String assetId = node.getId();
+                String assetType = node.getType();
+                if (assetType.equals("Pod")) {
+                    log.info("  {} [{}] severity={} (Hops: {}, CVSS={})",
+                            BOLD_RED + "!!" + RESET, assetId, asset.severity(), asset.hopsFromSource(),
+                            node.getRiskScore());
+                } else {
+                    log.info("  {} [{}] severity={} (Hops: {})",
+                            BOLD_RED + "!!" + RESET, assetId, asset.severity(), asset.hopsFromSource());
+                }
+                log.info("     Reason: {}", String.join(", ", asset.riskReasons()));
+                log.info("     Action: {}", ImpactRemediationAdvisor.recommendAction(asset));
+            });
         }
         System.out.println();
     }
 
-    private static void printPodVulnerabilityDetails(Map<String, List<String>> podCVEIds, Logger log) {
+    private static void printPodVulnerabilityDetails(Map<String, List<String>> podCVEIds) {
         if (podCVEIds == null || podCVEIds.isEmpty()) {
             return;
         }
@@ -255,19 +315,21 @@ public class AnalysisSummaryPrinter {
         System.out.println();
     }
 
-    private static void printRemediationPlans(List<RemediationPlan> plans, Logger log) {
+    private static void printRemediationPlans(List<RemediationPlan> plans) {
         if (plans.isEmpty()) return;
-
         log.info(CYAN + "--- PROPOSED REMEDIATION ACTIONS ---" + RESET);
         for (RemediationPlan plan : plans) {
             log.info(GREEN + "Fix for Choke Point: " + RESET + "[{}]", plan.nodeId());
             log.info("  Rationale: {}", plan.rationale());
 
-            if (!plan.enforceCommands().isEmpty()) {
-                log.info("  " + BOLD + "Enforcement Command:" + RESET);
-                plan.enforceCommands().forEach(cmd -> log.info(YELLOW + "     {}"  + RESET, cmd));
+            if (!plan.auditCommands().isEmpty()) {
+                log.info("  " + BOLD + "Audit first:" + RESET);
+                plan.auditCommands().forEach(cmd -> log.info("     {}", cmd));
             }
-
+            if (!plan.enforceCommands().isEmpty()) {
+                log.info("  " + BOLD + "Then enforce:" + RESET);
+                plan.enforceCommands().forEach(cmd -> log.info(YELLOW + "     {}" + RESET, cmd));
+            }
             if (plan.containsDestructiveAction()) {
                 log.warn(BOLD_RED + "  [!] WARNING: Plan contains destructive actions." + RESET);
             }
@@ -277,12 +339,10 @@ public class AnalysisSummaryPrinter {
 
     private static String getPathSeverity(double totalScore, int hops) {
         if (hops == 0) return "UNKNOWN";
-
         double averageRisk = totalScore / hops;
-
-        if (averageRisk >= 8.0) return "CRITICAL";
-        if (averageRisk >= 6.0) return "HIGH";
-        if (averageRisk >= 4.0) return "MEDIUM";
+        if (averageRisk >= RiskConfig.PATH_RISK_CRITICAL) return "CRITICAL";
+        if (averageRisk >= RiskConfig.PATH_RISK_HIGH)     return "HIGH";
+        if (averageRisk >= RiskConfig.PATH_RISK_MEDIUM)   return "MEDIUM";
         return "LOW";
     }
 

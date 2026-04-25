@@ -1,8 +1,8 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.analysis;
+package io.github.SaptarshiSarkar12.k8sattackmap.util;
 
 import java.util.Locale;
 
-public class AnalysisStringUtils {
+public class StringUtils {
     public static String safeLower(String value) {
         return value == null ? "" : value.toLowerCase(Locale.ROOT);
     }

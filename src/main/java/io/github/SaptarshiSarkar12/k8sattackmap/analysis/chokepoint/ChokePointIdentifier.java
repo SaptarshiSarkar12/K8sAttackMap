@@ -1,8 +1,7 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.analysis;
+package io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.RankedChokePoint;
 import org.jgrapht.GraphPath;
 
 import java.util.*;

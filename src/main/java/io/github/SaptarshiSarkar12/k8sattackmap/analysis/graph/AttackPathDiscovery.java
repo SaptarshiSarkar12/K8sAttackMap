@@ -1,5 +1,6 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.analysis;
+package io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph;
 
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisInput;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.EdgeRiskScorer;
@@ -27,10 +28,11 @@ public class AttackPathDiscovery {
         GraphPath<GraphNode, GraphEdge> mostDangerousPath = null;
         double lowestFrictionDensity = Double.MAX_VALUE;
 
+        Dijkstra dijkstra = new Dijkstra(graph, riskScores);
         for (GraphNode source : sourceNodes) {
             for (GraphNode target : targetNodes) {
                 if (source.equals(target)) continue;
-                GraphPath<GraphNode, GraphEdge> path = Dijkstra.findShortestPath(graph, source, target, riskScores);
+                GraphPath<GraphNode, GraphEdge> path = dijkstra.findShortestPath(source, target);
                 if (path != null && path.getLength() > 0) {
                     int baseLen = path.getLength();
                     int maxSearchDepth = baseLen + 2;

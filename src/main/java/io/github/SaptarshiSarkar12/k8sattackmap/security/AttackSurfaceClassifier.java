@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Set;
 
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
+
 public class AttackSurfaceClassifier {
     private static final Logger log = LoggerFactory.getLogger(AttackSurfaceClassifier.class);
 
@@ -16,7 +18,7 @@ public class AttackSurfaceClassifier {
         boolean isTargetNodeProvided = !targetNodes.isEmpty();
 
         for (GraphNode node : allNodes) {
-            String id = node.getId() == null ? "" : node.getId().toLowerCase();
+            String id = safeLower(node.getId());
             SecurityFacts facts = node.getSecurityFacts();
 
             if (!isSourceNodeProvided && isPotentialSourceNode(node, id, facts)) {
@@ -34,7 +36,7 @@ public class AttackSurfaceClassifier {
             }
         }
 
-        log.info("Identified {} potential entry points and {} potential crown jewels.", sourceNodes.size(), targetNodes.size());
+        log.info("Identified {} potential entry points and {} potential targets.", sourceNodes.size(), targetNodes.size());
         for (GraphNode node : sourceNodes) {
             log.debug("Potential Source Node - ID: {}, Type: {}", node.getId(), node.getType());
         }

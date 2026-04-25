@@ -1,8 +1,9 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.analysis;
+package io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.SecurityFacts;
+import io.github.SaptarshiSarkar12.k8sattackmap.util.RiskConfig;
 import org.jgrapht.Graph;
 import org.jgrapht.traverse.BreadthFirstIterator;
 
@@ -13,8 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisStringUtils.containsAny;
-import static io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisStringUtils.safeLower;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.containsAny;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
 public class BlastRadiusAnalyzer {
     private BlastRadiusAnalyzer() {
@@ -22,10 +23,12 @@ public class BlastRadiusAnalyzer {
 
     public static List<BlastRadiusResult> analyzeMultiple(Graph<GraphNode, GraphEdge> graph, List<GraphNode> sources, int maxHops) {
         List<BlastRadiusResult> results = new ArrayList<>();
-        for (GraphNode source : sources) {
+        sources.parallelStream().forEach(source -> {
             BlastRadiusResult result = analyze(graph, source, maxHops);
-            results.add(result);
-        }
+            synchronized (results) {
+                results.add(result);
+            }
+        });
         return results;
     }
 
@@ -219,9 +222,9 @@ public class BlastRadiusAnalyzer {
     }
 
     private static ImpactSeverity toSeverity(double score) {
-        if (score >= 70) return ImpactSeverity.CRITICAL;
-        if (score >= 50) return ImpactSeverity.HIGH;
-        if (score >= 30) return ImpactSeverity.MEDIUM;
+        if (score >= RiskConfig.BLAST_SCORE_CRITICAL) return ImpactSeverity.CRITICAL;
+        if (score >= RiskConfig.BLAST_SCORE_HIGH) return ImpactSeverity.HIGH;
+        if (score >= RiskConfig.BLAST_SCORE_MEDIUM) return ImpactSeverity.MEDIUM;
         return ImpactSeverity.LOW;
     }
 

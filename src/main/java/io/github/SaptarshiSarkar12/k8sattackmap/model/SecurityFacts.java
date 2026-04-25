@@ -4,7 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -16,9 +18,9 @@ public class SecurityFacts {
     private boolean rbacHasEscalate;
     private boolean rbacHasBind;
     private boolean rbacHasImpersonate;
-    private List<String> rbacVerbs = new ArrayList<>();
-    private List<String> rbacResources = new ArrayList<>();
-    private List<String> rbacApiGroups = new ArrayList<>();
+    private Set<String> rbacVerbs = new HashSet<>();
+    private Set<String> rbacResources = new HashSet<>();
+    private Set<String> rbacApiGroups = new HashSet<>();
 
     // Identity / secret / credential
     private boolean serviceAccountTokenAutomount;

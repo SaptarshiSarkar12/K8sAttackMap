@@ -1,4 +1,4 @@
-package io.github.SaptarshiSarkar12.k8sattackmap.analysis;
+package io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast;
 
 public enum ImpactSeverity {
     CRITICAL,

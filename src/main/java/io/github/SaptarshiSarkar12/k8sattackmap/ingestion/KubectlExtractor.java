@@ -75,7 +75,7 @@ public class KubectlExtractor {
             String context = outputReader.readLine();
 
             if (exitCode != 0 || context == null || context.trim().isEmpty()) {
-                log.warn("Could not determine cluster context. kubectl exit code: {}, output: {}", exitCode, context);
+                log.debug("Could not determine cluster context. kubectl exit code: {}, output: {}", exitCode, context);
                 return unknown;
             }
 

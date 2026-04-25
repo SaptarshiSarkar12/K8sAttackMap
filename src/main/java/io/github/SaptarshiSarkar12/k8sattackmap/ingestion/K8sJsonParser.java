@@ -1,7 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.ingestion;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphData;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
@@ -16,9 +15,9 @@ import java.io.Reader;
 import java.util.*;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.*;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
 
 public class K8sJsonParser {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(K8sJsonParser.class);
     private static final Map<String, ScanResult> imageRiskCache = new HashMap<>(); // Cache for image risk scores to avoid redundant Trivy scans
 
@@ -133,56 +132,89 @@ public class K8sJsonParser {
         }
     }
 
-    private static Map<String, List<String>> buildNodesAndIndex(JsonNode items, List<GraphNode> nodes, List<ParsedItem> parsedItems, Map<String, List<String>> nodesByKindAndNs, Map<String, List<String>> nodesByKindAndName) {
-        log.info("Extracting workloads and scanning container images via Trivy on-the-fly...");
-        Map<String, List<String>> podCVEIds = new HashMap<>();
-        for (JsonNode item : items) {
-            double maxCvssScore = 0.0;
-            Set<String> cveIds = new HashSet<>();
-            if (item.path("kind").asText().equals("Pod")) {
-                JsonNode specContainers = item.path("spec").path("containers");
-                JsonNode containerStatuses = item.path("status").path("containerStatuses");
-                if (specContainers.isArray()) {
-                    for (JsonNode container : specContainers) {
-                        String containerName = container.path("name").asText();
-                        String imageRef = container.path("image").asText();
-                        if (containerStatuses.isArray()) {
-                            for (JsonNode status : containerStatuses) {
-                                if (status.path("name").asText().equals(containerName)) {
-                                    String imageId = status.path("imageID").asText();
-                                    if (imageId != null && !imageId.isEmpty()) {
-                                        if (imageId.contains("://")) {
-                                            imageId = imageId.substring(imageId.indexOf("://") + 3);
-                                        }
-                                        imageRef = imageId;
-                                    }
-                                    break;
-                                }
+    private static ScanSummary scanContainerImages(JsonNode item) {
+        if (!item.path("kind").asText().equals("Pod")) {
+            return ScanSummary.empty();
+        }
+
+        JsonNode specContainers = item.path("spec").path("containers");
+        JsonNode containerStatuses = item.path("status").path("containerStatuses");
+        if (!specContainers.isArray()) {
+            return ScanSummary.empty();
+        }
+
+        double maxCvssScore = 0.0;
+        Set<String> cveIds = new HashSet<>();
+
+        for (JsonNode container : specContainers) {
+            String containerName = container.path("name").asText();
+            String imageRef = container.path("image").asText();
+
+            // Prefer the resolved imageID from container status (has digest)
+            if (containerStatuses.isArray()) {
+                for (JsonNode status : containerStatuses) {
+                    if (status.path("name").asText().equals(containerName)) {
+                        String imageId = status.path("imageID").asText();
+                        if (imageId != null && !imageId.isEmpty()) {
+                            if (imageId.contains("://")) {
+                                imageId = imageId.substring(imageId.indexOf("://") + 3);
                             }
+                            imageRef = imageId;
                         }
-                        if (imageRef != null && !imageRef.isEmpty()) {
-                            ScanResult scanResult = imageRiskCache.computeIfAbsent(imageRef, TrivyScanner::scanImage);
-                            cveIds.addAll(scanResult.cveIds());
-                            double riskScore = scanResult.cvssScore();
-                            if (riskScore > maxCvssScore) maxCvssScore = riskScore;
-                        }
+                        break;
                     }
                 }
             }
-            ParsedItem parsed = parseItemMetadata(item);
-            String sourceId = parsed.sourceId();
-            parsedItems.add(parsed);
+
+            if (imageRef != null && !imageRef.isEmpty()) {
+                ScanResult scanResult = imageRiskCache.computeIfAbsent(imageRef, TrivyScanner::scanImage);
+                cveIds.addAll(scanResult.cveIds());
+                if (scanResult.cvssScore() > maxCvssScore) {
+                    maxCvssScore = scanResult.cvssScore();
+                }
+            }
+        }
+
+        return new ScanSummary(maxCvssScore, cveIds);
+    }
+
+    private static void indexNode(ParsedItem parsed, Map<String, List<String>> nodesByKindAndNs, Map<String, List<String>> nodesByKindAndName) {
+        nodesByKindAndNs
+                .computeIfAbsent(buildKindNsKey(parsed.kind(), parsed.namespace()), _ -> new ArrayList<>())
+                .add(parsed.sourceId());
+        nodesByKindAndName
+                .computeIfAbsent(buildKindNameKey(parsed.kind(), parsed.name()), _ -> new ArrayList<>())
+                .add(parsed.sourceId());
+    }
+
+
+    private static Map<String, List<String>> buildNodesAndIndex(
+            JsonNode items,
+            List<GraphNode> nodes,
+            List<ParsedItem> parsedItems,
+            Map<String, List<String>> nodesByKindAndNs,
+            Map<String, List<String>> nodesByKindAndName) {
+
+        log.info("Extracting workloads and scanning container images via Trivy on-the-fly...");
+        Map<String, List<String>> podCVEIds = new HashMap<>();
+
+        for (JsonNode item : items) {
+            ScanSummary scan   = scanContainerImages(item);
+            ParsedItem parsed  = parseItemMetadata(item);
+
             GraphNode node = new GraphNode();
-            node.setId(sourceId);
+            node.setId(parsed.sourceId());
             node.setType(parsed.kind());
             node.setNamespace(parsed.namespace());
-            node.setRiskScore(maxCvssScore);
+            node.setRiskScore(scan.maxCvssScore());
             node.setSecurityFacts(extractSecurityFacts(parsed.kind(), parsed.raw()));
+
             nodes.add(node);
-            podCVEIds.put(sourceId, new ArrayList<>(cveIds));
-            nodesByKindAndNs.computeIfAbsent(buildKindNsKey(parsed.kind(), parsed.namespace()), _ -> new ArrayList<>()).add(parsed.sourceId());
-            nodesByKindAndName.computeIfAbsent(buildKindNameKey(parsed.kind(), parsed.name()), _ -> new ArrayList<>()).add(parsed.sourceId());
+            parsedItems.add(parsed);
+            podCVEIds.put(parsed.sourceId(), new ArrayList<>(scan.cveIds()));
+            indexNode(parsed, nodesByKindAndNs, nodesByKindAndName);
         }
+
         return podCVEIds;
     }
 
@@ -222,7 +254,7 @@ public class K8sJsonParser {
             collectLowercaseStrings(apiGroups, facts.getRbacApiGroups());
         }
 
-        List<String> verbs = facts.getRbacVerbs();
+        Set<String> verbs = facts.getRbacVerbs();
         facts.setRbacHasEscalate(verbs.contains("escalate"));
         facts.setRbacHasBind(verbs.contains("bind"));
         facts.setRbacHasImpersonate(verbs.contains("impersonate"));
@@ -310,11 +342,11 @@ public class K8sJsonParser {
         return false;
     }
 
-    private static void collectLowercaseStrings(JsonNode arrayNode, List<String> out) {
+    private static void collectLowercaseStrings(JsonNode arrayNode, Set<String> out) {
         if (!arrayNode.isArray()) return;
         for (JsonNode n : arrayNode) {
             String value = n.asText("").toLowerCase();
-            if (!value.isBlank() && !out.contains(value)) {
+            if (!value.isBlank()) {
                 out.add(value);
             }
         }
@@ -367,5 +399,11 @@ public class K8sJsonParser {
             String sourceId,
             JsonNode raw
     ) {
+    }
+
+    private record ScanSummary(double maxCvssScore, Set<String> cveIds) {
+        static ScanSummary empty() {
+            return new ScanSummary(0.0, Set.of());
+        }
     }
 }

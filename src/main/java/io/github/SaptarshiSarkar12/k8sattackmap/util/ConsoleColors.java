@@ -11,6 +11,7 @@ public final class ConsoleColors {
     public static final String BOLD = "\u001B[1m";
     public static final String GREEN = "\u001B[92m";
     public static final String MAGENTA = "\u001B[95m";
+    public static final String RED = "\u001B[31m";
     public static final String BOLD_RED = "\u001B[1;31m";
     public static final String GRAY = "\u001B[90m";
 }

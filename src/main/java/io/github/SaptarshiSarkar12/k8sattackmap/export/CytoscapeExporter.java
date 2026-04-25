@@ -3,26 +3,54 @@ package io.github.SaptarshiSarkar12.k8sattackmap.export;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.BlastRadiusResult;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.RankedChokePoint;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.PathDiscoveryResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
+import io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants;
+import io.github.SaptarshiSarkar12.k8sattackmap.util.TemplateStore;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
-public class CytoscapeExporter {
-    private static final ObjectMapper mapper = new ObjectMapper();
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
 
-    /**
-     * Exports the JGraphT model into a valid Cytoscape.js JSON string.
-     */
+public class CytoscapeExporter {
+    private static final Logger log = LoggerFactory.getLogger(CytoscapeExporter.class);
+
+    public static void exportHtmlReport(Graph<GraphNode, GraphEdge> graph, PathDiscoveryResult pathResult, Set<GraphNode> sourceNodes, RankedChokePoint topChoke, Map<String, List<String>> podCVEIds, Map<GraphNode, BlastRadiusResult> blastBySource) {
+        try {
+            GraphNode chokePointNode = topChoke == null ? null : topChoke.node();
+
+            String cytoscapeJson = exportToJson(
+                    graph,
+                    pathResult == null ? List.of() : pathResult.allPossiblePaths(),
+                    chokePointNode,
+                    sourceNodes == null ? List.of() : sourceNodes.stream().toList(),
+                    blastBySource
+            );
+
+            String finalHtml = TemplateStore.HTML.replace("/*%GRAPH_DATA%*/", cytoscapeJson);
+            Files.writeString(Paths.get(AppConstants.OUTPUT_HTML_FILENAME), finalHtml);
+            log.info("HTML/Cytoscape visualization exported to {}", AppConstants.OUTPUT_HTML_FILENAME);
+        } catch (Exception e) {
+            log.error("Failed to export Cytoscape HTML report.", e);
+        }
+    }
+
     public static String exportToJson(Graph<GraphNode, GraphEdge> graph,
                                       List<GraphPath<GraphNode, GraphEdge>> criticalPaths,
                                       GraphNode chokePoint,
                                       List<GraphNode> entryNodes,
-                                      int maxBlastHops) throws Exception {
+                                      Map<GraphNode, BlastRadiusResult> blastBySource) throws Exception {
 
-        ObjectNode root = mapper.createObjectNode();
+        ObjectNode root = MAPPER.createObjectNode();
         ArrayNode nodesArray = root.putArray("nodes");
         ArrayNode edgesArray = root.putArray("edges");
 
@@ -56,7 +84,7 @@ public class CytoscapeExporter {
             }
             
             // Tag Choke Point
-            if (chokePoint != null && node.equals(chokePoint)) {
+            if (node.equals(chokePoint)) {
                 data.put("isChokePoint", true);
                 classes.add("choke-point");
             }
@@ -65,10 +93,13 @@ public class CytoscapeExporter {
             if (entryNodes != null && entryNodes.contains(node)) {
                 data.put("isEntry", true);
                 classes.add("entry-node");
-                
-                List<String> blastIds = calculateBlastRadius(graph, node, maxBlastHops);
+
+                // Use pre-computed blast radius instead of re-running BFS
+                BlastRadiusResult blast = blastBySource.get(node);
                 ArrayNode blastArray = data.putArray("blastRadiusIds");
-                blastIds.forEach(blastArray::add);
+                if (blast != null) {
+                    blast.rankedImpactedAssets().forEach(asset -> blastArray.add(asset.node().getId()));
+                }
             }
 
             // Apply classes
@@ -93,39 +124,6 @@ public class CytoscapeExporter {
         }
 
         // Return pretty-printed JSON
-        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root);
-    }
-
-    /**
-     * Executes a Breadth-First Search (BFS) to find all nodes reachable from the start node within maxHops.
-     */
-    private static List<String> calculateBlastRadius(Graph<GraphNode, GraphEdge> graph, GraphNode start, int maxHops) {
-        List<String> reachable = new ArrayList<>();
-        Queue<GraphNode> queue = new LinkedList<>();
-        Map<GraphNode, Integer> distances = new HashMap<>();
-
-        queue.add(start);
-        distances.put(start, 0);
-
-        while (!queue.isEmpty()) {
-            GraphNode current = queue.poll();
-            int dist = distances.get(current);
-
-            // Don't add the start node itself to its own blast radius
-            if (dist > 0) {
-                reachable.add(current.getId());
-            }
-
-            if (dist < maxHops) {
-                for (GraphEdge edge : graph.outgoingEdgesOf(current)) {
-                    GraphNode neighbor = graph.getEdgeTarget(edge);
-                    if (!distances.containsKey(neighbor)) {
-                        distances.put(neighbor, dist + 1);
-                        queue.add(neighbor);
-                    }
-                }
-            }
-        }
-        return reachable;
+        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(root);
     }
 }

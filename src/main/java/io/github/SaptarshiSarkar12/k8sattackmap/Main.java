@@ -6,6 +6,7 @@ import com.openhtmltopdf.util.XRLog;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.*;
 import io.github.SaptarshiSarkar12.k8sattackmap.cli.CommandParser;
 import io.github.SaptarshiSarkar12.k8sattackmap.export.AnalysisSummaryPrinter;
+import io.github.SaptarshiSarkar12.k8sattackmap.export.ExportContext;
 import io.github.SaptarshiSarkar12.k8sattackmap.export.ExportService;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphFactory;
 import io.github.SaptarshiSarkar12.k8sattackmap.ingestion.K8sJsonParser;
@@ -15,6 +16,7 @@ import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.AttackSurfaceClassifier;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants;
+import io.github.SaptarshiSarkar12.k8sattackmap.util.TemplateStore;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.WorkspaceManager;
 import org.jgrapht.Graph;
 import org.slf4j.LoggerFactory;
@@ -23,7 +25,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.NodeFinder.findNodesById;
@@ -31,7 +32,7 @@ import static io.github.SaptarshiSarkar12.k8sattackmap.util.NodeFinder.findNodes
 public class Main {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Main.class);
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         System.out.println(AppConstants.HEADER);
         WorkspaceManager.initializeWorkspace();
         CommandParser cli = new CommandParser();
@@ -40,7 +41,7 @@ public class Main {
         }
 
         configureLogging(cli);
-        initializeTemplates();
+        TemplateStore.load(Main.class);
 
         ClusterGraphData graphData = loadClusterGraph(cli);
         if (graphData == null) {
@@ -49,25 +50,33 @@ public class Main {
 
         Graph<GraphNode, GraphEdge> graph = ClusterGraphFactory.buildGraph(graphData);
 
-        Set<GraphNode> vertexSet = graph.vertexSet();
         Set<String> sourceNodeIds = cli.getSourceNodes();
         Set<String> targetNodeIds = cli.getTargetNodes();
+        Map<String, GraphNode> nodeLookup = graphData.getNodeLookup();
 
-        Set<GraphNode> sourceNodes = findNodesById(vertexSet, sourceNodeIds);
-        Set<GraphNode> targetNodes = findNodesById(vertexSet, targetNodeIds);
+        Set<GraphNode> sourceNodes = findNodesById(nodeLookup, sourceNodeIds);
+        Set<GraphNode> targetNodes = findNodesById(nodeLookup, targetNodeIds);
         if (sourceNodeIds.isEmpty() || targetNodeIds.isEmpty()) {
             log.info("No explicit source/target provided. Running Auto-Discovery Heuristics...");
             AttackSurfaceClassifier.classifySourceAndTargetCandidates(graph.vertexSet(), sourceNodes, targetNodes);
             if (sourceNodes.isEmpty() || targetNodes.isEmpty()) {
-                log.info("Auto-discovery found no valid source/target. Use --source and --target.");
+                log.info("""
+                        Auto-discovery found no entry points or crown jewels in this cluster data.
+                        This can happen if:
+                          • The cluster JSON has no Pods, Services, or Ingresses (entry points)
+                          • The cluster JSON has no Secrets, Roles, or RBAC bindings (crown jewels)
+                          • The cluster JSON is empty or malformed
+                        Use --source and --target to specify nodes manually.
+                        """);
                 System.exit(1);
             }
         }
         AnalysisInput input = new AnalysisInput(graph, sourceNodes, targetNodes, cli.getMaxHops());
         AnalysisResult result = AnalysisOrchestrator.performAnalysis(input);
 
-        AnalysisSummaryPrinter.print(graph, result, graphData.getPodCVEIds(), log, cli.isVerbose());
-        ExportService.export(result, graph, sourceNodes, cli.getMaxHops(), cli.getOutputFormats());
+        AnalysisSummaryPrinter.print(graph, result, graphData.getPodCVEIds(), cli.isShowAllPaths());
+        ExportContext exportContext = new ExportContext(result, graph, sourceNodes, cli.getMaxHops(), graphData.getPodCVEIds(), KubectlExtractor.getClusterContext());
+        ExportService.export(exportContext, cli.getOutputFormats());
     }
 
     private static void configureLogging(CommandParser cli) {
@@ -79,21 +88,6 @@ public class Main {
             rootLogger.setLevel(Level.INFO);
         }
         XRLog.setLoggingEnabled(cli.isVerbose()); // Toggles logging for openhtmltopdf used for pdf generation
-    }
-
-    private static void initializeTemplates() {
-        try {
-            AppConstants.TEMPLATE_HTML = Files.readString(Paths.get(Objects.requireNonNull(Main.class.getResource(AppConstants.HTML_TEMPLATE_RESOURCE_PATH)).toURI()));
-        } catch (Exception e) {
-            log.error("Failed to load template for HTML: {}", e.getMessage(), e);
-            System.exit(1);
-        }
-        try {
-            AppConstants.TEMPLATE_PDF = Files.readString(Paths.get(Objects.requireNonNull(Main.class.getResource(AppConstants.PDF_TEMPLATE_RESOURCE_PATH)).toURI()));
-        } catch (Exception e) {
-            log.error("Failed to load template for PDF: {}", e.getMessage(), e);
-            System.exit(1);
-        }
     }
 
     private static ClusterGraphData loadClusterGraph(CommandParser cli) {
