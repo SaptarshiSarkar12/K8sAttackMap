@@ -1,10 +1,7 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.ingestion;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphData;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.SecurityFacts;
+import io.github.SaptarshiSarkar12.k8sattackmap.model.*;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.TrivyScanner;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.ScanResult;
 import org.slf4j.Logger;
@@ -14,18 +11,24 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.*;
 
+import static io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType.*;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.*;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
 public class K8sJsonParser {
     private static final Logger log = LoggerFactory.getLogger(K8sJsonParser.class);
     private static final Map<String, ScanResult> imageRiskCache = new HashMap<>(); // Cache for image risk scores to avoid redundant Trivy scans
+    private static final Set<String> LATERAL_MOVEMENT_VERBS = Set.of(
+            "create", "update", "patch", "delete", "exec",
+            "escalate", "bind", "impersonate", "deletecollection"
+    );
 
     public static ClusterGraphData parse(Reader reader) {
         List<GraphEdge> edges = new ArrayList<>();
-        Map<String, List<String>> nodesByKindAndNs = new HashMap<>();   // Key: "Kind:namespace" - wildcard RBAC lookups
+        Map<String, List<String>> nodesByKindAndNs = new HashMap<>(); // Key: "Kind:namespace" - wildcard RBAC lookups
         Map<String, List<String>> nodesByKindAndName = new HashMap<>(); // Key: "Kind:name" - named-resource RBAC lookups
-        Set<String> syntheticNodeIds = new HashSet<>(); // Track User/Group already added
+        Set<String> syntheticNodeIds = new HashSet<>(); // Track User/Group/Node already added
         try {
             JsonNode items = MAPPER.readTree(reader).path("items");
             if (items.isMissingNode() || !items.isArray()) {
@@ -54,7 +57,11 @@ public class K8sJsonParser {
 
     private static void processEdgesForItem(ParsedItem item, List<GraphEdge> edges, List<GraphNode> nodes, Map<String, List<String>> nodesByKindAndNs, Map<String, List<String>> nodesByKindAndName, Set<String> syntheticNodeIds) {
         switch (item.kind()) {
-            case "Pod" -> addPodEdges(item, edges);
+            case "Pod" -> {
+                addPodEdges(item, edges, nodes, syntheticNodeIds);
+                addOwnershipEdges(item, edges);
+            }
+            case "ReplicaSet", "StatefulSet", "DaemonSet", "Job", "CronJob" -> addOwnershipEdges(item, edges);
             case "RoleBinding", "ClusterRoleBinding" -> addRoleBindingEdges(item, edges, nodes, syntheticNodeIds);
             case "Role", "ClusterRole" -> addRoleEdges(item, edges, nodesByKindAndNs, nodesByKindAndName);
         }
@@ -62,33 +69,61 @@ public class K8sJsonParser {
 
     private static void addRoleEdges(ParsedItem item, List<GraphEdge> edges, Map<String, List<String>> nodesByKindAndNs, Map<String, List<String>> nodesByKindAndName) {
         JsonNode rules = item.raw().path("rules");
-        if (rules.isArray()) {
-            for (JsonNode rule : rules) {
-                JsonNode resources = rule.path("resources");
-                JsonNode resourceNames = rule.path("resourceNames");
-                if (resources.isArray()) {
-                    for (JsonNode res : resources) {
-                        String targetKind = mapResourceToKind(res.asText());
-                        if (targetKind == null) continue;
-                        if (!resourceNames.isMissingNode() && resourceNames.isArray() && !resourceNames.isEmpty()) {
-                            for (JsonNode resName : resourceNames) {
-                                String kindNameKey = buildKindNameKey(targetKind, resName.asText());
-                                List<String> namedTargets = nodesByKindAndName.getOrDefault(kindNameKey, Collections.emptyList());
-                                for (String targetId : namedTargets) {
-                                    edges.add(createEdge(item.sourceId(), targetId, CAN_ACCESS));
-                                }
-                            }
-                        } else {
-                            String lookupKey = buildKindNsKey(targetKind, item.namespace());
-                            List<String> targets = nodesByKindAndNs.getOrDefault(lookupKey, Collections.emptyList());
-                            for (String targetId : targets) {
+        if (!rules.isArray()) return;
+
+        boolean isClusterRole = "ClusterRole".equals(item.kind());
+        for (JsonNode rule : rules) {
+            // Read-only verbs (get/list/watch) grant API visibility, not lateral movement.
+            if (!hasLateralMovementVerb(rule)) continue;
+            JsonNode resources = rule.path("resources");
+            JsonNode resourceNames = rule.path("resourceNames");
+            if (!resources.isArray()) continue;
+
+            for (JsonNode res : resources) {
+                String targetKind = mapResourceToKind(res.asText());
+                if (targetKind == null) continue;
+
+                if (!resourceNames.isMissingNode() && resourceNames.isArray() && !resourceNames.isEmpty()) {
+                    // Named-resource rule: resolve by kind+name regardless of namespace
+                    for (JsonNode resName : resourceNames) {
+                        String kindNameKey = buildKindNameKey(targetKind, resName.asText());
+                        List<String> namedTargets = nodesByKindAndName.getOrDefault(kindNameKey, Collections.emptyList());
+                        for (String targetId : namedTargets) {
+                            edges.add(createEdge(item.sourceId(), targetId, CAN_ACCESS));
+                        }
+                    }
+                } else if (isClusterRole) {
+                    // ClusterRole has no namespace — it can reach resources in ALL namespaces.
+                    // Iterate every entry in nodesByKindAndNs whose key starts with "TargetKind:"
+                    String prefix = targetKind + ":";
+                    for (Map.Entry<String, List<String>> entry : nodesByKindAndNs.entrySet()) {
+                        if (entry.getKey().startsWith(prefix)) {
+                            for (String targetId : entry.getValue()) {
                                 edges.add(createEdge(item.sourceId(), targetId, CAN_ACCESS));
                             }
                         }
                     }
+                } else {
+                    // Regular Role: namespace-scoped, behavior unchanged
+                    String lookupKey = buildKindNsKey(targetKind, item.namespace());
+                    List<String> targets = nodesByKindAndNs.getOrDefault(lookupKey, Collections.emptyList());
+                    for (String targetId : targets) {
+                        edges.add(createEdge(item.sourceId(), targetId, CAN_ACCESS));
+                    }
                 }
             }
         }
+    }
+
+    private static boolean hasLateralMovementVerb(JsonNode rule) {
+        JsonNode verbs = rule.path("verbs");
+        if (!verbs.isArray()) return false;
+        for (JsonNode v : verbs) {
+            if ("*".equals(v.asText()) || LATERAL_MOVEMENT_VERBS.contains(v.asText().toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void addRoleBindingEdges(ParsedItem item, List<GraphEdge> edges, List<GraphNode> nodes, Set<String> syntheticNodeIds) {
@@ -120,15 +155,148 @@ public class K8sJsonParser {
                 nodes.add(syntheticNode);
             }
 
+            if ("Group".equals(subjKind) && subjName.startsWith("system:serviceaccounts")) {
+                String targetNs = null; // null means all namespaces
+                if (subjName.startsWith("system:serviceaccounts:")) {
+                    targetNs = subjName.substring("system:serviceaccounts:".length());
+                }
+                final String filterNs = targetNs;
+                for (GraphNode node : nodes) {
+                    if ("ServiceAccount".equalsIgnoreCase(node.getType())) {
+                        // If namespace-scoped group, only expand SAs in that namespace
+                        if (filterNs == null || filterNs.equals(node.getNamespace())) {
+                            edges.add(createEdge(node.getId(), subjSourceId, MEMBER_OF));
+                        }
+                    }
+                }
+            }
             edges.add(createEdge(subjSourceId, roleTargetId, BOUND_TO));
         }
     }
 
-    private static void addPodEdges(ParsedItem item, List<GraphEdge> edges) {
-        String saName = item.raw().path("spec").path("serviceAccountName").asText(null);
+    private static void addPodEdges(ParsedItem item, List<GraphEdge> edges, List<GraphNode> nodes, Set<String> syntheticNodeIds) {
+        JsonNode spec = item.raw().path("spec");
+        addServiceAccountEdge(item, spec, edges);
+        addPodSecretAndConfigMapEdges(item, spec, edges);
+        addNodeEscapeEdges(item, spec, edges, nodes, syntheticNodeIds);
+    }
+
+    private static void addServiceAccountEdge(ParsedItem item, JsonNode spec, List<GraphEdge> edges) {
+        String saName = spec.path("serviceAccountName").asText(null);
         if (saName != null && !saName.isEmpty()) {
             String targetId = buildNodeId("ServiceAccount", item.namespace(), saName);
             edges.add(createEdge(item.sourceId(), targetId, USES_SA));
+        }
+    }
+
+    private static void addPodSecretAndConfigMapEdges(ParsedItem item, JsonNode spec, List<GraphEdge> edges) {
+        JsonNode containers = spec.path("containers");
+        if (containers.isArray()) {
+            List<String> mountedVolNames = new ArrayList<>();
+            for (JsonNode container : containers) {
+                JsonNode envFrom = container.path("envFrom");
+                if (envFrom.isArray()) {
+                    for (JsonNode env : envFrom) {
+                        if (env.has("configMapRef")) {
+                            String cmName = env.path("configMapRef").path("name").asText(null);
+                            if (cmName != null && !cmName.isEmpty()) {
+                                String targetId = buildNodeId("ConfigMap", item.namespace(), cmName);
+                                edges.add(createEdge(item.sourceId(), targetId, USES_CONFIGMAP));
+                            }
+                        } else if (env.has("secretRef")) {
+                            String secretName = env.path("secretRef").path("name").asText(null);
+                            if (secretName != null && !secretName.isEmpty()) {
+                                String targetId = buildNodeId("Secret", item.namespace(), secretName);
+                                edges.add(createEdge(item.sourceId(), targetId, USES_SECRET));
+                            }
+                        }
+                    }
+                }
+                JsonNode env = container.path("env");
+                if (env.isArray()) {
+                    for (JsonNode envVar : env) {
+                        JsonNode valueFrom = envVar.path("valueFrom");
+                        if (valueFrom.has("secretKeyRef")) {
+                            String secretName = valueFrom.path("secretKeyRef").path("name").asText(null);
+                            if (secretName != null && !secretName.isEmpty()) {
+                                edges.add(createEdge(item.sourceId(),
+                                        buildNodeId("Secret", item.namespace(), secretName), ENV_FROM_SECRET));
+                            }
+                        } else if (valueFrom.has("configMapKeyRef")) {
+                            String cmName = valueFrom.path("configMapKeyRef").path("name").asText(null);
+                            if (cmName != null && !cmName.isEmpty()) {
+                                edges.add(createEdge(item.sourceId(),
+                                        buildNodeId("ConfigMap", item.namespace(), cmName), ENV_FROM_CONFIGMAP));
+                            }
+                        }
+                    }
+                }
+                JsonNode volumeMounts = container.path("volumeMounts");
+                if (volumeMounts.isArray()) {
+                    for (JsonNode vm : volumeMounts) {
+                        String volName = vm.path("name").asText(null);
+                        if (volName != null && !volName.isEmpty()) {
+                            mountedVolNames.add(volName);
+                        }
+                    }
+                }
+            }
+            JsonNode volumes = spec.path("volumes");
+            if (volumes.isArray()) {
+                for (JsonNode vol : volumes) {
+                    String volName = vol.path("name").asText(null);
+                    // Only process volumes that are actually mounted by a container
+                    if (volName == null || !mountedVolNames.contains(volName)) continue;
+
+                    if (vol.has("secret")) {
+                        String secretName = vol.path("secret").path("secretName").asText(null);
+                        if (secretName != null && !secretName.isEmpty()) {
+                            edges.add(createEdge(item.sourceId(), buildNodeId("Secret", item.namespace(), secretName), MOUNTS_SECRET));
+                        }
+                    } else if (vol.has("configMap")) {
+                        String cmName = vol.path("configMap").path("name").asText(null);
+                        if (cmName != null && !cmName.isEmpty()) {
+                            edges.add(createEdge(item.sourceId(), buildNodeId("ConfigMap", item.namespace(), cmName), MOUNTS_CONFIGMAP));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void addNodeEscapeEdges(ParsedItem item, JsonNode spec, List<GraphEdge> edges, List<GraphNode> nodes, Set<String> syntheticNodeIds) {
+        String nodeName = spec.path("nodeName").asText(null);
+        if (nodeName != null && !nodeName.isEmpty()) {
+            String nodeId = buildNodeId("Node", CLUSTER_SCOPED, nodeName);
+//            GraphNode node = new GraphNode(); // TODO: Causes crash, an exception IntrusiveEdgeException: Edge already associated with source <kube-system/Pod:kube-system:kube-apiserver-minikube (Pod)> and target <cluster-scoped/Node:cluster-scoped:minikube (Node)>
+//            node.setId(nodeId);
+//            node.setType("Node");
+//            node.setNamespace(CLUSTER_SCOPED);
+//            node.setRiskScore(0.0);
+//            syntheticNodeIds.add(nodeId);
+//            nodes.add(node);
+            SecurityFacts facts = extractSecurityFacts("Pod", item.raw()); // TODO: SecurityFacts are already calculated before calling this method; why not use that?
+
+            if (facts.isPrivilegedContainer()) {
+                edges.add(createEdge(item.sourceId(), nodeId, NODE_ESCAPE));
+            }
+            if (facts.isHostPathMounted()) {
+                edges.add(createEdge(item.sourceId(), nodeId, HOST_PATH_ACCESS));
+            }
+        }
+    }
+
+    private static void addOwnershipEdges(ParsedItem item, List<GraphEdge> edges) {
+        JsonNode ownerRefs = item.raw().path("metadata").path("ownerReferences");
+        if (!ownerRefs.isArray()) return;
+
+        for (JsonNode ref : ownerRefs) {
+            String ownerKind = ref.path("kind").asText();
+            String ownerName = ref.path("name").asText();
+            // Nodes are cluster-scoped; everything else shares the owned resource's namespace
+            String ownerNs = "Node".equals(ownerKind) ? CLUSTER_SCOPED : item.namespace();
+            String ownerId = buildNodeId(ownerKind, ownerNs, ownerName);
+            edges.add(createEdge(ownerId, item.sourceId(), MANAGES));
         }
     }
 
@@ -168,7 +336,10 @@ public class K8sJsonParser {
 
             if (imageRef != null && !imageRef.isEmpty()) {
                 ScanResult scanResult = imageRiskCache.computeIfAbsent(imageRef, TrivyScanner::scanImage);
-                cveIds.addAll(scanResult.cveIds());
+                List<String> imageCveIds = scanResult.cveIds();
+                if (imageCveIds != null) {
+                    cveIds.addAll(imageCveIds);
+                }
                 if (scanResult.cvssScore() > maxCvssScore) {
                     maxCvssScore = scanResult.cvssScore();
                 }
@@ -199,13 +370,14 @@ public class K8sJsonParser {
         Map<String, List<String>> podCVEIds = new HashMap<>();
 
         for (JsonNode item : items) {
-            ScanSummary scan   = scanContainerImages(item);
-            ParsedItem parsed  = parseItemMetadata(item);
+            ScanSummary scan = scanContainerImages(item);
+            ParsedItem parsed = parseItemMetadata(item);
 
             GraphNode node = new GraphNode();
             node.setId(parsed.sourceId());
             node.setType(parsed.kind());
             node.setNamespace(parsed.namespace());
+            node.setName(parsed.name());
             node.setRiskScore(scan.maxCvssScore());
             node.setSecurityFacts(extractSecurityFacts(parsed.kind(), parsed.raw()));
 
@@ -352,7 +524,7 @@ public class K8sJsonParser {
         }
     }
 
-    private static GraphEdge createEdge(String source, String target, String relationship) {
+    private static GraphEdge createEdge(String source, String target, EdgeType relationship) {
         GraphEdge edge = new GraphEdge();
         edge.setSource(source);
         edge.setTarget(target);
@@ -370,13 +542,22 @@ public class K8sJsonParser {
     }
 
     private static String mapResourceToKind(String resourcePlural) {
-        return switch (resourcePlural.toLowerCase()) {
+        String normalized = safeLower(resourcePlural);
+        int slashIndex = normalized.indexOf('/');
+        String baseResource = slashIndex >= 0 ? normalized.substring(0, slashIndex) : normalized;
+
+        return switch (baseResource) {
             case "secrets" -> "Secret";
             case "configmaps" -> "ConfigMap";
             case "pods" -> "Pod";
             case "services" -> "Service";
             case "deployments" -> "Deployment";
-            default -> null; // We ignore resources we don't care about mapping
+            case "replicasets" -> "ReplicaSet";
+            case "statefulsets" -> "StatefulSet";
+            case "daemonsets" -> "DaemonSet";
+            case "jobs" -> "Job";
+            case "cronjobs" -> "CronJob";
+            default -> null;
         };
     }
 

@@ -115,7 +115,7 @@ public class CytoscapeExporter {
 
             data.put("source", graph.getEdgeSource(edge).getId());
             data.put("target", graph.getEdgeTarget(edge).getId());
-            data.put("label", edge.getRelationship() != null ? edge.getRelationship() : "connected");
+            data.put("label", edge.getRelationship() != null ? edge.getRelationship().getLabel() : "connected");
 
             // Tag Critical Edges
             if (criticalEdges.contains(edge)) {

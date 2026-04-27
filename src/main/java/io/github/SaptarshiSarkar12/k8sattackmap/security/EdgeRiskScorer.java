@@ -1,5 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.security;
 
+import io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.SecurityFacts;
@@ -8,6 +9,7 @@ import org.jgrapht.Graph;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType.*;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.*;
 
 public class EdgeRiskScorer {
@@ -59,12 +61,18 @@ public class EdgeRiskScorer {
             if (targetFacts.isRbacHasEscalate() || targetFacts.isRbacHasBind() || targetFacts.isRbacHasImpersonate()) friction -= 2.5;
         }
 
-        // Relationship-aware adjustment (optional but useful)
-        String rel = edge.getRelationship() == null ? "" : edge.getRelationship().toLowerCase();
-        if (rel.contains(BOUND_TO)) friction -= 0.8;
-        if (rel.contains(CAN_ACCESS)) friction -= 0.8;
-        if (rel.contains(USES_SA)) friction -= 0.5;
-
+        // Relationship-aware adjustment
+        EdgeType rel = edge.getRelationship();
+        if (rel != null) {
+            switch (rel) {
+                case USES_SA, MOUNTS_CONFIGMAP, USES_CONFIGMAP, ENV_FROM_CONFIGMAP, MEMBER_OF -> friction -= 0.5;
+                case BOUND_TO, CAN_ACCESS -> friction -= 0.8;
+                case MOUNTS_SECRET, USES_SECRET, ENV_FROM_SECRET -> friction -= 2.0; // direct secret access, very easy
+                case NODE_ESCAPE, HOST_PATH_ACCESS -> friction -= 3.0; // node escape is trivial once you have it
+                case MANAGES -> friction -= 0.3; // workload ownership chain
+                case EXEC_INTO -> friction -= 2.5; // exec is near-direct access
+            }
+        }
         return friction;
     }
 }

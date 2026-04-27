@@ -81,7 +81,7 @@ public class ChokePointIdentifier {
             double pathWeight = normalizedPathRisk(path);
 
             for (int i = 1; i < nodes.size() - 1; i++) {
-                weighted.computeIfAbsent(nodes.get(i), k -> new DoubleAdder()).add(pathWeight);
+                weighted.computeIfAbsent(nodes.get(i), _ -> new DoubleAdder()).add(pathWeight);
             }
         });
 

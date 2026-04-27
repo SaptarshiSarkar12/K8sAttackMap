@@ -29,19 +29,20 @@ import java.util.*;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.NodeFinder.findNodesById;
 
-public class Main {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Main.class);
+public class K8sAttackMapApplication {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(K8sAttackMapApplication.class);
 
     public static void main(String[] args) {
         System.out.println(AppConstants.HEADER);
         WorkspaceManager.initializeWorkspace();
+
         CommandParser cli = new CommandParser();
         if (!cli.parse(args)) {
             System.exit(1);
         }
 
         configureLogging(cli);
-        TemplateStore.load(Main.class);
+        TemplateStore.load(K8sAttackMapApplication.class);
 
         ClusterGraphData graphData = loadClusterGraph(cli);
         if (graphData == null) {
@@ -49,17 +50,20 @@ public class Main {
         }
 
         Graph<GraphNode, GraphEdge> graph = ClusterGraphFactory.buildGraph(graphData);
+        Map<String, GraphNode> nodeLookup = graphData.getNodeLookup();
 
         Set<String> sourceNodeIds = cli.getSourceNodes();
         Set<String> targetNodeIds = cli.getTargetNodes();
-        Map<String, GraphNode> nodeLookup = graphData.getNodeLookup();
-
         Set<GraphNode> sourceNodes = findNodesById(nodeLookup, sourceNodeIds);
         Set<GraphNode> targetNodes = findNodesById(nodeLookup, targetNodeIds);
-        if (sourceNodeIds.isEmpty() || targetNodeIds.isEmpty()) {
+
+        boolean needsAutoDiscovery = sourceNodeIds.isEmpty() || targetNodeIds.isEmpty();
+        if (needsAutoDiscovery) {
             log.info("No explicit source/target provided. Running Auto-Discovery Heuristics...");
             AttackSurfaceClassifier.classifySourceAndTargetCandidates(graph.vertexSet(), sourceNodes, targetNodes);
-            if (sourceNodes.isEmpty() || targetNodes.isEmpty()) {
+
+            boolean noCandidatesFound = sourceNodes.isEmpty() || targetNodes.isEmpty();
+            if (noCandidatesFound) {
                 log.info("""
                         Auto-discovery found no entry points or crown jewels in this cluster data.
                         This can happen if:
@@ -71,12 +75,26 @@ public class Main {
                 System.exit(1);
             }
         }
+
         AnalysisInput input = new AnalysisInput(graph, sourceNodes, targetNodes, cli.getMaxHops());
         AnalysisResult result = AnalysisOrchestrator.performAnalysis(input);
 
-        AnalysisSummaryPrinter.print(graph, result, graphData.getPodCVEIds(), cli.isShowAllPaths());
-        ExportContext exportContext = new ExportContext(result, graph, sourceNodes, cli.getMaxHops(), graphData.getPodCVEIds(), KubectlExtractor.getClusterContext());
-        ExportService.export(exportContext, cli.getOutputFormats());
+        Set<String> outputFormats = cli.getOutputFormats();
+        boolean hasExports = !outputFormats.isEmpty();
+
+        AnalysisSummaryPrinter.print(graph, result, graphData.getPodCVEIds(), cli.isShowAllPaths(), hasExports);
+
+        ExportContext exportContext = new ExportContext(
+                result,
+                graph,
+                sourceNodes,
+                cli.getMaxHops(),
+                graphData.getPodCVEIds(),
+                nodeLookup,
+                result.pathDiscoveryResult().edgeRiskScores(),
+                KubectlExtractor.getClusterContext()
+        );
+        ExportService.export(exportContext, outputFormats);
     }
 
     private static void configureLogging(CommandParser cli) {

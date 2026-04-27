@@ -15,6 +15,8 @@ public record ExportContext(
     Set<GraphNode> sourceNodes,
     int maxHops,
     Map<String, List<String>> podCVEIds,
+    Map<String, GraphNode> nodeLookup,
+    Map<GraphEdge, Double> edgeRiskScores,
     String clusterContext
 ) {
 }

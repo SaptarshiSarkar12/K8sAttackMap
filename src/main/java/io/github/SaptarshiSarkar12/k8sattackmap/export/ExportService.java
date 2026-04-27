@@ -19,6 +19,7 @@ public final class ExportService {
         Graph<GraphNode, GraphEdge> graph = ctx.graph();
         Set<GraphNode> sourceNodes = ctx.sourceNodes();
         Map<String, List<String>> podCVEIds = ctx.podCVEIds();
+        Map<GraphEdge, Double> edgeRiskScores = ctx.edgeRiskScores();
         String clusterContext = ctx.clusterContext();
         PathDiscoveryResult pathResult = result.pathDiscoveryResult();
         RankedChokePoint topChoke = getTopChoke(result);
@@ -27,7 +28,7 @@ public final class ExportService {
                 .collect(Collectors.toMap(BlastRadiusResult::source, r -> r));
 
         if (outputFormats.contains("pdf")) {
-            PdfReportEngine.exportPdfReport(result, graph, sourceNodes, clusterContext);
+            PdfReportEngine.exportPdfReport(result, graph, sourceNodes, clusterContext, edgeRiskScores, podCVEIds, ctx.nodeLookup());
         }
         if (outputFormats.contains("html")) {
             CytoscapeExporter.exportHtmlReport(graph, pathResult, sourceNodes, topChoke, podCVEIds, blastBySource);

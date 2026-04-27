@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class ClusterGraphFactory {
     private static final Logger log = LoggerFactory.getLogger(ClusterGraphFactory.class);
@@ -22,18 +23,26 @@ public class ClusterGraphFactory {
         data.setNodeLookup(nodeLookup);
 
         log.info("Building graph: Adding edges...");
-        int edgeCount = 0;
         for (GraphEdge edge : data.getEdges()) {
             GraphNode source = nodeLookup.get(edge.getSource());
             GraphNode target = nodeLookup.get(edge.getTarget());
             if (source != null && target != null) {
                 clusterGraph.addEdge(source, target, edge);
-                edgeCount++;
             } else {
                 log.debug("Skipping edge with missing node(s): \"{}\" -{}-> \"{}\"", edge.getSource(), edge.getRelationship(), edge.getTarget());
             }
         }
-        log.info("Graph constructed with {} nodes and {} edges.", clusterGraph.vertexSet().size(), edgeCount);
+
+        int removed = 0;
+        Set<String> entryPointTypes = Set.of("Pod", "User", "Group", "ServiceAccount", "Node");
+        for (GraphNode node : new java.util.ArrayList<>(clusterGraph.vertexSet())) {
+            if (clusterGraph.inDegreeOf(node) == 0 && !entryPointTypes.contains(node.getType())) {
+                clusterGraph.removeVertex(node);
+                removed++;
+            }
+        }
+
+        log.info("Graph constructed with {} nodes and {} edges. Removed {} in-degree zero node(s).", clusterGraph.vertexSet().size(), clusterGraph.edgeSet().size(), removed);
         return clusterGraph;
     }
 }

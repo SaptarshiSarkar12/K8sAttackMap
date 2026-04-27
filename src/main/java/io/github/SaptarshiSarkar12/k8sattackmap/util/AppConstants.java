@@ -39,11 +39,8 @@ public class AppConstants {
             + "Example: K8sAttackMap -k cluster.json -s Pod:default:web -t Secret:default:my-secret -o html,pdf"
             + RESET;
 
-    // Graph relationship labels used when building edges
+    // Well-known namespace for cluster-scoped resources (e.g. ClusterRole, ClusterRoleBinding)
     public static final String CLUSTER_SCOPED = "cluster-scoped";
-    public static final String USES_SA = "uses_sa";
-    public static final String BOUND_TO = "bound_to";
-    public static final String CAN_ACCESS = "can_access";
 
     // Classpath locations of the report templates (consumed by TemplateStore)
     public static final String HTML_TEMPLATE_RESOURCE_PATH = "/templates/html-template.html";

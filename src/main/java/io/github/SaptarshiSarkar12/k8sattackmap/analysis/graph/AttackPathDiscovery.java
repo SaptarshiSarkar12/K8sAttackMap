@@ -35,7 +35,7 @@ public class AttackPathDiscovery {
                 GraphPath<GraphNode, GraphEdge> path = dijkstra.findShortestPath(source, target);
                 if (path != null && path.getLength() > 0) {
                     int baseLen = path.getLength();
-                    int maxSearchDepth = baseLen + 2;
+                    int maxSearchDepth = Math.clamp(baseLen + 2, 8, 10);
                     List<GraphPath<GraphNode, GraphEdge>> paths = pathFinder.getAllPaths(source, target, true, maxSearchDepth);
                     allPossiblePaths.addAll(paths);
                     allDijkstraPaths.add(path);

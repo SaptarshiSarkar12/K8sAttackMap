@@ -20,11 +20,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.ConsoleColors.*;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
 public class AnalysisSummaryPrinter {
     private static final Logger log = LoggerFactory.getLogger(AnalysisSummaryPrinter.class);
 
-    public static void print(Graph<GraphNode, GraphEdge> graph, AnalysisResult result, Map<String, List<String>> podCVEIds, boolean showAllPaths) {
+    public static void print(Graph<GraphNode, GraphEdge> graph, AnalysisResult result, Map<String, List<String>> podCVEIds, boolean showAllPaths, boolean hasExports) {
         printHeader();
         PathDiscoveryResult pathResult = result.pathDiscoveryResult();
         ChokePointResult chokeResult = result.chokePointResult();
@@ -38,7 +39,7 @@ public class AnalysisSummaryPrinter {
         printBlastRadiusAnalysis(blastResults);
         printPodVulnerabilityDetails(podCVEIds);
         printRemediationPlans(result.remediationPlans());
-        printFooter();
+        printFooter(hasExports);
     }
 
     private static void printHeader() {
@@ -88,7 +89,7 @@ public class AnalysisSummaryPrinter {
                 .collect(Collectors.toMap(
                         AnalysisSummaryPrinter::pairKey,
                         p -> p,
-                        (a, b) -> a   // if duplicate key, keep first
+                        (a, _) -> a   // if duplicate key, keep first
                 ));
 
         // Group all paths by pair key, preserving insertion order for readability
@@ -166,7 +167,7 @@ public class AnalysisSummaryPrinter {
         ranked.stream()
                 .limit(5)
                 .forEach(cp -> log.info(
-                        "  • [{}] type={} -> paths={} weightedScore={}",
+                        "  • [{}] type={} -> paths={}, weighted score={}",
                         cp.node().getId(),
                         cp.node().getType(),
                         cp.pathsSevered(),
@@ -199,28 +200,7 @@ public class AnalysisSummaryPrinter {
                 loopPath += " -> " + nodeIds.getFirst();
             }
 
-            // Quick risk hints from loop composition
-            boolean hasBinding = loop.stream().anyMatch(n -> {
-                String t = n.getType() == null ? "" : n.getType().toLowerCase();
-                return t.contains("rolebinding") || t.contains("clusterrolebinding");
-            });
-            boolean hasRole = loop.stream().anyMatch(n -> {
-                String t = n.getType() == null ? "" : n.getType().toLowerCase();
-                return t.equals("role") || t.equals("clusterrole");
-            });
-            boolean hasServiceAccount = loop.stream().anyMatch(n -> {
-                String t = n.getType() == null ? "" : n.getType().toLowerCase();
-                return t.equals("serviceaccount");
-            });
-
-            String severityHint;
-            if (hasBinding && hasRole && hasServiceAccount) {
-                severityHint = "HIGH";
-            } else if (hasBinding && hasRole) {
-                severityHint = "MEDIUM";
-            } else {
-                severityHint = "LOW";
-            }
+            String severityHint = classifyLoopSeverity(loop);
 
             if (privilegeLoops.size() > 1) {
                 log.info("  {}. Severity={} | Nodes={}", loopIndex++, severityHint, loop.size());
@@ -232,6 +212,36 @@ public class AnalysisSummaryPrinter {
 
         log.info("  • Recommended action: break at least one binding edge per loop to prevent cyclic privilege escalation.");
         System.out.println();
+    }
+
+    public static String classifyLoopSeverity(List<GraphNode> loop) {
+        boolean hasBinding = false;
+        boolean hasRole = false;
+        boolean hasSA = false;
+
+        for (GraphNode node : loop) {
+            String type = node.getType();
+            String lowerType = safeLower(type);
+
+            if (!hasBinding && lowerType.contains("rolebinding")) {
+                hasBinding = true;
+            }
+            if (!hasRole && (lowerType.equals("role") || lowerType.equals("clusterrole"))) {
+                hasRole = true;
+            }
+            if (!hasSA && "serviceaccount".equalsIgnoreCase(type)) {
+                hasSA = true;
+            }
+
+            if (hasBinding && hasRole && hasSA) {
+                return "HIGH";
+            }
+        }
+
+        if (hasBinding && hasRole) {
+            return "MEDIUM";
+        }
+        return "LOW";
     }
 
     private static void printBlastRadiusAnalysis(List<BlastRadiusResult> blastResults) {
@@ -341,14 +351,28 @@ public class AnalysisSummaryPrinter {
         if (hops == 0) return "UNKNOWN";
         double averageRisk = totalScore / hops;
         if (averageRisk >= RiskConfig.PATH_RISK_CRITICAL) return "CRITICAL";
-        if (averageRisk >= RiskConfig.PATH_RISK_HIGH)     return "HIGH";
-        if (averageRisk >= RiskConfig.PATH_RISK_MEDIUM)   return "MEDIUM";
+        if (averageRisk >= RiskConfig.PATH_RISK_HIGH) return "HIGH";
+        if (averageRisk >= RiskConfig.PATH_RISK_MEDIUM) return "MEDIUM";
         return "LOW";
     }
 
-    private static void printFooter() {
-        System.out.println(BOLD + "=".repeat(80));
+    private static void printFooter(boolean hasExports) {
+        System.out.println(BOLD + "=".repeat(80) + RESET);
         System.out.println(" End of Analysis Summary");
-        System.out.println("=".repeat(80) + RESET + "\n");
+        System.out.println(BOLD + "=".repeat(80) + RESET);
+
+        if (!hasExports) {
+            System.out.println();
+            log.info(CYAN + BOLD + "╔ NEXT STEPS ╗" + RESET);
+            log.info(BOLD + "├─ Visualization:" + RESET + "  {} {}",
+                    GREEN + "add -o html" + RESET, "(visual graph)");
+            log.info(BOLD + "├─ Documentation:" + RESET + " {} {}",
+                    GREEN + "add -o pdf" + RESET, "(PDF report)");
+            log.info(BOLD + "├─ Analysis:" + RESET + "      {} {}",
+                    GREEN + "add --show-all-paths" + RESET, "(all attack paths)");
+            log.info(BOLD + "└─ Scope:" + RESET + "         {} {}",
+                    GREEN + "add --max-hops <N>" + RESET, "(default: 3)");
+            System.out.println(BOLD + "=".repeat(80) + RESET + "\n");
+        }
     }
 }

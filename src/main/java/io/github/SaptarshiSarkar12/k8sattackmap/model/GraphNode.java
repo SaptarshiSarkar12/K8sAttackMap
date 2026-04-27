@@ -12,6 +12,7 @@ public class GraphNode {
     private String id;
     private String type; // e.g., "Pod", "ServiceAccount"
     private String namespace;
+    private String name;
     @JsonProperty("risk_score")
     private double riskScore;
     private SecurityFacts securityFacts = new SecurityFacts();

@@ -2,200 +2,564 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <title>Security Audit Report</title>
+    <title>K8sAttackMap Security Audit Report</title>
     <style>
-        /* PDF Print Formatting */
         @page {
             size: A4 portrait;
-            margin: 1in;
+            margin: 0.75in 0.85in 0.75in 0.85in;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #333;
-            line-height: 1.6;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #1a1a2e;
+            line-height: 1.65;
+            font-size: 10.5pt;
+            background: #ffffff;
         }
 
-        h1, h2, h3 {
-            color: #1a202c;
-            border-bottom: 2px solid #edf2f7;
-            padding-bottom: 5px;
-        }
-
-        .page-break {
-            page-break-before: always;
-        }
-
-        /* Utility Classes */
-        .text-center {
+        /*  Cover  */
+        .cover {
             text-align: center;
+            padding-top: 60px;
+            padding-bottom: 40px;
+            border-bottom: 3px solid #0f3460;
+            margin-bottom: 36px;
         }
-
-        .text-red {
-            color: #e53e3e;
+        .cover-eyebrow {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #e94560;
+            margin-bottom: 12px;
         }
-
-        .text-green {
-            color: #38a169;
-        }
-
-        .metric-box {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .metric-value {
-            font-size: 32px;
+        .cover h1 {
+            font-size: 26pt;
             font-weight: bold;
-            color: #2b6cb0;
+            color: #0f3460;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+            border: none;
         }
+        .cover-sub {
+            font-size: 11pt;
+            color: #444;
+            margin-bottom: 24px;
+        }
+        .cover-meta {
+            font-size: 9pt;
+            color: #666;
+            line-height: 1.8;
+        }
+        .cover-meta strong { color: #1a1a2e; }
 
-        /* Code Blocks */
-        .code-block {
-            background: #1a202c;
-            color: #a0aec0;
+        /*  Typography  */
+        h2 {
+            font-family: 'Georgia', serif;
+            font-size: 14pt;
+            color: #0f3460;
+            border-left: 4px solid #e94560;
+            padding-left: 10px;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            page-break-after: avoid;
+        }
+        h3 {
+            font-size: 11pt;
+            color: #1a1a2e;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            page-break-after: avoid;
+        }
+        p { margin-bottom: 10px; }
+
+        /*  Page breaks  */
+        .page-break { page-break-before: always; }
+        .no-break { page-break-inside: avoid; }
+
+        /*  Metric cards  */
+        .metric-grid {
+            display: table;
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: separate;
+            border-spacing: 8px;
+        }
+        .metric-row { display: table-row; }
+        .metric-cell {
+            display: table-cell;
+            width: 25%;
+            vertical-align: top;
+        }
+        .metric-card {
+            border: 1.5px solid #e2e8f0;
             border-radius: 6px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            white-space: pre-wrap
+            padding: 14px 10px;
+            text-align: center;
+            background: #f8faff;
+        }
+        .metric-card.danger  { border-color: #e94560; background: #fff5f7; }
+        .metric-card.warning { border-color: #e67e22; background: #fffbf0; }
+        .metric-card.safe    { border-color: #27ae60; background: #f0fff4; }
+        .metric-val {
+            font-family: 'Courier New', monospace;
+            font-size: 20pt;
+            font-weight: bold;
+            color: #0f3460;
+            line-height: 1.1;
+        }
+        .metric-val.red    { color: #e94560; }
+        .metric-val.orange { color: #e67e22; }
+        .metric-val.green  { color: #27ae60; }
+        .metric-label {
+            font-size: 7.5pt;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
         }
 
-        /* Inline code styling */
-        code {
-            background-color: #edf2f7; /* light gray background */
-            color: #2b6cb0; /* blue text for emphasis */
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 90%; /* slightly smaller than body text */
-            padding: 2px 4px;
-            border-radius: 4px;
-            white-space: pre-wrap; /* ensures wrapping in PDF */
+        /*  Risk grade banner  */
+        .risk-banner {
+            border-radius: 6px;
+            padding: 14px 20px;
+            margin: 18px 0;
+            display: table;
+            width: 100%;
         }
+        .risk-banner.critical { background: #fff0f0; border: 2px solid #e94560; }
+        .risk-banner.high     { background: #fff8f0; border: 2px solid #e67e22; }
+        .risk-banner.safe     { background: #f0fff4; border: 2px solid #27ae60; }
+        .risk-banner-left  { display: table-cell; vertical-align: middle; width: 70%; }
+        .risk-banner-right { display: table-cell; vertical-align: middle; text-align: right; }
+        .risk-grade-label  { font-size: 22pt; font-weight: bold; font-family: 'Courier New', monospace; }
+        .risk-grade-label.critical { color: #e94560; }
+        .risk-grade-label.high     { color: #e67e22; }
+        .risk-grade-label.safe     { color: #27ae60; }
 
-        /* Table Formatting */
+        /*  Tables  */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin: 14px 0;
+            font-size: 9pt;
             table-layout: fixed;
         }
-
-        th, td {
-            border: 1px solid #cbd5e0;
-            padding: 12px;
+        th {
+            background: #0f3460;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            letter-spacing: 0.5px;
+            padding: 8px 10px;
             text-align: left;
-            word-break: break-all;
+            font-weight: normal;
+        }
+        td {
+            border-bottom: 1px solid #e8edf5;
+            padding: 8px 10px;
+            vertical-align: top;
+        }
+        tr:nth-child(even) td { background: #f8faff; }
+        tr:last-child td { border-bottom: none; }
+        .table-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 14px 0;
+        }
+        .table-container table { margin: 0; }
+
+        /* Severity badges */
+        .badge {
+            font-family: 'Courier New', monospace;
+            font-size: 7.5pt;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        .badge-critical { background: #e94560; color: #fff; }
+        .badge-high     { background: #e67e22; color: #fff; }
+        .badge-medium   { background: #f1c40f; color: #1a1a2e; }
+        .badge-low      { background: #bdc3c7; color: #1a1a2e; }
+
+        /*  Code / Command blocks  */
+        .cmd-block {
+            background: #0f1b2d;
+            color: #8ec8f0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            padding: 10px 14px;
+            margin: 8px 0;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .cmd-comment { color: #548a78; }
+        .cmd-warn    { color: #e9a84c; font-weight: bold; }
+
+        /*  Attack path hop cells  */
+        .hop-num {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #e94560;
+            text-align: center;
+        }
+        .hop-rel {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #e94560;
+            font-weight: bold;
+        }
+        .node-id {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #0f3460;
         }
 
-        th {
-            background-color: #edf2f7;
+        /*  Choke point card  */
+        .choke-card {
+            border: 2px solid #e94560;
+            border-radius: 6px;
+            padding: 16px 18px;
+            margin: 16px 0;
+            background: #fff8f9;
+        }
+        .choke-card h3 {
+            color: #e94560;
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 11pt;
+        }
+        .choke-impact {
+            font-size: 28pt;
             font-weight: bold;
+            color: #e94560;
+            font-family: 'Courier New', monospace;
+            line-height: 1;
+        }
+
+        /*  Remediation plan cards  */
+        .remed-card {
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #0f3460;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin: 14px 0;
+            background: #fafbff;
+            page-break-inside: avoid;
+        }
+        .remed-card.destructive { border-left-color: #e94560; }
+        .remed-card h3 {
+            margin-top: 0;
+            font-size: 10pt;
+            color: #0f3460;
+        }
+        .remed-section-label {
+            font-size: 7.5pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            margin: 8px 0 3px 0;
+        }
+        .remed-rationale {
+            font-size: 9pt;
+            color: #444;
+            margin-bottom: 6px;
+            font-style: italic;
+        }
+        .destructive-warn {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #e94560;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        /*  Loop path display  */
+        .loop-path {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #e94560;
+            line-height: 1.8;
+        }
+
+        /*  CVE table severity column  */
+        .cve-count-high { color: #e94560; font-weight: bold; font-family: 'Courier New', monospace; }
+        .cve-count-med  { color: #e67e22; font-weight: bold; font-family: 'Courier New', monospace; }
+        .cve-count-low  { color: #555;    font-family: 'Courier New', monospace; }
+
+        /*  Section divider  */
+        .section-intro {
+            font-size: 9.5pt;
+            color: #555;
+            margin-bottom: 14px;
+            border-left: 3px solid #e2e8f0;
+            padding-left: 10px;
+        }
+
+        /*  Footer  */
+        .report-footer {
+            margin-top: 40px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 8pt;
+            color: #999;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
-<div class="text-center">
-    <h1>K8sAttackMap Security Audit</h1>
-    <p style="margin-bottom: 5px;"><strong>Generated on:</strong> {{REPORT_DATE}}</p>
-    <p style="margin-top: 0; color: #718096;"><strong>Target Environment:</strong> {{CLUSTER_CONTEXT}}</p>
+<!-- ═══════════════════════════════════════════════════════════════
+     COVER / HEADER
+═══════════════════════════════════════════════════════════════ -->
+<div class="cover">
+    <div class="cover-eyebrow">Automated Threat Model · Confidential</div>
+    <h1>K8sAttackMap<br/>Security Audit</h1>
+    <div class="cover-sub">Kubernetes Attack Surface Analysis Report</div>
+    <div class="cover-meta">
+        <strong>Generated:</strong> {{REPORT_DATE}}<br/>
+        <strong>Cluster Context:</strong> {{CLUSTER_CONTEXT}}<br/>
+        <strong>Tool:</strong> K8sAttackMap {{TOOL_VERSION}}<br/>
+        <strong>Disclaimer:</strong> This report is based on automated analysis and should be reviewed by security professionals.
+        It is not a substitute for comprehensive security audits or penetration testing.
+    </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 1 — EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════════════════ -->
 <h2>1. Executive Summary</h2>
-<p>This automated threat model analyzed the Kubernetes RBAC configurations, pod deployments, and access policies to map
-    potential paths of compromise.</p>
+<p class="section-intro">
+    This report summarises automated analysis of Kubernetes RBAC configuration, workload deployments,
+    container images, and access policies to map potential compromise paths.
+    Results are intended to guide prioritised remediation effort.
+</p>
 
-<table style="border:none; margin-top: 30px;">
-    <tr>
-        <td style="border:none;">
-            <div class="metric-box">
-                <div class="metric-value text-red">{{RISK_GRADE}}</div>
-                <div>Overall Cluster Risk Score</div>
-            </div>
-        </td>
-        <td style="border:none;">
-            <div class="metric-box">
-                <div class="metric-value">{{TOTAL_PATHS}}</div>
-                <div>Critical Attack Paths Found</div>
-            </div>
-        </td>
-    </tr>
-</table>
+<!-- Risk grade banner -->
+<div class="risk-banner {{RISK_GRADE_COLOR_CLASS}} no-break">
+    <div class="risk-banner-left">
+        <strong>Overall Risk Grade</strong><br/>
+        <span style="font-size:9pt; color:#555;">Based on total discovered attack paths and choke point density.</span>
+    </div>
+    <div class="risk-banner-right">
+        <span class="risk-grade-label {{RISK_GRADE_COLOR_CLASS}}">{{RISK_GRADE}}</span>
+    </div>
+</div>
 
-<div style="margin-top: 30px;">
-    <h3>High-Level Findings</h3>
-    <ul>
-        <li><strong>Entry Points Detected:</strong> {{ENTRY_POINTS_COUNT}} pods with vulnerabilities or external
-            exposure.
+<!-- Four metric cards -->
+<div class="metric-grid">
+    <div class="metric-row">
+        <div class="metric-cell">
+            <div class="metric-card {{PATHS_CARD_CLASS}}">
+                <div class="metric-val {{PATHS_VAL_CLASS}}">{{TOTAL_PATHS}}</div>
+                <div class="metric-label">Attack Paths Found</div>
+            </div>
+        </div>
+        <div class="metric-cell">
+            <div class="metric-card">
+                <div class="metric-val">{{ENTRY_POINTS_COUNT}}</div>
+                <div class="metric-label">Entry Points</div>
+            </div>
+        </div>
+        <div class="metric-cell">
+            <div class="metric-card {{LOOPS_CARD_CLASS}}">
+                <div class="metric-val {{LOOPS_VAL_CLASS}}">{{LOOPS_COUNT}}</div>
+                <div class="metric-label">Escalation Loops</div>
+            </div>
+        </div>
+        <div class="metric-cell">
+            <div class="metric-card">
+                <div class="metric-val">{{CHOKE_POINT_IMPACT}}%</div>
+                <div class="metric-label">Paths Severed by<br/>Top Fix</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="no-break">
+    <h3>Key Findings</h3>
+    <ul style="padding-left: 18px; font-size: 9.5pt;">
+        <li style="margin-bottom: 5px;">
+            <strong>{{TOTAL_PATHS}} attack path(s)</strong> were discovered from potential entry points to sensitive targets.
         </li>
-        <li><strong>RBAC Escalation Loops:</strong> {{LOOP_COUNT}} circular permission loops detected.</li>
-        <li><strong>Choke Point ROI:</strong> Fixing a single architectural misconfiguration can sever <strong>{{CHOKE_POINT_IMPACT}}%</strong>
-            of all known attack paths.
+        <li style="margin-bottom: 5px;">
+            The highest-impact single fix is <strong>{{CHOKE_POINT_ID}}</strong> —
+            addressing it eliminates <strong>{{CHOKE_POINT_IMPACT}}%</strong> of all known paths.
+        </li>
+        <li style="margin-bottom: 5px;">
+            <strong>{{LOOPS_COUNT}} privilege escalation loop(s)</strong> detected;
+            these allow attackers to re-acquire access after partial remediation.
+        </li>
+        <li style="margin-bottom: 5px;">
+            <strong>{{VULNERABLE_POD_COUNT}} pod(s)</strong> carry known CVEs.
+            See Section 5 for details.
         </li>
     </ul>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 2 — TOP CHOKE POINTS
+═══════════════════════════════════════════════════════════════ -->
 <div class="page-break"></div>
-<h2>2. Actionable Remediation Plan</h2>
-<p>To maximize security improvement with minimal engineering friction, address the following architectural "Choke
-    Point".</p>
+<h2>2. Critical Choke Points</h2>
+<p class="section-intro">
+    A choke point is a node whose removal from the graph would sever the most attack paths.
+    Fixing the top choke point first gives the maximum security return per engineering hour.
+</p>
 
-<div style="border-left: 4px solid #3182ce; padding-left: 15px; margin-top: 20px;">
-    <h3 style="border-bottom: none;">Primary Choke Point: <span class="text-red">{{CHOKE_POINT_ID}}</span></h3>
-    <p>This single node acts as a bridge for the majority of privilege escalation vectors in the cluster.</p>
-
-    <h4>Action Required:</h4>
-    <p>Sever this connection to restrict lateral movement. If this role is actively used by legitimate workloads,
-        <strong>do not delete it</strong>. Instead, apply the Principle of Least Privilege by restricting its allowed
-        <code>verbs</code> or <code>resources</code>.</p>
-
-    <div class="code-block">
-        # Option A: Full Removal (Highest Security)
-        $ kubectl delete {{CHOKE_POINT_TYPE}} {{CHOKE_POINT_NAME}} -n {{CHOKE_POINT_NAMESPACE}}
-
-        # Option B: Audit Permissions (Safest for Uptime)
-        $ kubectl describe {{CHOKE_POINT_TYPE}} {{CHOKE_POINT_NAME}} -n {{CHOKE_POINT_NAMESPACE}}
+<!-- Primary choke point spotlight -->
+<div class="choke-card no-break">
+    <div style="display: table; width: 100%;">
+        <div style="display: table-cell; vertical-align: middle; width: 70%;">
+            <h3>&#x26A0; Primary Choke Point</h3>
+            <div style="font-family: 'Courier New', monospace; font-size: 10pt; color: #1a1a2e; margin-bottom: 6px;">
+                {{CHOKE_POINT_ID}}
+            </div>
+            <div style="font-size: 9pt; color: #555;">
+                Type: <strong>{{CHOKE_POINT_TYPE}}</strong> &#160;|&#160;
+                Namespace: <strong>{{CHOKE_POINT_NAMESPACE}}</strong>
+            </div>
+        </div>
+        <div style="display: table-cell; vertical-align: middle; text-align: center; width: 30%;">
+            <div class="choke-impact">{{CHOKE_POINT_IMPACT}}%</div>
+            <div style="font-size: 8pt; color: #888; margin-top: 4px;">paths eliminated<br/>by single fix</div>
+        </div>
     </div>
 </div>
 
+<!-- Top 5 choke points table -->
+<h3>Top 5 Choke Points by Impact</h3>
+<div class="table-container no-break">
+    <table>
+        <thead>
+        <tr>
+            <th style="width:5%;">#</th>
+            <th style="width:40%;">Node ID</th>
+            <th style="width:15%;">Type</th>
+            <th style="width:15%;">Namespace</th>
+            <th style="width:12%;">Paths Severed</th>
+            <th style="width:13%;">Weighted Score</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{CHOKE_POINT_TABLE_ROWS}}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 3 — ATTACK PATH ANALYSIS
+═══════════════════════════════════════════════════════════════ -->
 <div class="page-break"></div>
-<h2>3. Critical Attack Path Analysis</h2>
-<p>The following sequence represents the path of least resistance for an attacker aiming to compromise the cluster's
-    target asset.</p>
+<h2>3. Critical Attack Path</h2>
+<p class="section-intro">
+    The path below represents the shortest, highest-risk route from an attacker-controlled entry point
+    to a sensitive target. Each row is one hop; lower edge weight = easier traversal.
+</p>
 
-<table style="margin-top: 20px;">
-    <thead>
-    <tr>
-        <th>Hop</th>
-        <th>Source Node</th>
-        <th>Vector (Action)</th>
-        <th>Target Node</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{ATTACK_PATH_ROWS}}
-    </tbody>
-</table>
+<div class="table-container no-break">
+    <table>
+        <thead>
+        <tr>
+            <th style="width:5%;">Hop</th>
+            <th style="width:35%;">Source Node</th>
+            <th style="width:16%;">Relationship</th>
+            <th style="width:35%;">Target Node</th>
+            <th style="width:9%;">Weight</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{ATTACK_PATH_TABLE_ROWS}}
+        </tbody>
+    </table>
+</div>
 
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 4 — REMEDIATION PLANS
+═══════════════════════════════════════════════════════════════ -->
 <div class="page-break"></div>
-<h2>4. Privilege Escalation Loops</h2>
-<p>The following circular dependencies represent misconfigurations where permissions loop back on themselves, allowing
-    an attacker to maintain persistent, escalating access. These must be broken.</p>
+<h2>4. Remediation Plans</h2>
+<p class="section-intro">
+    Each plan targets one choke point. Audit commands are safe to run on live clusters.
+    Enforcement commands should be reviewed and tested in a non-production environment first.
+    Commands marked <span style="color:#e94560; font-weight:bold;">[DESTRUCTIVE]</span> may impact running workloads.
+</p>
 
-<table style="margin-top: 20px;">
-    <thead>
-    <tr>
-        <th style="width: 10%;">Loop ID</th>
-        <th>Circular Path (Nodes Involved)</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{ESCALATION_LOOPS_ROWS}}
-    </tbody>
-</table>
+{{REMEDIATION_PLAN_CARDS}}
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 5 — PRIVILEGE ESCALATION LOOPS
+═══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>5. Privilege Escalation Loops</h2>
+<p class="section-intro">
+    Circular permission chains allow attackers to re-acquire access even after credentials are rotated.
+    Break at least one edge in each loop to prevent cyclic escalation.
+</p>
+
+<div class="table-container">
+    <table>
+        <thead>
+        <tr>
+            <th style="width:8%;">ID</th>
+            <th style="width:12%;">Severity</th>
+            <th style="width:12%;">Nodes</th>
+            <th>Circular Path</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{ESCALATION_LOOPS_ROWS}}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 6 — VULNERABLE PODS (CVE SUMMARY)
+═══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>6. Pod Vulnerability Summary</h2>
+<p class="section-intro">
+    Container images were scanned via Trivy. The table below lists pods with known CVEs,
+    sorted by CVE count. Pods on critical attack paths are marked.
+</p>
+
+<div class="table-container">
+    <table>
+        <thead>
+        <tr>
+            <th style="width:35%;">Pod</th>
+            <th style="width:20%;">Namespace</th>
+            <th style="width:12%;">CVE Count</th>
+            <th style="width:15%;">Max CVSS</th>
+            <th style="width:18%;">On Attack Path</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{VULNERABLE_PODS_ROWS}}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════════════ -->
+<div class="report-footer">
+    Generated by K8sAttackMap &#160;·&#160; {{REPORT_DATE}} &#160;·&#160; {{CLUSTER_CONTEXT}}
+    &#160;·&#160; Results are point-in-time; re-run after cluster changes.
+</div>
 
 </body>
 </html>
