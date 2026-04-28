@@ -1,0 +1,8 @@
+{
+  "resources": {
+    "includes": [
+      {"pattern": "templates/html-template.html"},
+      {"pattern": "templates/report-template.html"}
+    ]
+  }
+}

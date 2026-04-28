@@ -5,6 +5,7 @@ import org.jgrapht.graph.DirectedWeightedMultigraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +36,7 @@ public class ClusterGraphFactory {
 
         int removed = 0;
         Set<String> entryPointTypes = Set.of("Pod", "User", "Group", "ServiceAccount", "Node");
-        for (GraphNode node : new java.util.ArrayList<>(clusterGraph.vertexSet())) {
+        for (GraphNode node : new ArrayList<>(clusterGraph.vertexSet())) {
             if (clusterGraph.inDegreeOf(node) == 0 && !entryPointTypes.contains(node.getType())) {
                 clusterGraph.removeVertex(node);
                 removed++;

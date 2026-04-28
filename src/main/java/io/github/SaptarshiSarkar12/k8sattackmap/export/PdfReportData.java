@@ -17,7 +17,6 @@ public record PdfReportData(
     int entryPointsCount,
     int loopsCount,
     List<RankedChokePoint> topChokePoints,
-    int pathsSevered,
     GraphPath<GraphNode, GraphEdge> worstPath,
     Graph<GraphNode, GraphEdge> graph,
     List<List<GraphNode>> escalationLoops,

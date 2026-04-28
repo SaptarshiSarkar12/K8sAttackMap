@@ -38,7 +38,9 @@ public class TrivyScanner {
     private static String getTrivyJson(String imageName) {
         log.debug("Scanning image {}", imageName);
         ProcessBuilder pb = new ProcessBuilder("trivy", "image", "--format", "json", "--quiet", imageName);
-        try (Process process = pb.start()) {
+        Process process;
+        try {
+            process = pb.start();
             CompletableFuture<String> outputFuture = CompletableFuture.supplyAsync(() -> {
                 try {
                     return new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);

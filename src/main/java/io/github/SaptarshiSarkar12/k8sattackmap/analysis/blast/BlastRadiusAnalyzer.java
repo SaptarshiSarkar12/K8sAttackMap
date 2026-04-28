@@ -92,28 +92,7 @@ public class BlastRadiusAnalyzer {
         return counts;
     }
 
-    private static ScoreDetails scoreNode(GraphNode node, int hopsFromSource) {
-        /*
-         * TODO: Check the new scoreNode method implementation and check the copilot chat
-         *  for modified improvements for AttackSurfaceClassifier
-         * | Entity or pattern | Suggested reason text | Typical weight |
-         * |---|---|---|
-         * | role / role: | Namespace RBAC permission definition | +20 to +25 |
-         * | clusterrole / clusterrole: | Cluster-wide RBAC permission definition | +30 to +40 |
-         * | user / user: | Direct user principal access path | +20 to +30 |
-         * | group / group: | Group principal privilege aggregation | +20 to +30 |
-         * | system:masters / admin groups | Administrative group membership exposure | +40 |
-         * | wildcard RBAC indicators like \* in id/name | Wildcard RBAC permissions | +35 to +45 |
-         * | escalate, bind, impersonate | Privilege escalation verb exposure | +35 to +45 |
-         * | token, sa-token, kubeconfig, cert, key | Credential material exposure | +30 to +40 |
-         * | node / kubelet | Node-level execution surface | +30 |
-         * | pod with exec/shell indicators | Workload runtime execution surface | +20 to +30 |
-         *
-         * For your specific ask, the minimum missing reasons are:
-         * 1. Role -> Namespace RBAC permission definition
-         * 2. User -> Direct user principal access path
-         * 3. Also add ClusterRole and Group checks to avoid RBAC blind spots.
-         */
+    private static ScoreDetails scoreNode(GraphNode node, int hopsFromSource) { // TODO: Role, ClusterRole, ConfigMap, Pod and Group have sometimes no reasons attached to them, need to investigate if this is due to missing facts or just the heuristics not covering them well. Do we need any additional data to be parsed from the K8sJson file? Then, that will be better to give reasons confidently. Examples: ClusterRole:cluster-scoped:system:service-account-issuer-discovery, Group:cluster-scoped:system:serviceaccounts, ClusterRole:cluster-scoped:system:service-account-issuer-discovery, Role:default:loop-role, ClusterRole:cluster-scoped:system:service-account-issuer-discovery, Role:default:secret-reader, Pod:default:loop-pod, Pod:default:pod-x, ConfigMap:kubernetes-dashboard:kubernetes-dashboard-settings, Role:kubernetes-dashboard:kubernetes-dashboard, ConfigMap:kubernetes-dashboard:kubernetes-dashboard-settings
         List<String> reasons = new ArrayList<>();
         String id = safeLower(node.getId());
         String type = safeLower(node.getType());

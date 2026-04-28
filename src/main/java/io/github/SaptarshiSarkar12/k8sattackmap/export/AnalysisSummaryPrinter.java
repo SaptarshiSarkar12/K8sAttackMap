@@ -95,7 +95,7 @@ public class AnalysisSummaryPrinter {
         // Group all paths by pair key, preserving insertion order for readability
         Map<String, List<GraphPath<GraphNode, GraphEdge>>> grouped = new LinkedHashMap<>();
         for (GraphPath<GraphNode, GraphEdge> path : pathResult.allPossiblePaths()) {
-            grouped.computeIfAbsent(pairKey(path), k -> new ArrayList<>()).add(path);
+            grouped.computeIfAbsent(pairKey(path), _ -> new ArrayList<>()).add(path);
         }
 
         if (grouped.isEmpty()) {

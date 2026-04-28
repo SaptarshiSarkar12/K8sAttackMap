@@ -33,7 +33,7 @@ public class CommandParser {
         options.addOption("t", "target-node", true, "Comma-separated list of target node IDs for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Secret:default:my-secret\"");
         options.addOption("k", "k8s-json", true, "Path to Kubernetes cluster configuration JSON file");
         options.addOption(Option.builder("m").longOpt("max-hops").hasArg().desc("Maximum number of hops for finding affected components for a compromised node (default: 3)").type(Integer.class).get());
-        options.addOption("a", "show-all-paths", false, "Show all discovered attack paths instead of just the most dangerous one"); // TODO: Change description a bit
+        options.addOption("a", "show-all-paths", false, "Show all discovered attack paths. By default, only the single highest-risk path is shown.");
         options.addOption(Option.builder("o").longOpt("output").hasArgs().valueSeparator(',').desc("Comma-separated list of output formats ('html' for D3.js map, 'pdf' for report)").get());
         options.addOption(Option.builder().longOpt("verbose").desc("Enable verbose output for debugging").get());
         CommandLineParser parser = new DefaultParser();

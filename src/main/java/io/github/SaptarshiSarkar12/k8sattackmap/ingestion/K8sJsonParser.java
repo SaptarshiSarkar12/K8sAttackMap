@@ -266,23 +266,30 @@ public class K8sJsonParser {
 
     private static void addNodeEscapeEdges(ParsedItem item, JsonNode spec, List<GraphEdge> edges, List<GraphNode> nodes, Set<String> syntheticNodeIds) {
         String nodeName = spec.path("nodeName").asText(null);
-        if (nodeName != null && !nodeName.isEmpty()) {
-            String nodeId = buildNodeId("Node", CLUSTER_SCOPED, nodeName);
-//            GraphNode node = new GraphNode(); // TODO: Causes crash, an exception IntrusiveEdgeException: Edge already associated with source <kube-system/Pod:kube-system:kube-apiserver-minikube (Pod)> and target <cluster-scoped/Node:cluster-scoped:minikube (Node)>
-//            node.setId(nodeId);
-//            node.setType("Node");
-//            node.setNamespace(CLUSTER_SCOPED);
-//            node.setRiskScore(0.0);
-//            syntheticNodeIds.add(nodeId);
-//            nodes.add(node);
-            SecurityFacts facts = extractSecurityFacts("Pod", item.raw()); // TODO: SecurityFacts are already calculated before calling this method; why not use that?
+        if (nodeName == null || nodeName.isEmpty()) return;
 
-            if (facts.isPrivilegedContainer()) {
-                edges.add(createEdge(item.sourceId(), nodeId, NODE_ESCAPE));
-            }
-            if (facts.isHostPathMounted()) {
-                edges.add(createEdge(item.sourceId(), nodeId, HOST_PATH_ACCESS));
-            }
+        String nodeId = buildNodeId("Node", CLUSTER_SCOPED, nodeName);
+
+        // Register the Node as a synthetic node only once, even if multiple pods run on it
+        if (syntheticNodeIds.add(nodeId)) {
+            GraphNode nodeResource = new GraphNode();
+            nodeResource.setId(nodeId);
+            nodeResource.setType("Node");
+            nodeResource.setNamespace(CLUSTER_SCOPED);
+            nodeResource.setRiskScore(0.0);
+            SecurityFacts nodeFacts = new SecurityFacts();
+            nodeFacts.setNodeLevelSurface(true);
+            nodeResource.setSecurityFacts(nodeFacts);
+            nodes.add(nodeResource);
+        }
+
+        SecurityFacts facts = item.securityFacts();
+
+        if (facts.isPrivilegedContainer()) {
+            edges.add(createEdge(item.sourceId(), nodeId, NODE_ESCAPE));
+        }
+        if (facts.isHostPathMounted()) {
+            edges.add(createEdge(item.sourceId(), nodeId, HOST_PATH_ACCESS));
         }
     }
 
@@ -379,7 +386,7 @@ public class K8sJsonParser {
             node.setNamespace(parsed.namespace());
             node.setName(parsed.name());
             node.setRiskScore(scan.maxCvssScore());
-            node.setSecurityFacts(extractSecurityFacts(parsed.kind(), parsed.raw()));
+            node.setSecurityFacts(parsed.securityFacts());
 
             nodes.add(node);
             parsedItems.add(parsed);
@@ -538,7 +545,8 @@ public class K8sJsonParser {
         String name = metadata.path("name").asText();
         String namespace = metadata.path("namespace").asText(CLUSTER_SCOPED);
         String sourceId = buildNodeId(kind, namespace, name);
-        return new ParsedItem(kind, name, namespace, sourceId, item);
+        SecurityFacts facts = extractSecurityFacts(kind, item);
+        return new ParsedItem(kind, name, namespace, sourceId, item, facts);
     }
 
     private static String mapResourceToKind(String resourcePlural) {
@@ -578,7 +586,8 @@ public class K8sJsonParser {
             String name,
             String namespace,
             String sourceId,
-            JsonNode raw
+            JsonNode raw,
+            SecurityFacts securityFacts
     ) {
     }
 

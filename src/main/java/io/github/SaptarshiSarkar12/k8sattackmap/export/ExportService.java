@@ -31,7 +31,7 @@ public final class ExportService {
             PdfReportEngine.exportPdfReport(result, graph, sourceNodes, clusterContext, edgeRiskScores, podCVEIds, ctx.nodeLookup());
         }
         if (outputFormats.contains("html")) {
-            CytoscapeExporter.exportHtmlReport(graph, pathResult, sourceNodes, topChoke, podCVEIds, blastBySource);
+            CytoscapeExporter.exportHtmlReport(graph, pathResult, sourceNodes, topChoke, podCVEIds, blastBySource, ctx.maxHops());
         }
     }
 

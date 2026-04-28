@@ -18,6 +18,18 @@
         </encoder>
     </appender>
 
+    <!-- Logger for PDType1Font - only logs to file, not console to avoid cluttering console output
+            with font fallback warnings -->
+    <logger name="org.apache.pdfbox.pdmodel.font.PDType1Font" level="INFO" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- Logger for IOUtils - only logs to file, not console to avoid cluttering console output
+            with warnings about inaccessible methods when running on Java 9+ -->
+    <logger name="org.apache.pdfbox.io.IOUtils" level="INFO" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+
     <root level="INFO">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />

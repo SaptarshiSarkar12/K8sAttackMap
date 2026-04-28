@@ -16,7 +16,9 @@ public class KubectlExtractor {
         ProcessBuilder pb = new ProcessBuilder("kubectl", "get",
                 "pods,services,configmaps,secrets,serviceaccounts,replicasets,deployments,statefulsets,daemonsets,jobs,cronjobs,ingresses,roles,rolebindings,clusterroles,clusterrolebindings",
                 "-A", "-o", "json");
-        try (Process process = pb.start()) {
+        Process process;
+        try {
+            process = pb.start();
             CompletableFuture<String> outputFuture = CompletableFuture.supplyAsync(() -> {
                 try {
                     return new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
@@ -61,10 +63,11 @@ public class KubectlExtractor {
     public static String getClusterContext() {
         final String unknown = "Unknown/Offline Environment";
         ProcessBuilder processBuilder = new ProcessBuilder("kubectl", "config", "current-context").redirectErrorStream(true);
-
-        try (Process process = processBuilder.start();
-             BufferedReader outputReader = new BufferedReader(process.inputReader(StandardCharsets.UTF_8))) {
-
+        Process process;
+        BufferedReader outputReader;
+        try {
+            process = processBuilder.start();
+            outputReader = new BufferedReader(process.inputReader(StandardCharsets.UTF_8));
             if (!process.waitFor(5, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
                 return unknown;

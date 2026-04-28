@@ -3,6 +3,9 @@ package io.github.SaptarshiSarkar12.k8sattackmap.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -34,12 +37,23 @@ public final class TemplateStore {
 
     private static String loadTemplate(Class<?> caller, String resourcePath, String label) {
         try {
-            return Files.readString(Paths.get(Objects.requireNonNull(caller.getResource(resourcePath)).toURI())
-            );
+            return Files.readString(Paths.get(Objects.requireNonNull(caller.getResource(resourcePath)).toURI()));
         } catch (Exception e) {
-            log.error("Failed to load {} report template from {}: {}", label, resourcePath, e.getMessage(), e);
+            return loadTemplateFromStream(caller, resourcePath, label, e);
+        }
+    }
+
+    private static String loadTemplateFromStream(Class<?> caller, String resourcePath, String label, Exception fallbackException) {
+        String adjustedPath = resourcePath.substring(1); // Remove leading slash for classloader access
+        try (InputStream is = caller.getClassLoader().getResourceAsStream(adjustedPath)) {
+            if (is == null) {
+                throw new IOException("Resource not found on classpath: " + adjustedPath);
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            log.error("Failed to load {} report template from {}: {}", label, resourcePath, fallbackException.getMessage(), fallbackException);
             System.exit(1);
-            return null; // unreachable, but satisfies the compiler
+            return null;
         }
     }
 }

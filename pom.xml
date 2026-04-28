@@ -9,8 +9,8 @@
     <version>0.0.1</version>
 
     <properties>
-        <maven.compiler.source>26</maven.compiler.source>
-        <maven.compiler.target>26</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <main.class>io.github.SaptarshiSarkar12.k8sattackmap.K8sAttackMapApplication</main.class>
         <native.outputDirectory>target/</native.outputDirectory>
@@ -65,8 +65,14 @@
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>6.0.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>6.1.0-M1</version>
+            <version>6.0.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -78,8 +84,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.15.0</version>
                 <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
+                    <release>${maven.compiler.source}</release>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -170,6 +175,12 @@
                                         <classpath/>
                                         <argument>-agentlib:native-image-agent=config-merge-dir=${project.basedir}/src/main/resources/META-INF/native-image</argument>
                                         <argument>${main.class}</argument>
+<!--                                        <argument>-k</argument>-->
+<!--                                        <argument>cluster-state.json</argument>-->
+                                        <argument>--show-all-paths</argument>
+                                        <argument>-o</argument>
+                                        <argument>html,pdf</argument>
+                                        <argument>--verbose</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

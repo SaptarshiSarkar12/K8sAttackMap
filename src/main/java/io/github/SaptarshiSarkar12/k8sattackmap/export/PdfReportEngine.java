@@ -29,17 +29,6 @@ public class PdfReportEngine {
             PathDiscoveryResult pathResult = result.pathDiscoveryResult();
             ChokePointResult chokeResult = result.chokePointResult();
 
-            GraphNode topChokeNode = null;
-            int pathsSevered = 0;
-
-            if (chokeResult != null
-                    && chokeResult.rankedChokePoints() != null
-                    && !chokeResult.rankedChokePoints().isEmpty()) {
-                RankedChokePoint top = chokeResult.rankedChokePoints().getFirst();
-                topChokeNode = top.node();
-                pathsSevered = top.pathsSevered();
-            }
-
             List<List<GraphNode>> loops = result.privilegeLoops() == null ? List.of() : result.privilegeLoops();
 
             int totalPaths = pathResult == null || pathResult.allPossiblePaths() == null
@@ -52,7 +41,7 @@ public class PdfReportEngine {
                     ? List.of()
                     : chokeResult.rankedChokePoints();
             List<RankedChokePoint> topChokePoints = chokePoints.stream().limit(5).toList();
-            PdfReportData data = new PdfReportData(clusterContext, totalPaths, totalPaths, loops.size(), topChokePoints, pathsSevered, mostDangerousPath, graph, loops, edgeRiskScores, podCVEIds, nodeLookup, nodesOnCriticalPath, result.remediationPlans());
+            PdfReportData data = new PdfReportData(clusterContext, totalPaths, sourceNodes.size(), loops.size(), topChokePoints, mostDangerousPath, graph, loops, edgeRiskScores, podCVEIds, nodeLookup, nodesOnCriticalPath, result.remediationPlans());
             generatePdf(AppConstants.OUTPUT_PDF_FILENAME, data);
 
             log.info("PDF report exported to {}", AppConstants.OUTPUT_PDF_FILENAME);
@@ -64,16 +53,19 @@ public class PdfReportEngine {
     public static void generatePdf(String outputPath, PdfReportData data) throws Exception {
         int totalPaths = data.totalPaths();
 
-        // Calculate Dynamic Metrics
-        String dateStr = new SimpleDateFormat("MMMM dd, yyyy - HH:mm z").format(new Date());
-        String riskGrade = totalPaths > RiskConfig.PDF_GRADE_CRITICAL_PATHS ? "CRITICAL (F)" : (totalPaths > 0 ? "HIGH (D)" : "SAFE (A)");
-        int impactPercentage = totalPaths == 0 ? 0 : (int) (((double) data.pathsSevered() / totalPaths) * 100);
-
-        String chokeRows = buildChokePointRows(data.topChokePoints());
-        GraphNode topChokePoint = data.topChokePoints().isEmpty() ? null : data.topChokePoints().getFirst().node();
+        List<RankedChokePoint> topChokePoints = data.topChokePoints();
+        GraphNode topChokePoint = topChokePoints.isEmpty() ? null : topChokePoints.getFirst().node();
+        int pathsSeveredByTopChoke = topChokePoints.isEmpty() ? 0 : topChokePoints.getFirst().pathsSevered();
         if (topChokePoint != null && (topChokePoint.getNamespace() == null || topChokePoint.getNamespace().isEmpty())) {
             topChokePoint.setNamespace("—");
         }
+
+        // Calculate Dynamic Metrics
+        String dateStr = new SimpleDateFormat("MMMM dd, yyyy - HH:mm z").format(new Date());
+        String riskGrade = totalPaths > RiskConfig.PDF_GRADE_CRITICAL_PATHS ? "CRITICAL (F)" : (totalPaths > 0 ? "HIGH (D)" : "SAFE (A)");
+        int impactPercentage = totalPaths == 0 ? 0 : (int) (((double) pathsSeveredByTopChoke / totalPaths) * 100);
+
+        String chokeRows = buildChokePointRows(topChokePoints);
         String attackPathRows = buildAttackPathRows(data.worstPath(), data.edgeRiskScores(), data.graph());
         String remediationPlanCards = buildRemediationCards(data.remediationPlans());
         String loopRows = buildPrivilegeEscalationLoopRows(data.escalationLoops());
@@ -256,16 +248,15 @@ public class PdfReportEngine {
                 .sorted(Comparator.<Map.Entry<String, List<String>>>comparingInt(e -> e.getValue().size()).reversed())
                 .limit(15)
                 .map(e -> {
-                    String[] parts = e.getKey().split(":");
-                    String podName = parts.length > 2 ? parts[2] : e.getKey();
-                    String podNs   = parts.length > 1 ? parts[1] : "—";
+                    GraphNode node = nodeLookup.get(e.getKey());
+                    String podName = node != null ? node.getId() : e.getKey();
+                    String podNs = node != null ? node.getNamespace() : "—";
                     int count = e.getValue().size();
                     String countClass = count > 100 ? "cve-count-high" : count > 20 ? "cve-count-med" : "cve-count-low";
 
-                    GraphNode n = nodeLookup.get(e.getKey());
-                    String cvss = n != null ? String.format("%.1f", n.getRiskScore()) : "—";
-                    boolean onPath = n != null && nodesOnCriticalPath.contains(n);
-                    String onPathCell = onPath ? "<span style='color:#e94560;font-weight:bold;'> YES</span>" : "No"; // TODO: CheckMark not rendering in PDF, investigate; it appears as a hashtag symbol before YES
+                    String cvss = node != null ? String.format("%.1f", node.getRiskScore()) : "—";
+                    boolean onPath = node != null && nodesOnCriticalPath.contains(node);
+                    String onPathCell = onPath ? "<span style='color:#e94560;font-weight:bold;'>[!] YES</span>" : "No";
 
                     return "<tr><td class='node-id'>" + podName + "</td>"
                             + "<td>" + podNs + "</td>"

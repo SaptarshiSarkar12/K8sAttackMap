@@ -1,6 +1,5 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.export;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.BlastRadiusResult;
@@ -24,7 +23,7 @@ import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER
 public class CytoscapeExporter {
     private static final Logger log = LoggerFactory.getLogger(CytoscapeExporter.class);
 
-    public static void exportHtmlReport(Graph<GraphNode, GraphEdge> graph, PathDiscoveryResult pathResult, Set<GraphNode> sourceNodes, RankedChokePoint topChoke, Map<String, List<String>> podCVEIds, Map<GraphNode, BlastRadiusResult> blastBySource) {
+    public static void exportHtmlReport(Graph<GraphNode, GraphEdge> graph, PathDiscoveryResult pathResult, Set<GraphNode> sourceNodes, RankedChokePoint topChoke, Map<String, List<String>> podCVEIds, Map<GraphNode, BlastRadiusResult> blastBySource, int maxHops) {
         try {
             GraphNode chokePointNode = topChoke == null ? null : topChoke.node();
 
@@ -36,7 +35,8 @@ public class CytoscapeExporter {
                     blastBySource
             );
 
-            String finalHtml = TemplateStore.HTML.replace("/*%GRAPH_DATA%*/", cytoscapeJson);
+            String finalHtml = TemplateStore.HTML.replace("/*%GRAPH_DATA%*/", cytoscapeJson)
+                    .replace("{{MAX_HOPS_COUNT}}", String.valueOf(maxHops));
             Files.writeString(Paths.get(AppConstants.OUTPUT_HTML_FILENAME), finalHtml);
             log.info("HTML/Cytoscape visualization exported to {}", AppConstants.OUTPUT_HTML_FILENAME);
         } catch (Exception e) {

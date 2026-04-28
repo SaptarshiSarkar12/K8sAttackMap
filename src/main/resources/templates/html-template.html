@@ -110,7 +110,7 @@
     cy.on('mouseover', 'node', function(event) {
         const data = event.target.data();
         let html = `<div class="tooltip-title">${data.id}</div><b>Type:</b> ${data.type.toUpperCase()}<br>`;
-        if (data.isEntry) html += `<div class="tooltip-blast">🔥 Entry Point (Configured Max Hops: 5)</div>`;
+        if (data.isEntry) html += `<div class="tooltip-blast">🔥 Entry Point (Configured Max Hops: {{MAX_HOPS_COUNT}})</div>`;
         if (data.isChokePoint) html += `<div class="tooltip-alert">⚠️ RECOMMENDED CHOKE POINT</div>Severing this node drastically reduces the blast radius.`;
 
         tooltip.innerHTML = html;
