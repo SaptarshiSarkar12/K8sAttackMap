@@ -40,6 +40,7 @@ public class K8sJsonParser {
             List<GraphNode> nodes = new ArrayList<>(itemsSize);
             List<ParsedItem> parsedItems = new ArrayList<>();
             Map<String, List<String>> podCVEIds = buildNodesAndIndex(items, nodes, parsedItems, nodesByKindAndNs, nodesByKindAndName);
+            resolvePodServiceAccountAutomount(nodes);
             for (ParsedItem item : parsedItems) {
                 processEdgesForItem(item, edges, nodes, nodesByKindAndNs, nodesByKindAndName, syntheticNodeIds);
             }
@@ -52,6 +53,29 @@ public class K8sJsonParser {
         } catch (IOException e) {
             log.error("Failed to parse Kubernetes JSON data {}", e.getMessage(), e);
             return null;
+        }
+    }
+
+    private static void resolvePodServiceAccountAutomount(List<GraphNode> nodes) {
+        // Build quick lookup of ServiceAccounts
+        Map<String, Boolean> saAutomountMap = new HashMap<>();
+        for (GraphNode node : nodes) {
+            if ("ServiceAccount".equalsIgnoreCase(node.getType())) {
+                SecurityFacts facts = node.getSecurityFacts();
+                saAutomountMap.put(node.getId(), facts.isServiceAccountTokenAutomount());
+            }
+        }
+
+        // Now update Pods
+        for (GraphNode node : nodes) {
+            if ("Pod".equalsIgnoreCase(node.getType())) {
+                String saId = node.getServiceAccountName() != null
+                        ? buildNodeId("ServiceAccount", node.getNamespace(), node.getServiceAccountName())
+                        : null;
+                if (saId != null && saAutomountMap.getOrDefault(saId, false)) {
+                    node.getSecurityFacts().setServiceAccountTokenAutomount(true);
+                }
+            }
         }
     }
 
@@ -387,6 +411,7 @@ public class K8sJsonParser {
             node.setName(parsed.name());
             node.setRiskScore(scan.maxCvssScore());
             node.setSecurityFacts(parsed.securityFacts());
+            node.setServiceAccountName(parsed.serviceAccountName());
 
             nodes.add(node);
             parsedItems.add(parsed);
@@ -506,11 +531,21 @@ public class K8sJsonParser {
         String secretType = item.path("type").asText("");
         facts.setSecretType(secretType);
 
+        JsonNode data = item.path("data");
+        JsonNode stringData = item.path("stringData");
+
+        boolean hasData = data.isObject() && data.fieldNames().hasNext();
+        boolean hasStringData = stringData.isObject() && stringData.fieldNames().hasNext();
+
         String lower = secretType.toLowerCase();
-        if (lower.contains("service-account-token") || lower.contains("kubernetes.io/tls")
-                || lower.contains("dockerconfigjson") || lower.contains("basic-auth")) {
-            facts.setCredentialMaterial(true);
-        }
+        boolean sensitiveType = lower.contains("service-account-token")
+                || lower.contains("kubernetes.io/tls")
+                || lower.contains("dockerconfigjson")
+                || lower.contains("basic-auth");
+
+        // Secret is treated as credential material when it has payload data,
+        // or when the secret type is a known credential-bearing type.
+        facts.setCredentialMaterial(hasData || hasStringData || sensitiveType);
     }
 
     private static boolean containsWildcard(JsonNode arrayNode) {
@@ -545,8 +580,9 @@ public class K8sJsonParser {
         String name = metadata.path("name").asText();
         String namespace = metadata.path("namespace").asText(CLUSTER_SCOPED);
         String sourceId = buildNodeId(kind, namespace, name);
+        String saName = item.path("spec").path("serviceAccountName").asText(null);
         SecurityFacts facts = extractSecurityFacts(kind, item);
-        return new ParsedItem(kind, name, namespace, sourceId, item, facts);
+        return new ParsedItem(kind, name, namespace, sourceId, item, saName, facts);
     }
 
     private static String mapResourceToKind(String resourcePlural) {
@@ -587,6 +623,7 @@ public class K8sJsonParser {
             String namespace,
             String sourceId,
             JsonNode raw,
+            String serviceAccountName,
             SecurityFacts securityFacts
     ) {
     }

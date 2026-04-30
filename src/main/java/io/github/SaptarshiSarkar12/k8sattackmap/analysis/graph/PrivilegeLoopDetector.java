@@ -6,10 +6,11 @@ import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import org.jgrapht.Graph;
 import org.jgrapht.alg.cycle.JohnsonSimpleCycles;
 import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.SimpleDirectedGraph;
+import org.jgrapht.graph.DirectedWeightedMultigraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -20,9 +21,10 @@ public class PrivilegeLoopDetector {
     );
 
     public static List<List<GraphNode>> findEscalationLoops(Graph<GraphNode, GraphEdge> originalGraph) {
-        // Flatten to a simple directed graph as Johnson's algorithm crashes on parallel edges
-        // (multiple edges between the same two nodes), which our multigraph can have.
-        Graph<GraphNode, DefaultEdge> simpleGraph = new SimpleDirectedGraph<>(DefaultEdge.class);
+        // Use DirectedWeightedMultigraph instead: it doesn't use intrusive edges,
+        // so Johnson's internal graph manipulations won't cause IntrusiveEdgeException.
+        Graph<GraphNode, DefaultEdge> simpleGraph = new DirectedWeightedMultigraph<>(DefaultEdge.class);
+        Set<String> addedEdgePairs = new HashSet<>();
 
         for (GraphNode node : originalGraph.vertexSet()) {
             simpleGraph.addVertex(node);
@@ -30,7 +32,10 @@ public class PrivilegeLoopDetector {
         for (GraphEdge edge : originalGraph.edgeSet()) {
             GraphNode source = originalGraph.getEdgeSource(edge);
             GraphNode target = originalGraph.getEdgeTarget(edge);
-            simpleGraph.addEdge(source, target);
+            String edgePair = source.getId() + "->" + target.getId();
+            if (addedEdgePairs.add(edgePair)) {
+                simpleGraph.addEdge(source, target);
+            }
         }
 
         int v = simpleGraph.vertexSet().size();

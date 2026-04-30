@@ -2,16 +2,17 @@ package io.github.SaptarshiSarkar12.k8sattackmap;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import com.openhtmltopdf.util.XRLog;
-import io.github.SaptarshiSarkar12.k8sattackmap.analysis.*;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisInput;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisOrchestrator;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.cli.CommandParser;
 import io.github.SaptarshiSarkar12.k8sattackmap.export.AnalysisSummaryPrinter;
 import io.github.SaptarshiSarkar12.k8sattackmap.export.ExportContext;
 import io.github.SaptarshiSarkar12.k8sattackmap.export.ExportService;
-import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphFactory;
 import io.github.SaptarshiSarkar12.k8sattackmap.ingestion.K8sJsonParser;
 import io.github.SaptarshiSarkar12.k8sattackmap.ingestion.KubectlExtractor;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphData;
+import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphFactory;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.AttackSurfaceClassifier;
@@ -25,7 +26,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.NodeFinder.findNodesById;
 
@@ -105,7 +107,6 @@ public class K8sAttackMapApplication {
         } else {
             rootLogger.setLevel(Level.INFO);
         }
-        XRLog.setLoggingEnabled(cli.isVerbose()); // Toggles logging for openhtmltopdf used for pdf generation
     }
 
     private static ClusterGraphData loadClusterGraph(CommandParser cli) {
