@@ -1,6 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.export;
 
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import com.itextpdf.html2pdf.HtmlConverter;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.ChokePointResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.RankedChokePoint;
@@ -107,10 +107,7 @@ public class PdfReportEngine {
 
         // Render HTML to PDF
         try (FileOutputStream os = new FileOutputStream(outputPath)) {
-            PdfRendererBuilder builder = new PdfRendererBuilder();
-            builder.withHtmlContent(html, null);
-            builder.toStream(os);
-            builder.run();
+            HtmlConverter.convertToPdf(html, os);
         }
     }
 

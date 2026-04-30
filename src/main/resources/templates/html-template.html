@@ -111,7 +111,18 @@
         const data = event.target.data();
         let html = `<div class="tooltip-title">${data.id}</div><b>Type:</b> ${data.type.toUpperCase()}<br>`;
         if (data.isEntry) html += `<div class="tooltip-blast">🔥 Entry Point (Configured Max Hops: {{MAX_HOPS_COUNT}})</div>`;
-        if (data.isChokePoint) html += `<div class="tooltip-alert">⚠️ RECOMMENDED CHOKE POINT</div>Severing this node drastically reduces the blast radius.`;
+        if (data.isChokePoint) {
+            html += `<div class="tooltip-alert">⚠️ RECOMMENDED CHOKE POINT</div>`;
+            if (data.type === 'group') {
+                html += `Groups are not K8s API objects and cannot be directly deleted.<br>Remediate by auditing and removing the <b>ClusterRoleBinding(s)</b> that grant this group elevated access.`;
+            } else if (data.type === 'serviceaccount') {
+                html += `Disable token auto-mount and scope permissions on this ServiceAccount to cut off attack paths.`;
+            } else if (data.type === 'role' || data.type === 'clusterrole') {
+                html += `Tighten the permissions granted by this Role to sever the most attack paths.`;
+            } else {
+                html += `Hardening or removing this node significantly reduces the blast radius.`;
+            }
+        }
 
         tooltip.innerHTML = html;
         tooltip.style.display = 'block';

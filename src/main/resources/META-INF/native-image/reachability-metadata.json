@@ -155,22 +155,2649 @@
       ]
     },
     {
-      "type": "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
-      "methods": [
+      "type": "com.itextpdf.forms.util.RegisterDefaultDiContainer"
+    },
+    {
+      "type": "com.itextpdf.kernel.pdf.PdfName",
+      "fields": [
         {
-          "name": "<init>",
-          "parameterTypes": []
+          "name": "A"
+        },
+        {
+          "name": "A85"
+        },
+        {
+          "name": "AA"
+        },
+        {
+          "name": "ADBE"
+        },
+        {
+          "name": "AESV2"
+        },
+        {
+          "name": "AESV3"
+        },
+        {
+          "name": "AESV4"
+        },
+        {
+          "name": "AF"
+        },
+        {
+          "name": "AFRelationship"
+        },
+        {
+          "name": "AHx"
+        },
+        {
+          "name": "AIS"
+        },
+        {
+          "name": "AN"
+        },
+        {
+          "name": "AP"
+        },
+        {
+          "name": "AS"
+        },
+        {
+          "name": "ASCII85Decode"
+        },
+        {
+          "name": "ASCIIHexDecode"
+        },
+        {
+          "name": "AbsoluteColorimetric"
+        },
+        {
+          "name": "AcroForm"
+        },
+        {
+          "name": "Action"
+        },
+        {
+          "name": "ActualText"
+        },
+        {
+          "name": "Adbe_pkcs7_detached"
+        },
+        {
+          "name": "Adbe_pkcs7_s4"
+        },
+        {
+          "name": "Adbe_pkcs7_s5"
+        },
+        {
+          "name": "Adbe_pkcs7_sha1"
+        },
+        {
+          "name": "Adbe_x509_rsa_sha1"
+        },
+        {
+          "name": "Adobe_PPKLite"
+        },
+        {
+          "name": "Adobe_PPKMS"
+        },
+        {
+          "name": "Adobe_PubSec"
+        },
+        {
+          "name": "After"
+        },
+        {
+          "name": "Alaw"
+        },
+        {
+          "name": "All"
+        },
+        {
+          "name": "AllOff"
+        },
+        {
+          "name": "AllOn"
+        },
+        {
+          "name": "Alt"
+        },
+        {
+          "name": "Alternate"
+        },
+        {
+          "name": "AlternatePresentations"
+        },
+        {
+          "name": "Alternates"
+        },
+        {
+          "name": "Alternative"
+        },
+        {
+          "name": "And"
+        },
+        {
+          "name": "Annot"
+        },
+        {
+          "name": "AnnotStates"
+        },
+        {
+          "name": "Annotation"
+        },
+        {
+          "name": "Annots"
+        },
+        {
+          "name": "AnyOff"
+        },
+        {
+          "name": "AnyOn"
+        },
+        {
+          "name": "App"
+        },
+        {
+          "name": "AppDefault"
+        },
+        {
+          "name": "ApplicationOctetStream"
+        },
+        {
+          "name": "ApplicationPdf"
+        },
+        {
+          "name": "ApplicationXml"
+        },
+        {
+          "name": "Approved"
+        },
+        {
+          "name": "Art"
+        },
+        {
+          "name": "ArtBox"
+        },
+        {
+          "name": "Artifact"
+        },
+        {
+          "name": "AsIs"
+        },
+        {
+          "name": "Ascent"
+        },
+        {
+          "name": "Aside"
+        },
+        {
+          "name": "AttachedToSig"
+        },
+        {
+          "name": "AuthCode"
+        },
+        {
+          "name": "AuthEvent"
+        },
+        {
+          "name": "Author"
+        },
+        {
+          "name": "B"
+        },
+        {
+          "name": "BBox"
+        },
+        {
+          "name": "BC"
+        },
+        {
+          "name": "BE"
+        },
+        {
+          "name": "BG"
+        },
+        {
+          "name": "BG2"
+        },
+        {
+          "name": "BM"
+        },
+        {
+          "name": "BS"
+        },
+        {
+          "name": "BackgroundColor"
+        },
+        {
+          "name": "BaseEncoding"
+        },
+        {
+          "name": "BaseFont"
+        },
+        {
+          "name": "BaseState"
+        },
+        {
+          "name": "BaseVersion"
+        },
+        {
+          "name": "BaselineShift"
+        },
+        {
+          "name": "Bates"
+        },
+        {
+          "name": "Before"
+        },
+        {
+          "name": "BibEntry"
+        },
+        {
+          "name": "BitsPerComponent"
+        },
+        {
+          "name": "BitsPerCoordinate"
+        },
+        {
+          "name": "BitsPerFlag"
+        },
+        {
+          "name": "BitsPerSample"
+        },
+        {
+          "name": "Bl"
+        },
+        {
+          "name": "Black"
+        },
+        {
+          "name": "BlackIs1"
+        },
+        {
+          "name": "BlackPoint"
+        },
+        {
+          "name": "BleedBox"
+        },
+        {
+          "name": "Block"
+        },
+        {
+          "name": "BlockAlign"
+        },
+        {
+          "name": "BlockQuote"
+        },
+        {
+          "name": "Book"
+        },
+        {
+          "name": "Border"
+        },
+        {
+          "name": "BorderColor"
+        },
+        {
+          "name": "BorderStyle"
+        },
+        {
+          "name": "BorderThickness"
+        },
+        {
+          "name": "Both"
+        },
+        {
+          "name": "Bounds"
+        },
+        {
+          "name": "BrotliDecode"
+        },
+        {
+          "name": "Btn"
+        },
+        {
+          "name": "Butt"
+        },
+        {
+          "name": "ByteRange"
+        },
+        {
+          "name": "C"
+        },
+        {
+          "name": "C0"
+        },
+        {
+          "name": "C1"
+        },
+        {
+          "name": "CA"
+        },
+        {
+          "name": "CCF"
+        },
+        {
+          "name": "CCITTFaxDecode"
+        },
+        {
+          "name": "CF"
+        },
+        {
+          "name": "CFM"
+        },
+        {
+          "name": "CI"
+        },
+        {
+          "name": "CIDFontType0"
+        },
+        {
+          "name": "CIDFontType2"
+        },
+        {
+          "name": "CIDSet"
+        },
+        {
+          "name": "CIDSystemInfo"
+        },
+        {
+          "name": "CIDToGIDMap"
+        },
+        {
+          "name": "CL"
+        },
+        {
+          "name": "CMYK"
+        },
+        {
+          "name": "CMapName"
+        },
+        {
+          "name": "CO"
+        },
+        {
+          "name": "CP"
+        },
+        {
+          "name": "CRL"
+        },
+        {
+          "name": "CRLs"
+        },
+        {
+          "name": "CS"
+        },
+        {
+          "name": "CT"
+        },
+        {
+          "name": "CalGray"
+        },
+        {
+          "name": "CalRGB"
+        },
+        {
+          "name": "Cap"
+        },
+        {
+          "name": "CapHeight"
+        },
+        {
+          "name": "Caption"
+        },
+        {
+          "name": "Caret"
+        },
+        {
+          "name": "Catalog"
+        },
+        {
+          "name": "Category"
+        },
+        {
+          "name": "Center"
+        },
+        {
+          "name": "CenterWindow"
+        },
+        {
+          "name": "Cert"
+        },
+        {
+          "name": "Certs"
+        },
+        {
+          "name": "Ch"
+        },
+        {
+          "name": "CharProcs"
+        },
+        {
+          "name": "CharSet"
+        },
+        {
+          "name": "Circle"
+        },
+        {
+          "name": "ClosedArrow"
+        },
+        {
+          "name": "Code"
+        },
+        {
+          "name": "ColSpan"
+        },
+        {
+          "name": "Collection"
+        },
+        {
+          "name": "Color"
+        },
+        {
+          "name": "ColorBurn"
+        },
+        {
+          "name": "ColorDodge"
+        },
+        {
+          "name": "ColorSpace"
+        },
+        {
+          "name": "ColorTransform"
+        },
+        {
+          "name": "Colorants"
+        },
+        {
+          "name": "Colors"
+        },
+        {
+          "name": "Column"
+        },
+        {
+          "name": "ColumnCount"
+        },
+        {
+          "name": "ColumnGap"
+        },
+        {
+          "name": "ColumnWidths"
+        },
+        {
+          "name": "Columns"
+        },
+        {
+          "name": "Compatible"
+        },
+        {
+          "name": "Confidential"
+        },
+        {
+          "name": "Configs"
+        },
+        {
+          "name": "ContactInfo"
+        },
+        {
+          "name": "Contents"
+        },
+        {
+          "name": "Coords"
+        },
+        {
+          "name": "Count"
+        },
+        {
+          "name": "CreationDate"
+        },
+        {
+          "name": "Creator"
+        },
+        {
+          "name": "CreatorInfo"
+        },
+        {
+          "name": "CropBox"
+        },
+        {
+          "name": "Crypt"
+        },
+        {
+          "name": "CryptFilterDecodeParms"
+        },
+        {
+          "name": "Cyan"
+        },
+        {
+          "name": "D"
+        },
+        {
+          "name": "DA"
+        },
+        {
+          "name": "DCT"
+        },
+        {
+          "name": "DCTDecode"
+        },
+        {
+          "name": "DP"
+        },
+        {
+          "name": "DPart"
+        },
+        {
+          "name": "DR"
+        },
+        {
+          "name": "DS"
+        },
+        {
+          "name": "DSS"
+        },
+        {
+          "name": "DV"
+        },
+        {
+          "name": "DW"
+        },
+        {
+          "name": "Darken"
+        },
+        {
+          "name": "Dashed"
+        },
+        {
+          "name": "Data"
+        },
+        {
+          "name": "Decimal"
+        },
+        {
+          "name": "Decode"
+        },
+        {
+          "name": "DecodeParms"
+        },
+        {
+          "name": "Default"
+        },
+        {
+          "name": "DefaultCMYK"
+        },
+        {
+          "name": "DefaultCryptFilter"
+        },
+        {
+          "name": "DefaultGray"
+        },
+        {
+          "name": "DefaultRGB"
+        },
+        {
+          "name": "Departmental"
+        },
+        {
+          "name": "Desc"
+        },
+        {
+          "name": "DescendantFonts"
+        },
+        {
+          "name": "Descent"
+        },
+        {
+          "name": "Design"
+        },
+        {
+          "name": "Dest"
+        },
+        {
+          "name": "DestOutputProfile"
+        },
+        {
+          "name": "Dests"
+        },
+        {
+          "name": "DeviceCMY"
+        },
+        {
+          "name": "DeviceCMYK"
+        },
+        {
+          "name": "DeviceGray"
+        },
+        {
+          "name": "DeviceN"
+        },
+        {
+          "name": "DeviceRGB"
+        },
+        {
+          "name": "DeviceRGBK"
+        },
+        {
+          "name": "Diamond"
+        },
+        {
+          "name": "Difference"
+        },
+        {
+          "name": "Differences"
+        },
+        {
+          "name": "DigestLocation"
+        },
+        {
+          "name": "DigestMethod"
+        },
+        {
+          "name": "DigestValue"
+        },
+        {
+          "name": "Direction"
+        },
+        {
+          "name": "Disc"
+        },
+        {
+          "name": "DisplayDocTitle"
+        },
+        {
+          "name": "Div"
+        },
+        {
+          "name": "DocMDP"
+        },
+        {
+          "name": "DocOpen"
+        },
+        {
+          "name": "DocTimeStamp"
+        },
+        {
+          "name": "Document"
+        },
+        {
+          "name": "DocumentFragment"
+        },
+        {
+          "name": "Domain"
+        },
+        {
+          "name": "Dotted"
+        },
+        {
+          "name": "Double"
+        },
+        {
+          "name": "Dp"
+        },
+        {
+          "name": "Draft"
+        },
+        {
+          "name": "Duplex"
+        },
+        {
+          "name": "DuplexFlipLongEdge"
+        },
+        {
+          "name": "DuplexFlipShortEdge"
+        },
+        {
+          "name": "E"
+        },
+        {
+          "name": "EF"
+        },
+        {
+          "name": "EFF"
+        },
+        {
+          "name": "EFOpen"
+        },
+        {
+          "name": "EP"
+        },
+        {
+          "name": "ESIC"
+        },
+        {
+          "name": "ETSI_CAdES_DETACHED"
+        },
+        {
+          "name": "ETSI_RFC3161"
+        },
+        {
+          "name": "Em"
+        },
+        {
+          "name": "EmbeddedFile"
+        },
+        {
+          "name": "EmbeddedFiles"
+        },
+        {
+          "name": "Encode"
+        },
+        {
+          "name": "EncodedByteAlign"
+        },
+        {
+          "name": "Encoding"
+        },
+        {
+          "name": "Encrypt"
+        },
+        {
+          "name": "EncryptMetadata"
+        },
+        {
+          "name": "EncryptedPayload"
+        },
+        {
+          "name": "End"
+        },
+        {
+          "name": "EndIndent"
+        },
+        {
+          "name": "EndOfBlock"
+        },
+        {
+          "name": "EndOfLine"
+        },
+        {
+          "name": "Endnote"
+        },
+        {
+          "name": "Enforce"
+        },
+        {
+          "name": "Event"
+        },
+        {
+          "name": "ExData"
+        },
+        {
+          "name": "Exclude"
+        },
+        {
+          "name": "Exclusion"
+        },
+        {
+          "name": "Experimental"
+        },
+        {
+          "name": "Expired"
+        },
+        {
+          "name": "Export"
+        },
+        {
+          "name": "ExportState"
+        },
+        {
+          "name": "ExtGState"
+        },
+        {
+          "name": "Extend"
+        },
+        {
+          "name": "Extends"
+        },
+        {
+          "name": "ExtensionLevel"
+        },
+        {
+          "name": "ExtensionRevision"
+        },
+        {
+          "name": "Extensions"
+        },
+        {
+          "name": "F"
+        },
+        {
+          "name": "FDecodeParams"
+        },
+        {
+          "name": "FENote"
+        },
+        {
+          "name": "FFilter"
+        },
+        {
+          "name": "FL"
+        },
+        {
+          "name": "FS"
+        },
+        {
+          "name": "FT"
+        },
+        {
+          "name": "False"
+        },
+        {
+          "name": "Ff"
+        },
+        {
+          "name": "FieldMDP"
+        },
+        {
+          "name": "Fields"
+        },
+        {
+          "name": "Figure"
+        },
+        {
+          "name": "FileAttachment"
+        },
+        {
+          "name": "Filespec"
+        },
+        {
+          "name": "Filter"
+        },
+        {
+          "name": "Final"
+        },
+        {
+          "name": "First"
+        },
+        {
+          "name": "FirstChar"
+        },
+        {
+          "name": "FirstPage"
+        },
+        {
+          "name": "Fit"
+        },
+        {
+          "name": "FitB"
+        },
+        {
+          "name": "FitBH"
+        },
+        {
+          "name": "FitBV"
+        },
+        {
+          "name": "FitH"
+        },
+        {
+          "name": "FitR"
+        },
+        {
+          "name": "FitV"
+        },
+        {
+          "name": "FitWindow"
+        },
+        {
+          "name": "FixedPrint"
+        },
+        {
+          "name": "Fl"
+        },
+        {
+          "name": "Flags"
+        },
+        {
+          "name": "FlateDecode"
+        },
+        {
+          "name": "Fo"
+        },
+        {
+          "name": "Font"
+        },
+        {
+          "name": "FontBBox"
+        },
+        {
+          "name": "FontDescriptor"
+        },
+        {
+          "name": "FontFamily"
+        },
+        {
+          "name": "FontFauxing"
+        },
+        {
+          "name": "FontFile"
+        },
+        {
+          "name": "FontFile2"
+        },
+        {
+          "name": "FontFile3"
+        },
+        {
+          "name": "FontMatrix"
+        },
+        {
+          "name": "FontName"
+        },
+        {
+          "name": "FontStretch"
+        },
+        {
+          "name": "FontWeight"
+        },
+        {
+          "name": "Footer"
+        },
+        {
+          "name": "Footnote"
+        },
+        {
+          "name": "ForComment"
+        },
+        {
+          "name": "ForPublicRelease"
+        },
+        {
+          "name": "Form"
+        },
+        {
+          "name": "FormData"
+        },
+        {
+          "name": "FormType"
+        },
+        {
+          "name": "Formula"
+        },
+        {
+          "name": "FreeText"
+        },
+        {
+          "name": "FreeTextCallout"
+        },
+        {
+          "name": "FreeTextTypeWriter"
+        },
+        {
+          "name": "FullScreen"
+        },
+        {
+          "name": "Function"
+        },
+        {
+          "name": "FunctionType"
+        },
+        {
+          "name": "Functions"
+        },
+        {
+          "name": "G"
+        },
+        {
+          "name": "GTS_PDFA1"
+        },
+        {
+          "name": "Gamma"
+        },
+        {
+          "name": "GlyphOrientationVertical"
+        },
+        {
+          "name": "GoTo"
+        },
+        {
+          "name": "GoTo3DView"
+        },
+        {
+          "name": "GoToDp"
+        },
+        {
+          "name": "GoToE"
+        },
+        {
+          "name": "GoToR"
+        },
+        {
+          "name": "Graph"
+        },
+        {
+          "name": "Groove"
+        },
+        {
+          "name": "Group"
+        },
+        {
+          "name": "H"
+        },
+        {
+          "name": "H1"
+        },
+        {
+          "name": "H2"
+        },
+        {
+          "name": "H3"
+        },
+        {
+          "name": "H4"
+        },
+        {
+          "name": "H5"
+        },
+        {
+          "name": "H6"
+        },
+        {
+          "name": "HT"
+        },
+        {
+          "name": "HTO"
+        },
+        {
+          "name": "HTP"
+        },
+        {
+          "name": "HalftoneName"
+        },
+        {
+          "name": "HalftoneType"
+        },
+        {
+          "name": "HardLight"
+        },
+        {
+          "name": "Header"
+        },
+        {
+          "name": "Headers"
+        },
+        {
+          "name": "Height"
+        },
+        {
+          "name": "Hidden"
+        },
+        {
+          "name": "Hide"
+        },
+        {
+          "name": "HideMenubar"
+        },
+        {
+          "name": "HideToolbar"
+        },
+        {
+          "name": "HideWindowUI"
+        },
+        {
+          "name": "Highlight"
+        },
+        {
+          "name": "Hue"
+        },
+        {
+          "name": "I"
+        },
+        {
+          "name": "IC"
+        },
+        {
+          "name": "ICCBased"
+        },
+        {
+          "name": "ID"
+        },
+        {
+          "name": "IDS"
+        },
+        {
+          "name": "IDTree"
+        },
+        {
+          "name": "IRT"
+        },
+        {
+          "name": "ISO_"
+        },
+        {
+          "name": "IT"
+        },
+        {
+          "name": "Identity"
+        },
+        {
+          "name": "IdentityH"
+        },
+        {
+          "name": "Image"
+        },
+        {
+          "name": "ImageMask"
+        },
+        {
+          "name": "ImportData"
+        },
+        {
+          "name": "Include"
+        },
+        {
+          "name": "Index"
+        },
+        {
+          "name": "Indexed"
+        },
+        {
+          "name": "Info"
+        },
+        {
+          "name": "Ink"
+        },
+        {
+          "name": "InkList"
+        },
+        {
+          "name": "Inline"
+        },
+        {
+          "name": "InlineAlign"
+        },
+        {
+          "name": "Inset"
+        },
+        {
+          "name": "Intent"
+        },
+        {
+          "name": "Interpolate"
+        },
+        {
+          "name": "IsMap"
+        },
+        {
+          "name": "ItalicAngle"
+        },
+        {
+          "name": "JBIG2Decode"
+        },
+        {
+          "name": "JBIG2Globals"
+        },
+        {
+          "name": "JPXDecode"
+        },
+        {
+          "name": "JS"
+        },
+        {
+          "name": "JavaScript"
+        },
+        {
+          "name": "Justify"
+        },
+        {
+          "name": "K"
+        },
+        {
+          "name": "KDFSalt"
+        },
+        {
+          "name": "Keywords"
+        },
+        {
+          "name": "Kids"
+        },
+        {
+          "name": "L"
+        },
+        {
+          "name": "L2R"
+        },
+        {
+          "name": "LBody"
+        },
+        {
+          "name": "LC"
+        },
+        {
+          "name": "LE"
+        },
+        {
+          "name": "LI"
+        },
+        {
+          "name": "LJ"
+        },
+        {
+          "name": "LL"
+        },
+        {
+          "name": "LLE"
+        },
+        {
+          "name": "LLO"
+        },
+        {
+          "name": "LW"
+        },
+        {
+          "name": "LZWDecode"
+        },
+        {
+          "name": "Lab"
+        },
+        {
+          "name": "Lang"
+        },
+        {
+          "name": "Language"
+        },
+        {
+          "name": "Last"
+        },
+        {
+          "name": "LastChar"
+        },
+        {
+          "name": "LastModified"
+        },
+        {
+          "name": "LastPage"
+        },
+        {
+          "name": "Launch"
+        },
+        {
+          "name": "Layout"
+        },
+        {
+          "name": "Lbl"
+        },
+        {
+          "name": "Leading"
+        },
+        {
+          "name": "Length"
+        },
+        {
+          "name": "Length1"
+        },
+        {
+          "name": "Lighten"
+        },
+        {
+          "name": "Limits"
+        },
+        {
+          "name": "Line"
+        },
+        {
+          "name": "LineArrow"
+        },
+        {
+          "name": "LineHeight"
+        },
+        {
+          "name": "LineNum"
+        },
+        {
+          "name": "LineThrough"
+        },
+        {
+          "name": "Link"
+        },
+        {
+          "name": "List"
+        },
+        {
+          "name": "ListMode"
+        },
+        {
+          "name": "ListNumbering"
+        },
+        {
+          "name": "Location"
+        },
+        {
+          "name": "Lock"
+        },
+        {
+          "name": "Locked"
+        },
+        {
+          "name": "LowerAlpha"
+        },
+        {
+          "name": "LowerRoman"
+        },
+        {
+          "name": "Luminosity"
+        },
+        {
+          "name": "M"
+        },
+        {
+          "name": "MAC"
+        },
+        {
+          "name": "MACLocation"
+        },
+        {
+          "name": "MCD"
+        },
+        {
+          "name": "MCID"
+        },
+        {
+          "name": "MCR"
+        },
+        {
+          "name": "MD5"
+        },
+        {
+          "name": "MH"
+        },
+        {
+          "name": "MK"
+        },
+        {
+          "name": "ML"
+        },
+        {
+          "name": "MMType1"
+        },
+        {
+          "name": "MN"
+        },
+        {
+          "name": "MR"
+        },
+        {
+          "name": "MacExpertEncoding"
+        },
+        {
+          "name": "MacRomanEncoding"
+        },
+        {
+          "name": "Magenta"
+        },
+        {
+          "name": "MarkInfo"
+        },
+        {
+          "name": "MarkStyle"
+        },
+        {
+          "name": "Marked"
+        },
+        {
+          "name": "Markup"
+        },
+        {
+          "name": "Markup3D"
+        },
+        {
+          "name": "Mask"
+        },
+        {
+          "name": "Matrix"
+        },
+        {
+          "name": "MaxLen"
+        },
+        {
+          "name": "Measure"
+        },
+        {
+          "name": "MediaBox"
+        },
+        {
+          "name": "MediaClip"
+        },
+        {
+          "name": "Metadata"
+        },
+        {
+          "name": "Middle"
+        },
+        {
+          "name": "MissingWidth"
+        },
+        {
+          "name": "Mix"
+        },
+        {
+          "name": "ModDate"
+        },
+        {
+          "name": "Movie"
+        },
+        {
+          "name": "MuLaw"
+        },
+        {
+          "name": "Multiply"
+        },
+        {
+          "name": "N"
+        },
+        {
+          "name": "NA"
+        },
+        {
+          "name": "NM"
+        },
+        {
+          "name": "NS"
+        },
+        {
+          "name": "NSO"
+        },
+        {
+          "name": "Name"
+        },
+        {
+          "name": "Named"
+        },
+        {
+          "name": "Names"
+        },
+        {
+          "name": "Namespace"
+        },
+        {
+          "name": "Namespaces"
+        },
+        {
+          "name": "NeedAppearances"
+        },
+        {
+          "name": "NeedsRendering"
+        },
+        {
+          "name": "NewWindow"
+        },
+        {
+          "name": "Next"
+        },
+        {
+          "name": "NextPage"
+        },
+        {
+          "name": "NoOp"
+        },
+        {
+          "name": "NonFullScreenPageMode"
+        },
+        {
+          "name": "NonStruct"
+        },
+        {
+          "name": "None"
+        },
+        {
+          "name": "Normal"
+        },
+        {
+          "name": "Not"
+        },
+        {
+          "name": "NotApproved"
+        },
+        {
+          "name": "NotForPublicRelease"
+        },
+        {
+          "name": "Note"
+        },
+        {
+          "name": "NoteType"
+        },
+        {
+          "name": "NumCopies"
+        },
+        {
+          "name": "Nums"
+        },
+        {
+          "name": "O"
+        },
+        {
+          "name": "OBJR"
+        },
+        {
+          "name": "OC"
+        },
+        {
+          "name": "OCG"
+        },
+        {
+          "name": "OCGs"
+        },
+        {
+          "name": "OCMD"
+        },
+        {
+          "name": "OCProperties"
+        },
+        {
+          "name": "OCSP"
+        },
+        {
+          "name": "OCSPs"
+        },
+        {
+          "name": "OE"
+        },
+        {
+          "name": "OFF"
+        },
+        {
+          "name": "ON"
+        },
+        {
+          "name": "OP"
+        },
+        {
+          "name": "OPI"
+        },
+        {
+          "name": "OPM"
+        },
+        {
+          "name": "Obj"
+        },
+        {
+          "name": "ObjStm"
+        },
+        {
+          "name": "OneColumn"
+        },
+        {
+          "name": "Open"
+        },
+        {
+          "name": "OpenAction"
+        },
+        {
+          "name": "OpenArrow"
+        },
+        {
+          "name": "Operation"
+        },
+        {
+          "name": "Opt"
+        },
+        {
+          "name": "Or"
+        },
+        {
+          "name": "Order"
+        },
+        {
+          "name": "Ordered"
+        },
+        {
+          "name": "Ordering"
+        },
+        {
+          "name": "Outlines"
+        },
+        {
+          "name": "OutputCondition"
+        },
+        {
+          "name": "OutputConditionIdentifier"
+        },
+        {
+          "name": "OutputIntent"
+        },
+        {
+          "name": "OutputIntents"
+        },
+        {
+          "name": "Outset"
+        },
+        {
+          "name": "Overlay"
+        },
+        {
+          "name": "OverlayText"
+        },
+        {
+          "name": "P"
+        },
+        {
+          "name": "PA"
+        },
+        {
+          "name": "PC"
+        },
+        {
+          "name": "PCM"
+        },
+        {
+          "name": "PI"
+        },
+        {
+          "name": "PO"
+        },
+        {
+          "name": "PS"
+        },
+        {
+          "name": "PV"
+        },
+        {
+          "name": "Padding"
+        },
+        {
+          "name": "Page"
+        },
+        {
+          "name": "PageElement"
+        },
+        {
+          "name": "PageLabels"
+        },
+        {
+          "name": "PageLayout"
+        },
+        {
+          "name": "PageMode"
+        },
+        {
+          "name": "PageNum"
+        },
+        {
+          "name": "Pages"
+        },
+        {
+          "name": "Pagination"
+        },
+        {
+          "name": "PaintType"
+        },
+        {
+          "name": "Panose"
+        },
+        {
+          "name": "Paperclip"
+        },
+        {
+          "name": "Params"
+        },
+        {
+          "name": "Parent"
+        },
+        {
+          "name": "ParentTree"
+        },
+        {
+          "name": "ParentTreeNextKey"
+        },
+        {
+          "name": "Part"
+        },
+        {
+          "name": "Path"
+        },
+        {
+          "name": "Pattern"
+        },
+        {
+          "name": "PatternType"
+        },
+        {
+          "name": "Pause"
+        },
+        {
+          "name": "Pdf_Version_1_2"
+        },
+        {
+          "name": "Pdf_Version_1_3"
+        },
+        {
+          "name": "Pdf_Version_1_4"
+        },
+        {
+          "name": "Pdf_Version_1_5"
+        },
+        {
+          "name": "Pdf_Version_1_6"
+        },
+        {
+          "name": "Pdf_Version_1_7"
+        },
+        {
+          "name": "Pdf_Version_2_0"
+        },
+        {
+          "name": "Perceptual"
+        },
+        {
+          "name": "Perms"
+        },
+        {
+          "name": "Pg"
+        },
+        {
+          "name": "Phoneme"
+        },
+        {
+          "name": "PhoneticAlphabet"
+        },
+        {
+          "name": "PickTrayByPDFSize"
+        },
+        {
+          "name": "PieceInfo"
+        },
+        {
+          "name": "Placement"
+        },
+        {
+          "name": "Play"
+        },
+        {
+          "name": "PolyLine"
+        },
+        {
+          "name": "Polygon"
+        },
+        {
+          "name": "Popup"
+        },
+        {
+          "name": "Predictor"
+        },
+        {
+          "name": "Preferred"
+        },
+        {
+          "name": "PresSteps"
+        },
+        {
+          "name": "PreserveRB"
+        },
+        {
+          "name": "Prev"
+        },
+        {
+          "name": "PrevPage"
+        },
+        {
+          "name": "Print"
+        },
+        {
+          "name": "PrintArea"
+        },
+        {
+          "name": "PrintClip"
+        },
+        {
+          "name": "PrintPageRange"
+        },
+        {
+          "name": "PrintScaling"
+        },
+        {
+          "name": "PrintState"
+        },
+        {
+          "name": "PrinterMark"
+        },
+        {
+          "name": "Private"
+        },
+        {
+          "name": "ProcSet"
+        },
+        {
+          "name": "Producer"
+        },
+        {
+          "name": "Projection"
+        },
+        {
+          "name": "PronunciationLexicon"
+        },
+        {
+          "name": "Prop_Build"
+        },
+        {
+          "name": "Properties"
+        },
+        {
+          "name": "Pushpin"
+        },
+        {
+          "name": "Q"
+        },
+        {
+          "name": "QuadPoints"
+        },
+        {
+          "name": "Quote"
+        },
+        {
+          "name": "R"
+        },
+        {
+          "name": "R2L"
+        },
+        {
+          "name": "RB"
+        },
+        {
+          "name": "RBGroups"
+        },
+        {
+          "name": "RC"
+        },
+        {
+          "name": "RClosedArrow"
+        },
+        {
+          "name": "RD"
+        },
+        {
+          "name": "RGB"
+        },
+        {
+          "name": "RI"
+        },
+        {
+          "name": "RL"
+        },
+        {
+          "name": "RO"
+        },
+        {
+          "name": "ROpenArrow"
+        },
+        {
+          "name": "RP"
+        },
+        {
+          "name": "RT"
+        },
+        {
+          "name": "RV"
+        },
+        {
+          "name": "Range"
+        },
+        {
+          "name": "Raw"
+        },
+        {
+          "name": "Reason"
+        },
+        {
+          "name": "Recipients"
+        },
+        {
+          "name": "Rect"
+        },
+        {
+          "name": "Redact"
+        },
+        {
+          "name": "Redaction"
+        },
+        {
+          "name": "Ref"
+        },
+        {
+          "name": "Reference"
+        },
+        {
+          "name": "Registry"
+        },
+        {
+          "name": "RegistryName"
+        },
+        {
+          "name": "RelativeColorimetric"
+        },
+        {
+          "name": "Rendition"
+        },
+        {
+          "name": "Renditions"
+        },
+        {
+          "name": "Repeat"
+        },
+        {
+          "name": "Requirement"
+        },
+        {
+          "name": "Requirements"
+        },
+        {
+          "name": "ResetForm"
+        },
+        {
+          "name": "Resources"
+        },
+        {
+          "name": "Resume"
+        },
+        {
+          "name": "ReversedChars"
+        },
+        {
+          "name": "RichMedia"
+        },
+        {
+          "name": "Ridge"
+        },
+        {
+          "name": "RoleMap"
+        },
+        {
+          "name": "RoleMapNS"
+        },
+        {
+          "name": "Root"
+        },
+        {
+          "name": "Rotate"
+        },
+        {
+          "name": "Row"
+        },
+        {
+          "name": "RowSpan"
+        },
+        {
+          "name": "Rows"
+        },
+        {
+          "name": "Ruby"
+        },
+        {
+          "name": "RubyAlign"
+        },
+        {
+          "name": "RubyPosition"
+        },
+        {
+          "name": "RunLengthDecode"
+        },
+        {
+          "name": "S"
+        },
+        {
+          "name": "SA"
+        },
+        {
+          "name": "SD"
+        },
+        {
+          "name": "SM"
+        },
+        {
+          "name": "SMask"
+        },
+        {
+          "name": "SMaskInData"
+        },
+        {
+          "name": "SV"
+        },
+        {
+          "name": "Saturation"
+        },
+        {
+          "name": "Schema"
+        },
+        {
+          "name": "Scope"
+        },
+        {
+          "name": "Screen"
+        },
+        {
+          "name": "Sect"
+        },
+        {
+          "name": "Separation"
+        },
+        {
+          "name": "SeparationColorNames"
+        },
+        {
+          "name": "SeparationInfo"
+        },
+        {
+          "name": "SetOCGState"
+        },
+        {
+          "name": "SetState"
+        },
+        {
+          "name": "Shading"
+        },
+        {
+          "name": "ShadingType"
+        },
+        {
+          "name": "Short"
+        },
+        {
+          "name": "Sig"
+        },
+        {
+          "name": "SigFieldLock"
+        },
+        {
+          "name": "SigFlags"
+        },
+        {
+          "name": "SigObjRef"
+        },
+        {
+          "name": "SigRef"
+        },
+        {
+          "name": "Signed"
+        },
+        {
+          "name": "Simplex"
+        },
+        {
+          "name": "SinglePage"
+        },
+        {
+          "name": "Size"
+        },
+        {
+          "name": "Slash"
+        },
+        {
+          "name": "SoftLight"
+        },
+        {
+          "name": "Sold"
+        },
+        {
+          "name": "Solid"
+        },
+        {
+          "name": "Sort"
+        },
+        {
+          "name": "Sound"
+        },
+        {
+          "name": "Source"
+        },
+        {
+          "name": "SpaceAfter"
+        },
+        {
+          "name": "SpaceBefore"
+        },
+        {
+          "name": "Span"
+        },
+        {
+          "name": "Square"
+        },
+        {
+          "name": "Squiggly"
+        },
+        {
+          "name": "St"
+        },
+        {
+          "name": "Stamp"
+        },
+        {
+          "name": "StampImage"
+        },
+        {
+          "name": "StampSnapshot"
+        },
+        {
+          "name": "Standalone"
+        },
+        {
+          "name": "Standard"
+        },
+        {
+          "name": "Start"
+        },
+        {
+          "name": "StartIndent"
+        },
+        {
+          "name": "State"
+        },
+        {
+          "name": "StateModel"
+        },
+        {
+          "name": "StdCF"
+        },
+        {
+          "name": "StemH"
+        },
+        {
+          "name": "StemV"
+        },
+        {
+          "name": "Stm"
+        },
+        {
+          "name": "StmF"
+        },
+        {
+          "name": "Stop"
+        },
+        {
+          "name": "StrF"
+        },
+        {
+          "name": "Stream"
+        },
+        {
+          "name": "StrikeOut"
+        },
+        {
+          "name": "Strong"
+        },
+        {
+          "name": "StructElem"
+        },
+        {
+          "name": "StructParent"
+        },
+        {
+          "name": "StructParents"
+        },
+        {
+          "name": "StructTreeRoot"
+        },
+        {
+          "name": "Style"
+        },
+        {
+          "name": "Sub"
+        },
+        {
+          "name": "SubFilter"
+        },
+        {
+          "name": "Subj"
+        },
+        {
+          "name": "Subject"
+        },
+        {
+          "name": "SubmitForm"
+        },
+        {
+          "name": "Subtype"
+        },
+        {
+          "name": "Subtype2"
+        },
+        {
+          "name": "Supplement"
+        },
+        {
+          "name": "Suspects"
+        },
+        {
+          "name": "Sy"
+        },
+        {
+          "name": "Symbol"
+        },
+        {
+          "name": "Synchronous"
+        },
+        {
+          "name": "T"
+        },
+        {
+          "name": "TA"
+        },
+        {
+          "name": "TBody"
+        },
+        {
+          "name": "TBorderStyle"
+        },
+        {
+          "name": "TD"
+        },
+        {
+          "name": "TF"
+        },
+        {
+          "name": "TFoot"
+        },
+        {
+          "name": "TH"
+        },
+        {
+          "name": "THead"
+        },
+        {
+          "name": "TI"
+        },
+        {
+          "name": "TK"
+        },
+        {
+          "name": "TM"
+        },
+        {
+          "name": "TOC"
+        },
+        {
+          "name": "TOCI"
+        },
+        {
+          "name": "TP"
+        },
+        {
+          "name": "TPadding"
+        },
+        {
+          "name": "TR"
+        },
+        {
+          "name": "TR2"
+        },
+        {
+          "name": "TU"
+        },
+        {
+          "name": "Table"
+        },
+        {
+          "name": "Tabs"
+        },
+        {
+          "name": "Tag"
+        },
+        {
+          "name": "Templates"
+        },
+        {
+          "name": "Text"
+        },
+        {
+          "name": "TextAlign"
+        },
+        {
+          "name": "TextDecorationColor"
+        },
+        {
+          "name": "TextDecorationThickness"
+        },
+        {
+          "name": "TextDecorationType"
+        },
+        {
+          "name": "TextIndent"
+        },
+        {
+          "name": "Thumb"
+        },
+        {
+          "name": "TilingType"
+        },
+        {
+          "name": "Title"
+        },
+        {
+          "name": "ToUnicode"
+        },
+        {
+          "name": "Toggle"
+        },
+        {
+          "name": "Top"
+        },
+        {
+          "name": "TopSecret"
+        },
+        {
+          "name": "Trans"
+        },
+        {
+          "name": "TransferFunction"
+        },
+        {
+          "name": "TransformMethod"
+        },
+        {
+          "name": "TransformParams"
+        },
+        {
+          "name": "Transparency"
+        },
+        {
+          "name": "TrapNet"
+        },
+        {
+          "name": "TrapRegions"
+        },
+        {
+          "name": "TrapStyles"
+        },
+        {
+          "name": "Trapped"
+        },
+        {
+          "name": "TrimBox"
+        },
+        {
+          "name": "True"
+        },
+        {
+          "name": "TrueType"
+        },
+        {
+          "name": "TwoColumnLeft"
+        },
+        {
+          "name": "TwoColumnRight"
+        },
+        {
+          "name": "TwoPageLeft"
+        },
+        {
+          "name": "TwoPageRight"
+        },
+        {
+          "name": "Tx"
+        },
+        {
+          "name": "Type"
+        },
+        {
+          "name": "Type0"
+        },
+        {
+          "name": "Type1"
+        },
+        {
+          "name": "Type3"
+        },
+        {
+          "name": "U"
+        },
+        {
+          "name": "UCR"
+        },
+        {
+          "name": "UCR2"
+        },
+        {
+          "name": "UE"
+        },
+        {
+          "name": "UF"
+        },
+        {
+          "name": "UR3"
+        },
+        {
+          "name": "URI"
+        },
+        {
+          "name": "URL"
+        },
+        {
+          "name": "URLS"
+        },
+        {
+          "name": "Underline"
+        },
+        {
+          "name": "Unordered"
+        },
+        {
+          "name": "Unspecified"
+        },
+        {
+          "name": "UpperAlpha"
+        },
+        {
+          "name": "UpperRoman"
+        },
+        {
+          "name": "Usage"
+        },
+        {
+          "name": "UseAttachments"
+        },
+        {
+          "name": "UseBlackPtComp"
+        },
+        {
+          "name": "UseNone"
+        },
+        {
+          "name": "UseOC"
+        },
+        {
+          "name": "UseOutlines"
+        },
+        {
+          "name": "UseThumbs"
+        },
+        {
+          "name": "User"
+        },
+        {
+          "name": "UserProperties"
+        },
+        {
+          "name": "UserUnit"
+        },
+        {
+          "name": "V"
+        },
+        {
+          "name": "V2"
+        },
+        {
+          "name": "VE"
+        },
+        {
+          "name": "VRI"
+        },
+        {
+          "name": "Version"
+        },
+        {
+          "name": "Vertices"
+        },
+        {
+          "name": "VerticesPerRow"
+        },
+        {
+          "name": "View"
+        },
+        {
+          "name": "ViewArea"
+        },
+        {
+          "name": "ViewClip"
+        },
+        {
+          "name": "ViewState"
+        },
+        {
+          "name": "ViewerPreferences"
+        },
+        {
+          "name": "VisiblePages"
+        },
+        {
+          "name": "Volatile"
+        },
+        {
+          "name": "Volume"
+        },
+        {
+          "name": "W"
+        },
+        {
+          "name": "W2"
+        },
+        {
+          "name": "WC"
+        },
+        {
+          "name": "WP"
+        },
+        {
+          "name": "WS"
+        },
+        {
+          "name": "WT"
+        },
+        {
+          "name": "Warichu"
+        },
+        {
+          "name": "Watermark"
+        },
+        {
+          "name": "WhitePoint"
+        },
+        {
+          "name": "Widget"
+        },
+        {
+          "name": "Width"
+        },
+        {
+          "name": "Widths"
+        },
+        {
+          "name": "Win"
+        },
+        {
+          "name": "WinAnsiEncoding"
+        },
+        {
+          "name": "WritingMode"
+        },
+        {
+          "name": "X"
+        },
+        {
+          "name": "XFA"
+        },
+        {
+          "name": "XHeight"
+        },
+        {
+          "name": "XML"
+        },
+        {
+          "name": "XObject"
+        },
+        {
+          "name": "XRef"
+        },
+        {
+          "name": "XRefStm"
+        },
+        {
+          "name": "XStep"
+        },
+        {
+          "name": "XYZ"
+        },
+        {
+          "name": "YStep"
+        },
+        {
+          "name": "Yellow"
+        },
+        {
+          "name": "ZapfDingbats"
+        },
+        {
+          "name": "Zoom"
+        },
+        {
+          "name": "_3D"
+        },
+        {
+          "name": "_3DA"
+        },
+        {
+          "name": "_3DB"
+        },
+        {
+          "name": "_3DCrossSection"
+        },
+        {
+          "name": "_3DD"
+        },
+        {
+          "name": "_3DI"
+        },
+        {
+          "name": "_3DV"
+        },
+        {
+          "name": "_3DView"
+        },
+        {
+          "name": "a"
+        },
+        {
+          "name": "ca"
+        },
+        {
+          "name": "ipa"
+        },
+        {
+          "name": "max"
+        },
+        {
+          "name": "min"
+        },
+        {
+          "name": "op"
+        },
+        {
+          "name": "r"
+        },
+        {
+          "name": "x_sampa"
+        },
+        {
+          "name": "zh_Latn_pinyin"
+        },
+        {
+          "name": "zh_Latn_wadegile"
         }
       ]
     },
     {
-      "type": "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
+      "type": "com.itextpdf.kernel.utils.RegisterDefaultDiContainer"
+    },
+    {
+      "type": "com.itextpdf.typography.shaping.TypographyApplier"
     },
     {
       "type": "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
@@ -180,9 +2807,6 @@
           "parameterTypes": []
         }
       ]
-    },
-    {
-      "type": "double"
     },
     {
       "type": "io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge"
@@ -196,14 +2820,6 @@
             "double",
             "java.util.List"
           ]
-        },
-        {
-          "name": "cveIds",
-          "parameterTypes": []
-        },
-        {
-          "name": "cvssScore",
-          "parameterTypes": []
         }
       ]
     },
@@ -213,183 +2829,6 @@
         {
           "name": "<init>",
           "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "java.awt.GraphicsEnvironment",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "isHeadless",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "java.awt.image.BufferedImage",
-      "jniAccessible": true,
-      "fields": [
-        {
-          "name": "colorModel"
-        },
-        {
-          "name": "imageType"
-        },
-        {
-          "name": "raster"
-        }
-      ],
-      "methods": [
-        {
-          "name": "getRGB",
-          "parameterTypes": [
-            "int",
-            "int",
-            "int",
-            "int",
-            "int[]",
-            "int",
-            "int"
-          ]
-        },
-        {
-          "name": "setRGB",
-          "parameterTypes": [
-            "int",
-            "int",
-            "int",
-            "int",
-            "int[]",
-            "int",
-            "int"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "java.awt.image.ColorModel",
-      "jniAccessible": true,
-      "fields": [
-        {
-          "name": "colorSpace"
-        },
-        {
-          "name": "colorSpaceType"
-        },
-        {
-          "name": "isAlphaPremultiplied"
-        },
-        {
-          "name": "is_sRGB"
-        },
-        {
-          "name": "nBits"
-        },
-        {
-          "name": "numComponents"
-        },
-        {
-          "name": "supportsAlpha"
-        },
-        {
-          "name": "transparency"
-        }
-      ],
-      "methods": [
-        {
-          "name": "getRGBdefault",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "java.awt.image.Raster",
-      "jniAccessible": true,
-      "fields": [
-        {
-          "name": "dataBuffer"
-        },
-        {
-          "name": "height"
-        },
-        {
-          "name": "minX"
-        },
-        {
-          "name": "minY"
-        },
-        {
-          "name": "numBands"
-        },
-        {
-          "name": "numDataElements"
-        },
-        {
-          "name": "sampleModel"
-        },
-        {
-          "name": "sampleModelTranslateX"
-        },
-        {
-          "name": "sampleModelTranslateY"
-        },
-        {
-          "name": "width"
-        }
-      ]
-    },
-    {
-      "type": "java.awt.image.SampleModel",
-      "jniAccessible": true,
-      "fields": [
-        {
-          "name": "height"
-        },
-        {
-          "name": "width"
-        }
-      ],
-      "methods": [
-        {
-          "name": "getPixels",
-          "parameterTypes": [
-            "int",
-            "int",
-            "int",
-            "int",
-            "int[]",
-            "java.awt.image.DataBuffer"
-          ]
-        },
-        {
-          "name": "setPixels",
-          "parameterTypes": [
-            "int",
-            "int",
-            "int",
-            "int",
-            "int[]",
-            "java.awt.image.DataBuffer"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "java.awt.image.SinglePixelPackedSampleModel",
-      "jniAccessible": true,
-      "fields": [
-        {
-          "name": "bitMasks"
-        },
-        {
-          "name": "bitOffsets"
-        },
-        {
-          "name": "bitSizes"
-        },
-        {
-          "name": "maxBitSize"
         }
       ]
     },
@@ -422,18 +2861,6 @@
       "type": "java.lang.Record"
     },
     {
-      "type": "java.lang.System",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "load",
-          "parameterTypes": [
-            "java.lang.String"
-          ]
-        }
-      ]
-    },
-    {
       "type": "java.lang.reflect.RecordComponent",
       "methods": [
         {
@@ -443,70 +2870,6 @@
         {
           "name": "getType",
           "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.apache.commons.logging.LogFactory"
-    },
-    {
-      "type": "org.apache.commons.logging.impl.Log4jApiLogFactory"
-    },
-    {
-      "type": "org.apache.commons.logging.impl.Slf4jLogFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.apache.commons.logging.impl.WeakHashtable",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.apache.logging.slf4j.SLF4JProvider"
-    },
-    {
-      "type": "sun.awt.image.IntegerComponentRaster",
-      "jniAccessible": true,
-      "fields": [
-        {
-          "name": "data"
-        },
-        {
-          "name": "dataOffsets"
-        },
-        {
-          "name": "pixelStride"
-        },
-        {
-          "name": "scanlineStride"
-        },
-        {
-          "name": "type"
-        }
-      ]
-    },
-    {
-      "type": "sun.misc.Unsafe",
-      "fields": [
-        {
-          "name": "theUnsafe"
-        }
-      ],
-      "methods": [
-        {
-          "name": "invokeCleaner",
-          "parameterTypes": [
-            "java.nio.ByteBuffer"
-          ]
         }
       ]
     },
@@ -531,25 +2894,13 @@
       ]
     },
     {
-      "type": "sun.security.provider.SHA2$SHA256",
+      "type": "sun.security.provider.SHA5$SHA512",
       "methods": [
         {
           "name": "<init>",
           "parameterTypes": []
         }
       ]
-    },
-    {
-      "type": "sun.text.resources.BreakIteratorInfo"
-    },
-    {
-      "type": "sun.text.resources.BreakIteratorResources"
-    },
-    {
-      "type": "sun.text.resources.BreakIteratorResources_en"
-    },
-    {
-      "type": "sun.text.resources.BreakIteratorResources_en_US"
     },
     {
       "type": "sun.text.resources.cldr.FormatData"
@@ -581,9 +2932,6 @@
       "glob": "META-INF/services/javax.xml.parsers.SAXParserFactory"
     },
     {
-      "glob": "META-INF/services/org.apache.commons.logging.LogFactory"
-    },
-    {
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
     },
     {
@@ -593,7 +2941,85 @@
       "glob": "ch/qos/logback/core/logback-core-version.properties"
     },
     {
-      "glob": "commons-logging.properties"
+      "glob": "com/itextpdf/html2pdf/default.css"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSans-Bold.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSans-BoldItalic.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSans-Italic.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSans-Regular.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSansMono-Bold.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSansMono-Regular.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSerif-Bold.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSerif-BoldItalic.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSerif-Italic.ttf"
+    },
+    {
+      "glob": "com/itextpdf/html2pdf/font/NotoSerif-Regular.ttf"
+    },
+    {
+      "glob": "com/itextpdf/io/font/AdobeGlyphList.txt"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Courier-Bold.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Courier-BoldOblique.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Courier-Oblique.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Courier.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Helvetica-Bold.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Helvetica-BoldOblique.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Helvetica-Oblique.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Helvetica.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Symbol.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Times-Bold.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Times-BoldItalic.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Times-Italic.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/Times-Roman.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/afm/ZapfDingbats.afm"
+    },
+    {
+      "glob": "com/itextpdf/io/font/cmap/cjk_registry.properties"
     },
     {
       "glob": "logback-test.xml"
@@ -602,82 +3028,10 @@
       "glob": "logback.xml"
     },
     {
-      "glob": "org/apache/pdfbox/resources/afm/Courier-Bold.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Courier-BoldOblique.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Courier-Oblique.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Courier.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Helvetica-Bold.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Helvetica-BoldOblique.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Helvetica-Oblique.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Helvetica.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Symbol.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Times-Bold.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Times-BoldItalic.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Times-Italic.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/Times-Roman.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/afm/ZapfDingbats.afm"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/glyphlist/glyphlist.txt"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/glyphlist/zapfdingbats.txt"
-    },
-    {
-      "glob": "org/apache/pdfbox/resources/ttf/LiberationSans-Regular.ttf"
-    },
-    {
-      "glob": "resources/css/XhtmlNamespaceHandler.css"
-    },
-    {
-      "glob": "resources/schema/openhtmltopdf/catalog-special.xml"
-    },
-    {
       "glob": "templates/html-template.html"
     },
     {
       "glob": "templates/report-template.html"
-    },
-    {
-      "module": "java.base",
-      "glob": "sun/text/resources/LineBreakIteratorData"
-    },
-    {
-      "module": "java.desktop",
-      "glob": "sun/awt/resources/awt_en.properties"
-    },
-    {
-      "module": "java.desktop",
-      "glob": "sun/awt/resources/awt_en_IN.properties"
-    },
-    {
-      "bundle": "sun.awt.resources.awt"
     }
   ]
 }

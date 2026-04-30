@@ -15,6 +15,7 @@ public class GraphNode {
     private String name;
     @JsonProperty("risk_score")
     private double riskScore;
+    private String serviceAccountName;
     private SecurityFacts securityFacts = new SecurityFacts();
 
     public double getIntrinsicFriction() {

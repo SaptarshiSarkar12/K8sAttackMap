@@ -14,7 +14,7 @@ public class KubectlExtractor {
     public static String fetchClusterStateAsJson() {
         log.info("Fetching cluster state from Kubectl...");
         ProcessBuilder pb = new ProcessBuilder("kubectl", "get",
-                "pods,services,configmaps,secrets,serviceaccounts,replicasets,deployments,statefulsets,daemonsets,jobs,cronjobs,ingresses,roles,rolebindings,clusterroles,clusterrolebindings",
+                "pods,services,configmaps,secrets,serviceaccounts,replicasets,deployments,statefulsets,daemonsets,jobs,cronjobs,ingresses,roles,rolebindings,clusterroles,clusterrolebindings,nodes",
                 "-A", "-o", "json");
         Process process;
         try {

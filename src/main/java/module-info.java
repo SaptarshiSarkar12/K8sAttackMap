@@ -11,8 +11,7 @@ module K8sAttackMap {
     requires org.apache.commons.cli;
     requires com.fasterxml.jackson.databind;
     requires org.jgrapht.core;
-    requires openhtmltopdf.core;
-    requires openhtmltopdf.pdfbox;
+    requires html2pdf;
 
     // Exports
     exports io.github.SaptarshiSarkar12.k8sattackmap.util to ch.qos.logback.core; // for CliPrefixConverter class

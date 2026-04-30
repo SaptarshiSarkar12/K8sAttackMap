@@ -92,112 +92,187 @@ public class BlastRadiusAnalyzer {
         return counts;
     }
 
-    private static ScoreDetails scoreNode(GraphNode node, int hopsFromSource) { // TODO: Role, ClusterRole, ConfigMap, Pod and Group have sometimes no reasons attached to them, need to investigate if this is due to missing facts or just the heuristics not covering them well. Do we need any additional data to be parsed from the K8sJson file? Then, that will be better to give reasons confidently. Examples: ClusterRole:cluster-scoped:system:service-account-issuer-discovery, Group:cluster-scoped:system:serviceaccounts, ClusterRole:cluster-scoped:system:service-account-issuer-discovery, Role:default:loop-role, ClusterRole:cluster-scoped:system:service-account-issuer-discovery, Role:default:secret-reader, Pod:default:loop-pod, Pod:default:pod-x, ConfigMap:kubernetes-dashboard:kubernetes-dashboard-settings, Role:kubernetes-dashboard:kubernetes-dashboard, ConfigMap:kubernetes-dashboard:kubernetes-dashboard-settings
+    private static ScoreDetails scoreNode(GraphNode node, int hopsFromSource) {
         List<String> reasons = new ArrayList<>();
         String id = safeLower(node.getId());
         String type = safeLower(node.getType());
 
         double score = 0.0;
-
         SecurityFacts facts = node.getSecurityFacts();
-        boolean matchedFacts = true;
+        boolean matchedFacts = facts != null;
 
-        // Metadata-driven scoring first
         if (facts != null) {
-            if (facts.isRbacWildcardVerb() || facts.isRbacWildcardResource() || facts.isRbacWildcardApiGroup()) {
-                score += 40;
-                reasons.add("Wildcard RBAC permissions");
+            score += scoreSecurityFacts(facts, reasons);
+            if (score == 0.0) {
+                matchedFacts = false;
             }
-            if (facts.isRbacHasEscalate() || facts.isRbacHasBind() || facts.isRbacHasImpersonate()) {
-                score += 40;
-                reasons.add("Privilege escalation RBAC verbs");
-            }
-            if (facts.isCredentialMaterial()) {
-                score += 35;
-                reasons.add("Credential material exposure");
-            }
-            if (facts.isServiceAccountTokenAutomount()) {
-                score += 20;
-                reasons.add("ServiceAccount token auto-mount enabled");
-            }
-            if (facts.isPrivilegedContainer()) {
-                score += 30;
-                reasons.add("Privileged container runtime");
-            }
-            if (facts.isAllowPrivilegeEscalation()) {
-                score += 25;
-                reasons.add("Container allows privilege escalation");
-            }
-            if (facts.isHostPID() || facts.isHostNetwork() || facts.isHostIPC()) {
-                score += 25;
-                reasons.add("Host namespace exposure (PID/Network/IPC)");
-            }
-            if (facts.isHostPathMounted()) {
-                score += 20;
-                reasons.add("HostPath mount exposure");
-            }
-            if (facts.isRunAsRoot()) {
-                score += 15;
-                reasons.add("Container running as root");
-            }
-            if (facts.isNodeLevelSurface()) {
-                score += 30;
-                reasons.add("Node-level execution surface");
-            }
-            if (facts.getAddedCapabilities() != null && !facts.getAddedCapabilities().isEmpty()) {
-                score += 15;
-                reasons.add("Added Linux capabilities");
-            }
-        }
-        if (score == 0) {
-            matchedFacts = false;
         }
 
-        // fallback heuristics
-        double fallbackScore = 0.0;
+        double fallbackScore = scoreFallbackHeuristics(id, type, reasons);
 
-        if (type.equals("secret") || id.startsWith("secret:")) {
-            fallbackScore += 6;
-            reasons.add("Secret entity");
-        }
-        if (type.contains("clusterrolebinding") || id.startsWith("clusterrolebinding:")) {
-            fallbackScore += 7;
-            reasons.add("Cluster-wide RBAC binding");
-        }
-        if (type.contains("rolebinding") || id.startsWith("rolebinding:")) {
-            fallbackScore += 5;
-            reasons.add("Namespace RBAC binding");
-        }
-        if (type.contains("serviceaccount") || id.startsWith("serviceaccount:")) {
-            fallbackScore += 4;
-            reasons.add("ServiceAccount identity surface");
-        }
-        if (id.contains("cluster-admin") || id.contains("system:masters")) {
-            fallbackScore += 8;
-            reasons.add("Administrative privilege indicator");
-        }
-        if (containsAny(id, "prod", "production", "vault", "db", "database", "payment", "auth")) {
-            fallbackScore += 4;
-            reasons.add("Critical workload or sensitive data");
-        }
-        if (containsAny(id, "ingress", "loadbalancer", "nodeport", "public", "external")) {
-            fallbackScore += 3;
-            reasons.add("External exposure");
-        }
-
-        // if facts matched, keep fallback from dominating
         if (matchedFacts) {
             fallbackScore = Math.min(fallbackScore, 8.0);
         }
 
         score += fallbackScore;
-
-        // Distance penalty
-        double penalty = Math.clamp((hopsFromSource - 1) * 4L, 0, 20);
-        score -= penalty;
-
+        score -= distancePenalty(hopsFromSource);
         score = Math.clamp(score, 0, 100);
+
         return new ScoreDetails(score, List.copyOf(reasons));
+    }
+
+    private static double scoreSecurityFacts(SecurityFacts facts, List<String> reasons) {
+        double score = 0.0;
+
+        if (facts.isRbacWildcardVerb() || facts.isRbacWildcardResource() || facts.isRbacWildcardApiGroup()) {
+            score += 40;
+            reasons.add("Wildcard RBAC permissions");
+        }
+        if (facts.isRbacHasEscalate() || facts.isRbacHasBind() || facts.isRbacHasImpersonate()) {
+            score += 40;
+            reasons.add("Privilege escalation RBAC verbs");
+        }
+        if (facts.isCredentialMaterial()) {
+            score += 35;
+            reasons.add("Credential material exposure");
+        }
+        if (facts.isServiceAccountTokenAutomount()) {
+            score += 20;
+            reasons.add("ServiceAccount token auto-mount enabled");
+        }
+        if (facts.isPrivilegedContainer()) {
+            score += 30;
+            reasons.add("Privileged container runtime");
+        }
+        if (facts.isAllowPrivilegeEscalation()) {
+            score += 25;
+            reasons.add("Container allows privilege escalation");
+        }
+        if (facts.isHostPID() || facts.isHostNetwork() || facts.isHostIPC()) {
+            score += 25;
+            reasons.add("Host namespace exposure (PID/Network/IPC)");
+        }
+        if (facts.isHostPathMounted()) {
+            score += 20;
+            reasons.add("HostPath mount exposure");
+        }
+        if (facts.isRunAsRoot()) {
+            score += 15;
+            reasons.add("Container running as root");
+        }
+        if (facts.isNodeLevelSurface()) {
+            score += 30;
+            reasons.add("Node-level execution surface");
+        }
+        if (facts.getAddedCapabilities() != null && !facts.getAddedCapabilities().isEmpty()) {
+            score += 15;
+            reasons.add("Added Linux capabilities");
+        }
+
+        return score;
+    }
+
+    private static double scoreFallbackHeuristics(String id, String type, List<String> reasons) {
+        double score = 0.0;
+
+        if (isSecret(id, type)) {
+            score += 6;
+            reasons.add("Secret entity");
+        }
+        if (isClusterRoleBinding(id, type)) {
+            score += 7;
+            reasons.add("Cluster-wide RBAC binding");
+        }
+        if (isRoleBinding(id, type)) {
+            score += 5;
+            reasons.add("Namespace RBAC binding");
+        }
+        if (isServiceAccount(id, type)) {
+            score += 4;
+            reasons.add("ServiceAccount identity surface");
+        }
+        if (id.contains("cluster-admin") || id.contains("system:masters")) {
+            score += 8;
+            reasons.add("Administrative privilege indicator");
+        }
+        if (containsAny(id, "prod", "production", "vault", "db", "database", "payment", "auth")) {
+            score += 4;
+            reasons.add("Critical workload or sensitive data");
+        }
+        if (containsAny(id, "ingress", "loadbalancer", "nodeport", "public", "external")) {
+            score += 3;
+            reasons.add("External exposure");
+        }
+        if (isRole(id, type)) {
+            score += 4;
+            reasons.add("Namespace-scoped RBAC role");
+        }
+        if (isClusterRole(id, type)) {
+            score += 6;
+            reasons.add("Cluster-scoped RBAC role");
+        }
+        if (isPod(id, type)) {
+            score += 5;
+            reasons.add("Pod execution surface");
+        }
+        if (isConfigMap(id, type)) {
+            score += 3;
+            reasons.add("ConfigMap (potential config/credential exposure)");
+        }
+        if (isGroup(id, type)) {
+            score += 4;
+            reasons.add("Group identity (broad RBAC subject)");
+        }
+        if (id.contains("system:serviceaccounts")) {
+            score += 5;
+            reasons.add("System service account group (broad identity surface)");
+        }
+        if (id.contains("system:") && (isClusterRole(id, type) || isRole(id, type))) {
+            score += 2;
+            reasons.add("System-managed RBAC role");
+        }
+
+        return score;
+    }
+
+    private static boolean isSecret(String id, String type) {
+        return type.equals("secret") || id.startsWith("secret:");
+    }
+
+    private static boolean isClusterRoleBinding(String id, String type) {
+        return type.contains("clusterrolebinding") || id.startsWith("clusterrolebinding:");
+    }
+
+    private static boolean isRoleBinding(String id, String type) {
+        return type.contains("rolebinding") || id.startsWith("rolebinding:");
+    }
+
+    private static boolean isServiceAccount(String id, String type) {
+        return type.contains("serviceaccount") || id.startsWith("serviceaccount:");
+    }
+
+    private static boolean isRole(String id, String type) {
+        return type.equals("role") || id.startsWith("role:");
+    }
+
+    private static boolean isClusterRole(String id, String type) {
+        return type.equals("clusterrole") || id.startsWith("clusterrole:");
+    }
+
+    private static boolean isPod(String id, String type) {
+        return type.equals("pod") || id.startsWith("pod:");
+    }
+
+    private static boolean isConfigMap(String id, String type) {
+        return type.equals("configmap") || id.startsWith("configmap:");
+    }
+
+    private static boolean isGroup(String id, String type) {
+        return type.equals("group") || id.startsWith("group:");
+    }
+
+    private static double distancePenalty(int hopsFromSource) {
+        return Math.clamp((hopsFromSource - 1) * 4L, 0, 20);
     }
 
     private static ImpactSeverity toSeverity(double score) {
