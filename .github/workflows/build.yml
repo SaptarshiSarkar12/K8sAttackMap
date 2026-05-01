@@ -65,6 +65,8 @@ jobs:
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true # Merges all artifacts into a single directory
       - name: List downloaded artifacts
         run: ls -la
       - name: Unpack artifacts
