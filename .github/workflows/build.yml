@@ -51,7 +51,7 @@ jobs:
       - name: Tar executable
         run: |
           cd target
-          tar -cvf K8sAttackMap-${{ matrix.os }}.tar K8sAttackMap
+          tar -cvf K8sAttackMap-${{ matrix.os }}.tar K8sAttackMap${{matrix.os == 'windows-latest' && '.exe' || ''}}
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
