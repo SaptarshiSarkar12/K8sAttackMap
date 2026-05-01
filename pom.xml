@@ -6,7 +6,7 @@
 
     <groupId>io.github.saptarshisarkar12</groupId>
     <artifactId>k8s-attack-map</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0</version>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -121,27 +121,6 @@
     </build>
 
     <profiles>
-        <!-- [Windows] CLI native image builder profile -->
-        <profile>
-            <id>build-windows-latest</id>
-            <properties>
-                <native.outputDirectory>target/windows</native.outputDirectory>
-            </properties>
-        </profile>
-        <!-- [Linux] CLI native image builder profile -->
-        <profile>
-            <id>build-ubuntu-latest</id>
-            <properties>
-                <native.outputDirectory>target/linux</native.outputDirectory>
-            </properties>
-        </profile>
-        <!-- [macOS ARM] CLI native image builder profile -->
-        <profile>
-            <id>build-macos-15</id>
-            <properties>
-                <native.outputDirectory>target/macos-arm</native.outputDirectory>
-            </properties>
-        </profile>
         <!-- Profile to generate GraalVM metadata using the Java agent -->
         <profile>
             <id>generate-graalvm-metadata</id>

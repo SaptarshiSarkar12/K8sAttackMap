@@ -158,7 +158,7 @@ k8sattackmap.exe --help
 
 ### Build from Source
 
-**Requirements:** [GraalVM](https://www.graalvm.org/downloads/) 25.0.3 (JDK 25), Maven 3.9+
+**Requirements:** [GraalVM](https://www.graalvm.org/downloads/) 25, JDK 25, Maven 3.9+
 
 ```bash
 git clone https://github.com/SaptarshiSarkar12/K8sAttackMap.git
@@ -220,6 +220,7 @@ kubectl get pods,services,serviceaccounts,roles,clusterroles,rolebindings,cluste
   -o html,pdf
 ```
 
+> [!NOTE]
 > The source and target node ID format is `<Type>:<namespace>:<name>`.
 > For cluster-scoped resources, use `cluster-scoped` as the namespace. Example: `ClusterRole:cluster-scoped:cluster-admin`.
 
