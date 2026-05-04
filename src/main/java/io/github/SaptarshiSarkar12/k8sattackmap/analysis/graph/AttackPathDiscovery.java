@@ -32,6 +32,10 @@ public class AttackPathDiscovery {
         for (GraphNode source : sourceNodes) {
             for (GraphNode target : targetNodes) {
                 if (source.equals(target)) continue;
+                // Verify both nodes exist in the graph before attempting pathfinding
+                if (!graph.containsVertex(source) || !graph.containsVertex(target)) {
+                    continue;
+                }
                 GraphPath<GraphNode, GraphEdge> path = dijkstra.findShortestPath(source, target);
                 if (path != null && path.getLength() > 0) {
                     int baseLen = path.getLength();

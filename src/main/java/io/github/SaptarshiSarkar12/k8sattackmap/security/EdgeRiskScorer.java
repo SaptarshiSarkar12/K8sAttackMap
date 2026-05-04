@@ -57,7 +57,9 @@ public class EdgeRiskScorer {
         // If target is highly sensitive / privilege-enabling, reduce friction
         if (targetFacts != null) {
             if (targetFacts.isCredentialMaterial()) friction -= 1.8;
-            if (targetFacts.isRbacWildcardVerb() || targetFacts.isRbacWildcardResource() || targetFacts.isRbacWildcardApiGroup()) friction -= 2.2;
+            if (targetFacts.isRbacWildcardVerb()) friction -= 0.8;
+            if (targetFacts.isRbacWildcardResource()) friction -= 1.2;
+            if (targetFacts.isRbacWildcardApiGroup()) friction -= 1.0;
             if (targetFacts.isRbacHasEscalate() || targetFacts.isRbacHasBind() || targetFacts.isRbacHasImpersonate()) friction -= 2.5;
         }
 

@@ -21,16 +21,23 @@ public class GraphNode {
     public double getIntrinsicFriction() {
         List<String> passiveResources = List.of(
                 "Secret", "ConfigMap",
-                "ServiceAccount", "Role", "ClusterRole", "RoleBinding", "ClusterRoleBinding",
+                "ServiceAccount",
                 "Service", "Ingress", "NetworkPolicy"
         );
 
+        // RBAC objects grant permissions; giving them a modest base friction
+        // so wildcard/escalation deductions remain distinguishable after clamping.
+        List<String> rbacResources = List.of(
+                "Role", "ClusterRole", "RoleBinding", "ClusterRoleBinding"
+        );
+
         if (passiveResources.contains(this.type)) {
-            // The attacker just "takes" or "uses" these once the Edge is traversed.
             return 0.0;
         }
+        if (rbacResources.contains(this.type)) {
+            return 3.0; // moderate baseline — security deductions remain visible
+        }
         // For Workloads (Pods, Deployments, etc.)
-        // A perfectly secure pod (riskScore = 0.0) has Max Friction (10.0).
         return 10.0 - riskScore;
     }
 

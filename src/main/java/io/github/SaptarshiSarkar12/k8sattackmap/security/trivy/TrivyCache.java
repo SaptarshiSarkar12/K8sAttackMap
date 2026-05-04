@@ -14,7 +14,7 @@ import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER
 public class TrivyCache {
     private static final Logger log = LoggerFactory.getLogger(TrivyCache.class);
     private static final String CACHE_FILE_NAME = "trivy-cvss-cache.json";
-    private static final File CACHE_FILE = WorkspaceManager.getAppDirectory().resolve(CACHE_FILE_NAME).toFile();
+    private static final File CACHE_FILE = resolveCacheFile();
     private final Map<String, ScanResult> cache = new HashMap<>();
     private final AtomicBoolean dirty = new AtomicBoolean(false);
 
@@ -25,6 +25,10 @@ public class TrivyCache {
     }
 
     private void loadCache() {
+        if (CACHE_FILE == null) {
+            log.debug("Cache file path is null; skipping cache loading.");
+            return;
+        }
         if (CACHE_FILE.exists()) {
             try {
                 Map<String, ScanResult> loaded = MAPPER.readValue(
@@ -36,6 +40,14 @@ public class TrivyCache {
                 log.warn("Failed to load Trivy cache file. Starting with an empty cache.", e);
             }
         }
+    }
+
+    private static File resolveCacheFile() {
+        if (WorkspaceManager.getAppDirectory() == null) {
+            log.debug("Workspace is not initialized yet; Trivy cache will stay in-memory.");
+            return null;
+        }
+        return WorkspaceManager.getAppDirectory().resolve(CACHE_FILE_NAME).toFile();
     }
 
     public synchronized ScanResult getCachedResult(String imageName) {

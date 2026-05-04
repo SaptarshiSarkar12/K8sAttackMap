@@ -3,14 +3,15 @@ package io.github.SaptarshiSarkar12.k8sattackmap.security;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.ScanResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.TrivyCache;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.TrivyJsonParser;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 public class TrivyScanner {
-    private static final Logger log = LoggerFactory.getLogger(TrivyScanner.class);
     private static final TrivyCache trivyCache = new TrivyCache();
 
     public static ScanResult scanImage(String imageRef) {
