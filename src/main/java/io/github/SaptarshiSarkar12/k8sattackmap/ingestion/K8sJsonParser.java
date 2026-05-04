@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.*;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.TrivyScanner;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.ScanResult;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +17,8 @@ import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.*;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
+@Slf4j
 public class K8sJsonParser {
-    private static final Logger log = LoggerFactory.getLogger(K8sJsonParser.class);
     private static final Map<String, ScanResult> imageRiskCache = new HashMap<>(); // Cache for image risk scores to avoid redundant Trivy scans
     private static final Set<String> LATERAL_MOVEMENT_VERBS = Set.of(
             "create", "update", "patch", "delete", "exec",

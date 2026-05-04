@@ -125,7 +125,9 @@ public class BlastRadiusAnalyzer {
         double score = 0.0;
 
         if (facts.isRbacWildcardVerb() || facts.isRbacWildcardResource() || facts.isRbacWildcardApiGroup()) {
-            score += 40;
+            // Wildcard RBAC permissions are highly impactful — ensure the score reaches the
+            // critical blast threshold so impacted nodes are classified as CRITICAL.
+            score = RiskConfig.BLAST_SCORE_CRITICAL;
             reasons.add("Wildcard RBAC permissions");
         }
         if (facts.isRbacHasEscalate() || facts.isRbacHasBind() || facts.isRbacHasImpersonate()) {

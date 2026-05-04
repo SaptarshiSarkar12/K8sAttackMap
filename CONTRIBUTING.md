@@ -16,7 +16,7 @@ Thank you for your interest in contributing to **K8sAttackMap**! Whether you're 
 - [Development Workflow](#development-workflow)
     - [Branching Strategy](#branching-strategy)
     - [Making Changes](#making-changes)
-    - [Running Tests](#running-tests)
+    - [Running Tests](#testing-running-and-writing)
     - [Native Image Builds](#native-image-builds)
 - [Code Style Guidelines](#code-style-guidelines)
 - [Submitting a Pull Request](#submitting-a-pull-request)
@@ -176,15 +176,34 @@ A few pointers before you start coding:
 - **GraalVM reflection.** If you add new classes that are accessed via reflection, serialization, or dynamic proxy at runtime, regenerate the GraalVM metadata (see [Native Image Builds](#native-image-builds)) and commit the updated files under `src/main/resources/META-INF/native-image/`.
 - **Test with a real snapshot.** Before submitting, run your change against an actual cluster JSON. The `ingestion/` layer handles many edge cases in the Kubernetes API output that are hard to catch with unit tests alone.
 
-### Running Tests
+### Testing (running and writing)
 
-```bash
-mvn test
-```
+We use Maven + JUnit for automated unit testing. Test classes live under `src/test/` mirroring the main package structure.
+Contributors should run the test suite locally before opening a pull request.
 
-Tests use JUnit Jupiter 6. Test classes live under `src/test/` mirroring the main package structure.
+- To run all tests:
+  ```bash
+  mvn test
+  ```
+- To run a specific test class:
+  ```bash
+  mvn -Dtest=BlastRadiusAnalyzerTest test
+  ```
+- To run a specific test method:
+  ```bash
+  mvn -Dtest=BlastRadiusAnalyzerTest#shouldReturnEmptyResultForSourceNotInGraph test
+  ```
 
 When adding new functionality, please add matching tests. For analysis algorithms (path discovery, blast radius, choke points), construct a small synthetic graph in the test to validate the algorithm logic independently of the parser.
+
+**Writing Tests**:
+- Use descriptive test method names and prefer small, focused tests.
+- For testing edge cases in parsing, create minimal JSON snippets that trigger the specific case and load them in the test.
+- For testing analysis logic, construct `GraphNode` and `GraphEdge` instances directly in the test to create controlled scenarios.
+
+**Naming & Conventions**:
+- Test class names should mirror the production class they validate, e.g. GraphNodeTest for GraphNode.
+- Keep each test focused on a single behavior; use `@BeforeEach` / `@AfterEach` for setup/teardown.
 
 ### Native Image Builds
 
