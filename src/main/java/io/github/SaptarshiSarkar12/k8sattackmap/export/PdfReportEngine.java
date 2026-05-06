@@ -11,19 +11,17 @@ import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.RiskConfig;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.TemplateStore;
+import lombok.extern.slf4j.Slf4j;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class PdfReportEngine {
-    private static final Logger log = LoggerFactory.getLogger(PdfReportEngine.class);
-
     public static void exportPdfReport(AnalysisResult result, Graph<GraphNode, GraphEdge> graph, Set<GraphNode> sourceNodes, String clusterContext, Map<GraphEdge, Double> edgeRiskScores, Map<String, List<String>> podCVEIds, Map<String, GraphNode> nodeLookup) {
         try {
             PathDiscoveryResult pathResult = result.pathDiscoveryResult();
@@ -82,7 +80,7 @@ public class PdfReportEngine {
         String loopsValClass = data.loopsCount() > 0 ? "red" : "green";
 
         // Inject Data into HTML Placeholders
-        String html = TemplateStore.PDF.replace("{{REPORT_DATE}}", dateStr)
+        String html = TemplateStore.getPdf().replace("{{REPORT_DATE}}", dateStr)
                 .replace("{{CLUSTER_CONTEXT}}", data.clusterContext())
                 .replace("{{TOOL_VERSION}}", AppConstants.APP_VERSION)
                 .replace("{{RISK_GRADE_COLOR_CLASS}}", riskGradeClass)

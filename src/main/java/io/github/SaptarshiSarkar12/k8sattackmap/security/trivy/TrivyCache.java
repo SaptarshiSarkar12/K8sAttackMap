@@ -1,6 +1,7 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.security.trivy;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.util.WorkspaceManager;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,8 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
 
+@Slf4j
 public class TrivyCache {
-    private static final Logger log = LoggerFactory.getLogger(TrivyCache.class);
     private static final String CACHE_FILE_NAME = "trivy-cvss-cache.json";
     private static final File CACHE_FILE = resolveCacheFile();
     private final Map<String, ScanResult> cache = new HashMap<>();
