@@ -1,0 +1,4049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K8sAttackMap - Threat Intelligence</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/layout-base/layout-base.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cose-base/cose-base.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose/cytoscape-fcose.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #0d1117; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #c9d1d9; overflow: hidden; }
+        #cy { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        #ui-layer { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(22, 27, 34, 0.85); border: 1px solid #30363d; border-radius: 8px; padding: 15px 25px; backdrop-filter: blur(10px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        h1 { margin: 0 0 10px 0; font-size: 20px; color: #58a6ff; display: flex; align-items: center; gap: 10px; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; }
+        .color-box { width: 14px; height: 14px; border-radius: 3px; margin-right: 10px; }
+        .toggle-group { margin-top: 15px; padding-top: 15px; border-top: 1px solid #30363d; display: flex; flex-direction: column; gap: 10px; }
+        .toggle-label { font-size: 13px; display: flex; align-items: center; cursor: pointer; color: #c9d1d9; }
+
+        #custom-tooltip { position: absolute; display: none; background: #161b22; border: 1px solid #30363d; color: #c9d1d9; padding: 12px; border-radius: 6px; font-size: 13px; z-index: 100; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.8); max-width: 300px; line-height: 1.5; }
+        .tooltip-title { color: #58a6ff; font-weight: bold; margin-bottom: 5px; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        .tooltip-alert { color: #ff7b72; font-weight: bold; margin-top: 5px; }
+        .tooltip-blast { color: #ffa657; font-weight: bold; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <h1>🛡️ K8sAttackMap</h1>
+    <div class="legend-item"><div class="color-box" style="background: #2ea043;"></div> Entry Point (Hover for Blast Radius)</div>
+    <div class="legend-item"><div class="color-box" style="background: #ff7b72;"></div> Critical Attack Path</div>
+    <div class="legend-item"><div class="color-box" style="background: #8b949e;"></div> Suggested Remediation (Choke Point)</div>
+
+    <div class="toggle-group">
+        <label class="toggle-label"><input type="checkbox" id="orphanToggle" style="margin-right: 8px; cursor: pointer;"> Show Isolated Nodes (Zero Connections)</label>
+        <label class="toggle-label"><input type="checkbox" id="focusToggle" style="margin-right: 8px; cursor: pointer;"> Dim Background (Highlight Critical Threats)</label>
+    </div>
+</div>
+
+<div id="custom-tooltip"></div>
+<div id="cy"></div>
+
+<script>
+    // Data injected by Java Backend
+    const graphData = {
+  "nodes" : [ {
+    "data" : {
+      "id" : "Pod:default:loop-pod",
+      "label" : "loop-pod\n(Pod)",
+      "type" : "pod",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Group:cluster-scoped:system:serviceaccounts", "ServiceAccount:default:loop-sa", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery", "Role:default:loop-role" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "nginx-deployment-7b9ccfd4cc-c4j62\n(Pod)",
+      "type" : "pod",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Group:cluster-scoped:system:serviceaccounts", "ServiceAccount:default:default", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "nginx-deployment-7b9ccfd4cc-pknq4\n(Pod)",
+      "type" : "pod",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Group:cluster-scoped:system:serviceaccounts", "ServiceAccount:default:default", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "nginx-deployment-7b9ccfd4cc-vhrbx\n(Pod)",
+      "type" : "pod",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Group:cluster-scoped:system:serviceaccounts", "ServiceAccount:default:default", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "Pod:default:secret-demo-pod",
+      "label" : "secret-demo-pod\n(Pod)",
+      "type" : "pod",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Secret:default:my-secret", "Group:cluster-scoped:system:serviceaccounts", "ServiceAccount:default:default", "ConfigMap:default:blue-web-cm", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "coredns-7d764666f9-x9dd5\n(Pod)",
+      "type" : "pod"
+    }
+  }, {
+    "data" : {
+      "id" : "Pod:kube-system:etcd-minikube",
+      "label" : "etcd-minikube\n(Pod)",
+      "type" : "pod"
+    }
+  }, {
+    "data" : {
+      "id" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "kube-apiserver-minikube\n(Pod)",
+      "type" : "pod"
+    }
+  }, {
+    "data" : {
+      "id" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "kube-controller-manager-minikube\n(Pod)",
+      "type" : "pod"
+    }
+  }, {
+    "data" : {
+      "id" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "kube-proxy-5x7l5\n(Pod)",
+      "type" : "pod"
+    }
+  }, {
+    "data" : {
+      "id" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "kube-scheduler-minikube\n(Pod)",
+      "type" : "pod"
+    }
+  }, {
+    "data" : {
+      "id" : "Pod:kube-system:storage-provisioner",
+      "label" : "storage-provisioner\n(Pod)",
+      "type" : "pod"
+    }
+  }, {
+    "data" : {
+      "id" : "Pod:multipath-test:attacker-pod",
+      "label" : "attacker-pod\n(Pod)",
+      "type" : "pod",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Secret:multipath-test:crown-jewel", "Group:cluster-scoped:system:serviceaccounts", "ServiceAccount:multipath-test:attacker-sa", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery", "Role:multipath-test:role-alpha", "Role:multipath-test:role-beta" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "Service:default:kubernetes",
+      "label" : "kubernetes\n(Service)",
+      "type" : "service"
+    }
+  }, {
+    "data" : {
+      "id" : "Service:kube-system:kube-dns",
+      "label" : "kube-dns\n(Service)",
+      "type" : "service"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:default:blue-web-cm",
+      "label" : "blue-web-cm\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:default:kube-root-ca.crt",
+      "label" : "kube-root-ca.crt\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-node-lease:kube-root-ca.crt",
+      "label" : "kube-root-ca.crt\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-public:cluster-info",
+      "label" : "cluster-info\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-public:kube-root-ca.crt",
+      "label" : "kube-root-ca.crt\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-system:coredns",
+      "label" : "coredns\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-system:extension-apiserver-authentication",
+      "label" : "extension-apiserver-authentication\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-system:kube-apiserver-legacy-service-account-token-tracking",
+      "label" : "kube-apiserver-legacy-service-account-token-tracking\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-system:kube-proxy",
+      "label" : "kube-proxy\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-system:kube-root-ca.crt",
+      "label" : "kube-root-ca.crt\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-system:kubeadm-config",
+      "label" : "kubeadm-config\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:kube-system:kubelet-config",
+      "label" : "kubelet-config\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "ConfigMap:multipath-test:kube-root-ca.crt",
+      "label" : "kube-root-ca.crt\n(ConfigMap)",
+      "type" : "configmap"
+    }
+  }, {
+    "data" : {
+      "id" : "Secret:default:my-secret",
+      "label" : "my-secret\n(Secret)",
+      "type" : "secret"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "id" : "Secret:multipath-test:crown-jewel",
+      "label" : "crown-jewel\n(Secret)",
+      "type" : "secret"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:default:default",
+      "label" : "default\n(ServiceAccount)",
+      "type" : "serviceaccount",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Group:cluster-scoped:system:serviceaccounts", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:default:loop-sa",
+      "label" : "loop-sa\n(ServiceAccount)",
+      "type" : "serviceaccount",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Group:cluster-scoped:system:serviceaccounts", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery", "Role:default:loop-role", "Pod:default:loop-pod" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-node-lease:default",
+      "label" : "default\n(ServiceAccount)",
+      "type" : "serviceaccount",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Group:cluster-scoped:system:serviceaccounts", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-public:default",
+      "label" : "default\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:attachdetach-controller",
+      "label" : "attachdetach-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:bootstrap-signer",
+      "label" : "bootstrap-signer\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:certificate-controller",
+      "label" : "certificate-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:clusterrole-aggregation-controller",
+      "label" : "clusterrole-aggregation-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:coredns",
+      "label" : "coredns\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:cronjob-controller",
+      "label" : "cronjob-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:daemon-set-controller",
+      "label" : "daemon-set-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:default",
+      "label" : "default\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:deployment-controller",
+      "label" : "deployment-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:disruption-controller",
+      "label" : "disruption-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:endpoint-controller",
+      "label" : "endpoint-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:endpointslice-controller",
+      "label" : "endpointslice-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:endpointslicemirroring-controller",
+      "label" : "endpointslicemirroring-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:ephemeral-volume-controller",
+      "label" : "ephemeral-volume-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:expand-controller",
+      "label" : "expand-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:generic-garbage-collector",
+      "label" : "generic-garbage-collector\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:horizontal-pod-autoscaler",
+      "label" : "horizontal-pod-autoscaler\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:job-controller",
+      "label" : "job-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:kube-proxy",
+      "label" : "kube-proxy\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:legacy-service-account-token-cleaner",
+      "label" : "legacy-service-account-token-cleaner\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:namespace-controller",
+      "label" : "namespace-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:node-controller",
+      "label" : "node-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:persistent-volume-binder",
+      "label" : "persistent-volume-binder\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:pod-garbage-collector",
+      "label" : "pod-garbage-collector\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:pv-protection-controller",
+      "label" : "pv-protection-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:pvc-protection-controller",
+      "label" : "pvc-protection-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:replicaset-controller",
+      "label" : "replicaset-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:replication-controller",
+      "label" : "replication-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:resource-claim-controller",
+      "label" : "resource-claim-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:resourcequota-controller",
+      "label" : "resourcequota-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:root-ca-cert-publisher",
+      "label" : "root-ca-cert-publisher\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:service-account-controller",
+      "label" : "service-account-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:service-cidrs-controller",
+      "label" : "service-cidrs-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:statefulset-controller",
+      "label" : "statefulset-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:storage-provisioner",
+      "label" : "storage-provisioner\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:token-cleaner",
+      "label" : "token-cleaner\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:ttl-after-finished-controller",
+      "label" : "ttl-after-finished-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:ttl-controller",
+      "label" : "ttl-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:validatingadmissionpolicy-status-controller",
+      "label" : "validatingadmissionpolicy-status-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:kube-system:volumeattributesclass-protection-controller",
+      "label" : "volumeattributesclass-protection-controller\n(ServiceAccount)",
+      "type" : "serviceaccount"
+    }
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:multipath-test:attacker-sa",
+      "label" : "attacker-sa\n(ServiceAccount)",
+      "type" : "serviceaccount",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Secret:multipath-test:crown-jewel", "Group:cluster-scoped:system:serviceaccounts", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery", "Role:multipath-test:role-alpha", "Role:multipath-test:role-beta" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "ServiceAccount:multipath-test:default",
+      "label" : "default\n(ServiceAccount)",
+      "type" : "serviceaccount",
+      "isEntry" : true,
+      "blastRadiusIds" : [ "Group:cluster-scoped:system:serviceaccounts", "ClusterRole:cluster-scoped:system:service-account-issuer-discovery" ]
+    },
+    "classes" : "critical-path entry-node"
+  }, {
+    "data" : {
+      "id" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "label" : "nginx-deployment-7b9ccfd4cc\n(ReplicaSet)",
+      "type" : "replicaset"
+    }
+  }, {
+    "data" : {
+      "id" : "ReplicaSet:kube-system:coredns-7d764666f9",
+      "label" : "coredns-7d764666f9\n(ReplicaSet)",
+      "type" : "replicaset"
+    }
+  }, {
+    "data" : {
+      "id" : "Deployment:default:nginx-deployment",
+      "label" : "nginx-deployment\n(Deployment)",
+      "type" : "deployment"
+    }
+  }, {
+    "data" : {
+      "id" : "Deployment:kube-system:coredns",
+      "label" : "coredns\n(Deployment)",
+      "type" : "deployment"
+    }
+  }, {
+    "data" : {
+      "id" : "DaemonSet:kube-system:kube-proxy",
+      "label" : "kube-proxy\n(DaemonSet)",
+      "type" : "daemonset"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:default:loop-role",
+      "label" : "loop-role\n(Role)",
+      "type" : "role"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "id" : "Role:kube-public:kubeadm:bootstrap-signer-clusterinfo",
+      "label" : "bootstrap-signer-clusterinfo\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-public:system:controller:bootstrap-signer",
+      "label" : "bootstrap-signer\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:extension-apiserver-authentication-reader",
+      "label" : "extension-apiserver-authentication-reader\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:kube-proxy",
+      "label" : "kube-proxy\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:kubeadm:kubelet-config",
+      "label" : "kubelet-config\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:kubeadm:nodes-kubeadm-config",
+      "label" : "nodes-kubeadm-config\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:system::leader-locking-kube-controller-manager",
+      "label" : "leader-locking-kube-controller-manager\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:system::leader-locking-kube-scheduler",
+      "label" : "leader-locking-kube-scheduler\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:system:controller:bootstrap-signer",
+      "label" : "bootstrap-signer\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:system:controller:token-cleaner",
+      "label" : "token-cleaner\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:kube-system:system:persistent-volume-provisioner",
+      "label" : "persistent-volume-provisioner\n(Role)",
+      "type" : "role"
+    }
+  }, {
+    "data" : {
+      "id" : "Role:multipath-test:role-alpha",
+      "label" : "role-alpha\n(Role)",
+      "type" : "role"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "id" : "Role:multipath-test:role-beta",
+      "label" : "role-beta\n(Role)",
+      "type" : "role"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:cluster-admin",
+      "label" : "cluster-admin\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:kubeadm:get-nodes",
+      "label" : "get-nodes\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:basic-user",
+      "label" : "basic-user\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:certificates.k8s.io:certificatesigningrequests:nodeclient",
+      "label" : "nodeclient\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:certificates.k8s.io:certificatesigningrequests:selfnodeclient",
+      "label" : "selfnodeclient\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:attachdetach-controller",
+      "label" : "attachdetach-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:certificate-controller",
+      "label" : "certificate-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:clusterrole-aggregation-controller",
+      "label" : "clusterrole-aggregation-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "label" : "cronjob-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "label" : "daemon-set-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "label" : "deployment-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "label" : "disruption-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:endpoint-controller",
+      "label" : "endpoint-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:endpointslice-controller",
+      "label" : "endpointslice-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:endpointslicemirroring-controller",
+      "label" : "endpointslicemirroring-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "label" : "ephemeral-volume-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:expand-controller",
+      "label" : "expand-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:generic-garbage-collector",
+      "label" : "generic-garbage-collector\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:horizontal-pod-autoscaler",
+      "label" : "horizontal-pod-autoscaler\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "label" : "job-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:legacy-service-account-token-cleaner",
+      "label" : "legacy-service-account-token-cleaner\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:namespace-controller",
+      "label" : "namespace-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "label" : "node-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "label" : "persistent-volume-binder\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "label" : "pod-garbage-collector\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:pv-protection-controller",
+      "label" : "pv-protection-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:pvc-protection-controller",
+      "label" : "pvc-protection-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "label" : "replicaset-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "label" : "replication-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "label" : "resource-claim-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:resourcequota-controller",
+      "label" : "resourcequota-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "label" : "root-ca-cert-publisher\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:service-account-controller",
+      "label" : "service-account-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:service-cidrs-controller",
+      "label" : "service-cidrs-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "label" : "statefulset-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:ttl-after-finished-controller",
+      "label" : "ttl-after-finished-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:ttl-controller",
+      "label" : "ttl-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:validatingadmissionpolicy-status-controller",
+      "label" : "validatingadmissionpolicy-status-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:controller:volumeattributesclass-protection-controller",
+      "label" : "volumeattributesclass-protection-controller\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:coredns",
+      "label" : "coredns\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:discovery",
+      "label" : "discovery\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:kube-controller-manager",
+      "label" : "kube-controller-manager\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "label" : "kube-scheduler\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:monitoring",
+      "label" : "monitoring\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:node-bootstrapper",
+      "label" : "node-bootstrapper\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:node-proxier",
+      "label" : "node-proxier\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:persistent-volume-provisioner",
+      "label" : "persistent-volume-provisioner\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:public-info-viewer",
+      "label" : "public-info-viewer\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:service-account-issuer-discovery",
+      "label" : "service-account-issuer-discovery\n(ClusterRole)",
+      "type" : "clusterrole"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "id" : "ClusterRole:cluster-scoped:system:volume-scheduler",
+      "label" : "volume-scheduler\n(ClusterRole)",
+      "type" : "clusterrole"
+    }
+  }, {
+    "data" : {
+      "id" : "Node:cluster-scoped:minikube",
+      "label" : "minikube\n(Node)",
+      "type" : "node",
+      "isEntry" : true,
+      "blastRadiusIds" : [ ]
+    },
+    "classes" : "entry-node"
+  }, {
+    "data" : {
+      "id" : "User:cluster-scoped:system:anonymous",
+      "label" : "anonymous\n(User)",
+      "type" : "user"
+    }
+  }, {
+    "data" : {
+      "id" : "Group:cluster-scoped:system:bootstrappers:kubeadm:default-node-token",
+      "label" : "default-node-token\n(Group)",
+      "type" : "group"
+    }
+  }, {
+    "data" : {
+      "id" : "Group:cluster-scoped:system:nodes",
+      "label" : "nodes\n(Group)",
+      "type" : "group"
+    }
+  }, {
+    "data" : {
+      "id" : "User:cluster-scoped:system:kube-controller-manager",
+      "label" : "kube-controller-manager\n(User)",
+      "type" : "user"
+    }
+  }, {
+    "data" : {
+      "id" : "User:cluster-scoped:system:kube-scheduler",
+      "label" : "kube-scheduler\n(User)",
+      "type" : "user"
+    }
+  }, {
+    "data" : {
+      "id" : "Group:cluster-scoped:system:masters",
+      "label" : "masters\n(Group)",
+      "type" : "group"
+    }
+  }, {
+    "data" : {
+      "id" : "Group:cluster-scoped:kubeadm:cluster-admins",
+      "label" : "cluster-admins\n(Group)",
+      "type" : "group"
+    }
+  }, {
+    "data" : {
+      "id" : "Group:cluster-scoped:system:authenticated",
+      "label" : "authenticated\n(Group)",
+      "type" : "group"
+    }
+  }, {
+    "data" : {
+      "id" : "Group:cluster-scoped:system:monitoring",
+      "label" : "monitoring\n(Group)",
+      "type" : "group"
+    }
+  }, {
+    "data" : {
+      "id" : "User:cluster-scoped:system:kube-proxy",
+      "label" : "kube-proxy\n(User)",
+      "type" : "user"
+    }
+  }, {
+    "data" : {
+      "id" : "Group:cluster-scoped:system:unauthenticated",
+      "label" : "unauthenticated\n(Group)",
+      "type" : "group"
+    }
+  }, {
+    "data" : {
+      "id" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "serviceaccounts\n(Group)",
+      "type" : "group",
+      "isChokePoint" : true
+    },
+    "classes" : "critical-path choke-point"
+  } ],
+  "edges" : [ {
+    "data" : {
+      "source" : "Pod:default:loop-pod",
+      "target" : "ServiceAccount:default:loop-sa",
+      "label" : "uses_sa"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "target" : "ServiceAccount:default:default",
+      "label" : "uses_sa"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "target" : "ServiceAccount:default:default",
+      "label" : "uses_sa"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "target" : "ServiceAccount:default:default",
+      "label" : "uses_sa"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:default:secret-demo-pod",
+      "target" : "ServiceAccount:default:default",
+      "label" : "uses_sa"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "Pod:default:secret-demo-pod",
+      "target" : "Secret:default:my-secret",
+      "label" : "uses_secret"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "Pod:default:secret-demo-pod",
+      "target" : "ConfigMap:default:blue-web-cm",
+      "label" : "uses_configmap"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:default:secret-demo-pod",
+      "target" : "Secret:default:my-secret",
+      "label" : "mounts_secret"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "Pod:default:secret-demo-pod",
+      "target" : "ConfigMap:default:blue-web-cm",
+      "label" : "mounts_configmap"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "target" : "ServiceAccount:kube-system:coredns",
+      "label" : "uses_sa"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "target" : "ConfigMap:kube-system:coredns",
+      "label" : "mounts_configmap"
+    }
+  }, {
+    "data" : {
+      "source" : "ReplicaSet:kube-system:coredns-7d764666f9",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:etcd-minikube",
+      "target" : "Node:cluster-scoped:minikube",
+      "label" : "host_path_access"
+    }
+  }, {
+    "data" : {
+      "source" : "Node:cluster-scoped:minikube",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:kube-apiserver-minikube",
+      "target" : "Node:cluster-scoped:minikube",
+      "label" : "host_path_access"
+    }
+  }, {
+    "data" : {
+      "source" : "Node:cluster-scoped:minikube",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:kube-controller-manager-minikube",
+      "target" : "Node:cluster-scoped:minikube",
+      "label" : "host_path_access"
+    }
+  }, {
+    "data" : {
+      "source" : "Node:cluster-scoped:minikube",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:kube-proxy-5x7l5",
+      "target" : "ServiceAccount:kube-system:kube-proxy",
+      "label" : "uses_sa"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:kube-proxy-5x7l5",
+      "target" : "ConfigMap:kube-system:kube-proxy",
+      "label" : "mounts_configmap"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:kube-proxy-5x7l5",
+      "target" : "Node:cluster-scoped:minikube",
+      "label" : "node_escape"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:kube-proxy-5x7l5",
+      "target" : "Node:cluster-scoped:minikube",
+      "label" : "host_path_access"
+    }
+  }, {
+    "data" : {
+      "source" : "DaemonSet:kube-system:kube-proxy",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:kube-scheduler-minikube",
+      "target" : "Node:cluster-scoped:minikube",
+      "label" : "host_path_access"
+    }
+  }, {
+    "data" : {
+      "source" : "Node:cluster-scoped:minikube",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:storage-provisioner",
+      "target" : "ServiceAccount:kube-system:storage-provisioner",
+      "label" : "uses_sa"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:kube-system:storage-provisioner",
+      "target" : "Node:cluster-scoped:minikube",
+      "label" : "host_path_access"
+    }
+  }, {
+    "data" : {
+      "source" : "Pod:multipath-test:attacker-pod",
+      "target" : "ServiceAccount:multipath-test:attacker-sa",
+      "label" : "uses_sa"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "Deployment:default:nginx-deployment",
+      "target" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Deployment:kube-system:coredns",
+      "target" : "ReplicaSet:kube-system:coredns-7d764666f9",
+      "label" : "manages"
+    }
+  }, {
+    "data" : {
+      "source" : "Role:default:loop-role",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "Role:kube-public:system:controller:bootstrap-signer",
+      "target" : "ConfigMap:kube-public:cluster-info",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "Role:multipath-test:role-alpha",
+      "target" : "Secret:multipath-test:crown-jewel",
+      "label" : "can_access"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "Role:multipath-test:role-beta",
+      "target" : "Secret:multipath-test:crown-jewel",
+      "label" : "can_access"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:default:loop-sa",
+      "target" : "Role:default:loop-role",
+      "label" : "bound_to"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:anonymous",
+      "target" : "Role:kube-public:kubeadm:bootstrap-signer-clusterinfo",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:bootstrap-signer",
+      "target" : "Role:kube-public:system:controller:bootstrap-signer",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:bootstrappers:kubeadm:default-node-token",
+      "target" : "Role:kube-system:kube-proxy",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:nodes",
+      "target" : "Role:kube-system:kubeadm:kubelet-config",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:bootstrappers:kubeadm:default-node-token",
+      "target" : "Role:kube-system:kubeadm:kubelet-config",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:bootstrappers:kubeadm:default-node-token",
+      "target" : "Role:kube-system:kubeadm:nodes-kubeadm-config",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:nodes",
+      "target" : "Role:kube-system:kubeadm:nodes-kubeadm-config",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:kube-controller-manager",
+      "target" : "Role:kube-system:extension-apiserver-authentication-reader",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:kube-scheduler",
+      "target" : "Role:kube-system:extension-apiserver-authentication-reader",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:kube-controller-manager",
+      "target" : "Role:kube-system:system::leader-locking-kube-controller-manager",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:kube-scheduler",
+      "target" : "Role:kube-system:system::leader-locking-kube-scheduler",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:bootstrap-signer",
+      "target" : "Role:kube-system:system:controller:bootstrap-signer",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:token-cleaner",
+      "target" : "Role:kube-system:system:controller:token-cleaner",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:storage-provisioner",
+      "target" : "Role:kube-system:system:persistent-volume-provisioner",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:multipath-test:attacker-sa",
+      "target" : "Role:multipath-test:role-alpha",
+      "label" : "bound_to"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:multipath-test:attacker-sa",
+      "target" : "Role:multipath-test:role-beta",
+      "label" : "bound_to"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "DaemonSet:kube-system:kube-proxy",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "DaemonSet:kube-system:kube-proxy",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Deployment:kube-system:coredns",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Deployment:default:nginx-deployment",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Deployment:kube-system:coredns",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Deployment:default:nginx-deployment",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Deployment:kube-system:coredns",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Deployment:default:nginx-deployment",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "ReplicaSet:kube-system:coredns-7d764666f9",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:endpointslice-controller",
+      "target" : "Service:kube-system:kube-dns",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:endpointslice-controller",
+      "target" : "Service:default:kubernetes",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:endpointslicemirroring-controller",
+      "target" : "Service:kube-system:kube-dns",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:endpointslicemirroring-controller",
+      "target" : "Service:default:kubernetes",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:legacy-service-account-token-cleaner",
+      "target" : "Secret:multipath-test:crown-jewel",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:legacy-service-account-token-cleaner",
+      "target" : "Secret:default:my-secret",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "ReplicaSet:kube-system:coredns-7d764666f9",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "ReplicaSet:kube-system:coredns-7d764666f9",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "ReplicaSet:kube-system:coredns-7d764666f9",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "ReplicaSet:default:nginx-deployment-7b9ccfd4cc",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-public:cluster-info",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-public:kube-root-ca.crt",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:multipath-test:kube-root-ca.crt",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-node-lease:kube-root-ca.crt",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:default:blue-web-cm",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:default:kube-root-ca.crt",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-system:coredns",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-system:extension-apiserver-authentication",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-system:kube-apiserver-legacy-service-account-token-tracking",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-system:kube-proxy",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-system:kube-root-ca.crt",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-system:kubeadm-config",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "target" : "ConfigMap:kube-system:kubelet-config",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-controller-manager",
+      "target" : "Secret:multipath-test:crown-jewel",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-controller-manager",
+      "target" : "Secret:default:my-secret",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-controller-manager",
+      "target" : "Secret:multipath-test:crown-jewel",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-controller-manager",
+      "target" : "Secret:default:my-secret",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-controller-manager",
+      "target" : "Secret:multipath-test:crown-jewel",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-controller-manager",
+      "target" : "Secret:default:my-secret",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:loop-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-c4j62",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-pknq4",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:nginx-deployment-7b9ccfd4cc-vhrbx",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:default:secret-demo-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:coredns-7d764666f9-x9dd5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:etcd-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-apiserver-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-controller-manager-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-proxy-5x7l5",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:kube-scheduler-minikube",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:kube-system:storage-provisioner",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "target" : "Pod:multipath-test:attacker-pod",
+      "label" : "can_access"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:masters",
+      "target" : "ClusterRole:cluster-scoped:cluster-admin",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:kubeadm:cluster-admins",
+      "target" : "ClusterRole:cluster-scoped:cluster-admin",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:bootstrappers:kubeadm:default-node-token",
+      "target" : "ClusterRole:cluster-scoped:kubeadm:get-nodes",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:bootstrappers:kubeadm:default-node-token",
+      "target" : "ClusterRole:cluster-scoped:system:node-bootstrapper",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:bootstrappers:kubeadm:default-node-token",
+      "target" : "ClusterRole:cluster-scoped:system:certificates.k8s.io:certificatesigningrequests:nodeclient",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:nodes",
+      "target" : "ClusterRole:cluster-scoped:system:certificates.k8s.io:certificatesigningrequests:selfnodeclient",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:kube-proxy",
+      "target" : "ClusterRole:cluster-scoped:system:node-proxier",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:default",
+      "target" : "ClusterRole:cluster-scoped:cluster-admin",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:storage-provisioner",
+      "target" : "ClusterRole:cluster-scoped:system:persistent-volume-provisioner",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:authenticated",
+      "target" : "ClusterRole:cluster-scoped:system:basic-user",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:attachdetach-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:attachdetach-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:certificate-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:certificate-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:clusterrole-aggregation-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:clusterrole-aggregation-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:cronjob-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:cronjob-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:daemon-set-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:daemon-set-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:deployment-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:deployment-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:disruption-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:disruption-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:endpoint-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:endpoint-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:endpointslice-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:endpointslice-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:endpointslicemirroring-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:endpointslicemirroring-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:ephemeral-volume-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:ephemeral-volume-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:expand-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:expand-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:generic-garbage-collector",
+      "target" : "ClusterRole:cluster-scoped:system:controller:generic-garbage-collector",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:horizontal-pod-autoscaler",
+      "target" : "ClusterRole:cluster-scoped:system:controller:horizontal-pod-autoscaler",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:job-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:job-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:legacy-service-account-token-cleaner",
+      "target" : "ClusterRole:cluster-scoped:system:controller:legacy-service-account-token-cleaner",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:namespace-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:namespace-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:node-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:node-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:persistent-volume-binder",
+      "target" : "ClusterRole:cluster-scoped:system:controller:persistent-volume-binder",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:pod-garbage-collector",
+      "target" : "ClusterRole:cluster-scoped:system:controller:pod-garbage-collector",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:pv-protection-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:pv-protection-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:pvc-protection-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:pvc-protection-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:replicaset-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:replicaset-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:replication-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:replication-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:resource-claim-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:resource-claim-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:resourcequota-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:resourcequota-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:root-ca-cert-publisher",
+      "target" : "ClusterRole:cluster-scoped:system:controller:root-ca-cert-publisher",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:service-account-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:service-account-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:service-cidrs-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:service-cidrs-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:statefulset-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:statefulset-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:ttl-after-finished-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:ttl-after-finished-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:ttl-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:ttl-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:validatingadmissionpolicy-status-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:validatingadmissionpolicy-status-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:volumeattributesclass-protection-controller",
+      "target" : "ClusterRole:cluster-scoped:system:controller:volumeattributesclass-protection-controller",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:coredns",
+      "target" : "ClusterRole:cluster-scoped:system:coredns",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:authenticated",
+      "target" : "ClusterRole:cluster-scoped:system:discovery",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:kube-controller-manager",
+      "target" : "ClusterRole:cluster-scoped:system:kube-controller-manager",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:kube-scheduler",
+      "target" : "ClusterRole:cluster-scoped:system:kube-scheduler",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:monitoring",
+      "target" : "ClusterRole:cluster-scoped:system:monitoring",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:kube-proxy",
+      "target" : "ClusterRole:cluster-scoped:system:node-proxier",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:authenticated",
+      "target" : "ClusterRole:cluster-scoped:system:public-info-viewer",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:unauthenticated",
+      "target" : "ClusterRole:cluster-scoped:system:public-info-viewer",
+      "label" : "bound_to"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:default:default",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:default:loop-sa",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-node-lease:default",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-public:default",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:attachdetach-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:bootstrap-signer",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:certificate-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:clusterrole-aggregation-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:coredns",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:cronjob-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:daemon-set-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:default",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:deployment-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:disruption-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:endpoint-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:endpointslice-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:endpointslicemirroring-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:ephemeral-volume-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:expand-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:generic-garbage-collector",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:horizontal-pod-autoscaler",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:job-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:kube-proxy",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:legacy-service-account-token-cleaner",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:namespace-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:node-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:persistent-volume-binder",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:pod-garbage-collector",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:pv-protection-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:pvc-protection-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:replicaset-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:replication-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:resource-claim-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:resourcequota-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:root-ca-cert-publisher",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:service-account-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:service-cidrs-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:statefulset-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:storage-provisioner",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:token-cleaner",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:ttl-after-finished-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:ttl-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:validatingadmissionpolicy-status-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:kube-system:volumeattributesclass-protection-controller",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    }
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:multipath-test:attacker-sa",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "ServiceAccount:multipath-test:default",
+      "target" : "Group:cluster-scoped:system:serviceaccounts",
+      "label" : "member_of"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "Group:cluster-scoped:system:serviceaccounts",
+      "target" : "ClusterRole:cluster-scoped:system:service-account-issuer-discovery",
+      "label" : "bound_to"
+    },
+    "classes" : "critical-path"
+  }, {
+    "data" : {
+      "source" : "User:cluster-scoped:system:kube-scheduler",
+      "target" : "ClusterRole:cluster-scoped:system:volume-scheduler",
+      "label" : "bound_to"
+    }
+  } ]
+};
+    const elements = typeof graphData === 'object' ? graphData : { nodes: [], edges: [] };
+
+    // Initialize Cytoscape
+    const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: elements,
+        style: [
+            { selector: 'node', style: { 'background-color': '#1f6feb', 'label': 'data(label)', 'color': '#c9d1d9', 'font-size': '10px', 'text-wrap': 'wrap', 'text-valign': 'bottom', 'text-margin-y': 5, 'width': 25, 'height': 25 } },
+            { selector: 'edge', style: { 'width': 1.5, 'line-color': '#30363d', 'target-arrow-color': '#30363d', 'target-arrow-shape': 'triangle', 'curve-style': 'bezier', 'label': 'data(label)', 'font-size': '8px', 'color': '#8b949e', 'text-rotation': 'autorotate', 'text-background-opacity': 1, 'text-background-color': '#0d1117' } },
+            { selector: '.critical-path', style: { 'line-color': '#ff7b72', 'target-arrow-color': '#ff7b72', 'width': 3, 'color': '#ff7b72', 'font-weight': 'bold', 'z-index': 10 } },
+            { selector: 'node.critical-path', style: { 'border-color': '#ff7b72', 'border-width': 3 } },
+            { selector: '.entry-node', style: { 'border-color': '#2ea043', 'border-width': 3, 'shape': 'hexagon', 'width': 30, 'height': 30 } },
+            { selector: '.choke-point', style: { 'background-color': '#8b949e', 'border-width': 0, 'width': 35, 'height': 35, 'background-image': "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d1117' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E", 'background-fit': 'contain', 'z-index': 100 } },
+            { selector: '.blink-off', style: { 'opacity': 0.4 } },
+            { selector: '.blasted', style: { 'underlay-color': '#ffa657', 'underlay-padding': 8, 'underlay-opacity': 0.8, 'background-color': '#ffa657', 'border-color': '#ffa657' } }
+        ]
+    });
+
+    // Blinking Effect for Choke Point
+    setInterval(() => cy.nodes('.choke-point').toggleClass('blink-off'), 800);
+
+    // UI Toggles & Physics Layout
+    const orphanNodes = cy.nodes().filter(node => node.degree() === 0);
+    cy.remove(orphanNodes);
+
+    const focusToggle = document.getElementById('focusToggle');
+
+    const runPhysicsLayout = () => {
+        cy.layout({
+            name: 'fcose', quality: 'proof', randomize: true, animate: true, animationDuration: 1200,
+            nodeRepulsion: 8000, idealEdgeLength: 150, edgeElasticity: 0.25, packComponents: true, step: "all"
+        }).run();
+    };
+
+    const applyFocusEffect = () => {
+        const backgroundElements = cy.elements().not('.critical-path').not('.entry-node').not('.choke-point');
+        if (focusToggle.checked) {
+            backgroundElements.animate({ style: { 'opacity': 0.25, 'text-opacity': 0.25 } }, { duration: 500 });
+        } else {
+            backgroundElements.animate({ style: { 'opacity': 1, 'text-opacity': 1 } }, { duration: 500 });
+        }
+    };
+
+    focusToggle.addEventListener('change', applyFocusEffect);
+
+    document.getElementById('orphanToggle').addEventListener('change', function(e) {
+        if (e.target.checked) {
+            cy.add(orphanNodes);
+            orphanNodes.style(focusToggle.checked ? { 'opacity': 0.25, 'text-opacity': 0.25 } : { 'opacity': 1, 'text-opacity': 1 });
+        } else {
+            cy.remove(orphanNodes);
+        }
+        runPhysicsLayout();
+    });
+
+    // Initial Load
+    runPhysicsLayout();
+
+    // Tooltip & Blast Radius Hover
+    const tooltip = document.getElementById('custom-tooltip');
+
+    cy.on('mouseover', 'node', function(event) {
+        const data = event.target.data();
+        let html = `<div class="tooltip-title">${data.id}</div><b>Type:</b> ${data.type.toUpperCase()}<br>`;
+        if (data.isEntry) html += `<div class="tooltip-blast">🔥 Entry Point (Configured Max Hops: 3)</div>`;
+        if (data.isChokePoint) {
+            html += `<div class="tooltip-alert">⚠️ RECOMMENDED CHOKE POINT</div>`;
+            if (data.type === 'group') {
+                html += `Groups are not K8s API objects and cannot be directly deleted.<br>Remediate by auditing and removing the <b>ClusterRoleBinding(s)</b> that grant this group elevated access.`;
+            } else if (data.type === 'serviceaccount') {
+                html += `Disable token auto-mount and scope permissions on this ServiceAccount to cut off attack paths.`;
+            } else if (data.type === 'role' || data.type === 'clusterrole') {
+                html += `Tighten the permissions granted by this Role to sever the most attack paths.`;
+            } else {
+                html += `Hardening or removing this node significantly reduces the blast radius.`;
+            }
+        }
+
+        tooltip.innerHTML = html;
+        tooltip.style.display = 'block';
+
+        if (data.isEntry && data.blastRadiusIds) {
+            data.blastRadiusIds.forEach(id => {
+                const targetNode = cy.getElementById(id);
+                if (targetNode) targetNode.addClass('blasted');
+            });
+        }
+    });
+
+    cy.on('mousemove', event => {
+        tooltip.style.left = (event.originalEvent.pageX + 15) + 'px';
+        tooltip.style.top = (event.originalEvent.pageY + 15) + 'px';
+    });
+
+    cy.on('mouseout', 'node', event => {
+        tooltip.style.display = 'none';
+        if (event.target.data('isEntry')) cy.nodes('.blasted').removeClass('blasted');
+    });
+</script>
+</body>
+</html>

@@ -5,15 +5,13 @@ import io.github.SaptarshiSarkar12.k8sattackmap.model.*;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.TrivyScanner;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.ScanResult;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.util.*;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType.*;
-import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.*;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.CLUSTER_SCOPED;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 

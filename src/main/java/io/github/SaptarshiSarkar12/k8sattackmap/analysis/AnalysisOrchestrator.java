@@ -12,14 +12,13 @@ import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.Remediation
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.ProgressReporter;
+import lombok.extern.slf4j.Slf4j;
 import org.jgrapht.GraphPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
+@Slf4j
 public class AnalysisOrchestrator {
-    private static final Logger log = LoggerFactory.getLogger(AnalysisOrchestrator.class);
     private static final ProgressReporter progress = new ProgressReporter(log);
 
     public static AnalysisResult performAnalysis(AnalysisInput input) {

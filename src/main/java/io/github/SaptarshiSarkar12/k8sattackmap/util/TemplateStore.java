@@ -1,59 +1,38 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Objects;
 
-/**
- * Holds the runtime-loaded HTML/PDF report template strings.
- * Templates are read once at startup via {@link #load(Class)} and
- * are then available as plain fields for the lifetime of the process.
- */
+@Slf4j
 public final class TemplateStore {
-    private static final Logger log = LoggerFactory.getLogger(TemplateStore.class);
+    @Getter
+    private static volatile String html;
+    @Getter
+    private static volatile String pdf;
 
-    private TemplateStore() {}
+    private TemplateStore() {
+    }
 
-    public static String HTML;
-    public static String PDF;
-
-    /**
-     * Loads both templates from the classpath. Exits the process if either
-     * template cannot be found, because the application cannot produce any
-     * output without them.
-     *
-     * @param caller the class whose classloader should resolve the resource paths
-     */
     public static void load(Class<?> caller) {
-        HTML = loadTemplate(caller, AppConstants.HTML_TEMPLATE_RESOURCE_PATH, "HTML");
-        PDF  = loadTemplate(caller, AppConstants.PDF_TEMPLATE_RESOURCE_PATH,  "PDF");
+        Objects.requireNonNull(caller, "caller must not be null");
+        html = readResourceText(caller, AppConstants.HTML_TEMPLATE_RESOURCE_PATH, "HTML");
+        pdf = readResourceText(caller, AppConstants.PDF_TEMPLATE_RESOURCE_PATH, "PDF");
     }
 
-    private static String loadTemplate(Class<?> caller, String resourcePath, String label) {
-        try {
-            return Files.readString(Paths.get(Objects.requireNonNull(caller.getResource(resourcePath)).toURI()));
-        } catch (Exception e) {
-            return loadTemplateFromStream(caller, resourcePath, label, e);
-        }
-    }
-
-    private static String loadTemplateFromStream(Class<?> caller, String resourcePath, String label, Exception fallbackException) {
-        String adjustedPath = resourcePath.substring(1); // Remove leading slash for classloader access
-        try (InputStream is = caller.getClassLoader().getResourceAsStream(adjustedPath)) {
-            if (is == null) {
-                throw new IOException("Resource not found on classpath: " + adjustedPath);
+    private static String readResourceText(Class<?> caller, String resourcePath, String label) {
+        try (InputStream inputStream = caller.getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                throw new IllegalStateException("Missing " + label + " template on classpath: " + resourcePath);
             }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            log.error("Failed to load {} report template from {}: {}", label, resourcePath, fallbackException.getMessage(), fallbackException);
-            System.exit(1);
-            return null;
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.error("Failed to read {} template from {}", label, resourcePath, e);
+            throw new IllegalStateException("Unable to read " + label + " template: " + resourcePath, e);
         }
     }
 }

@@ -223,7 +223,7 @@ Native images are automatically built by GitHub Actions CI/CD workflow.
 The project follows standard Java conventions. Please keep these in mind:
 
 **General**
-- Use Lombok annotations (`@Getter`, `@Slf4j`, `@Builder`, etc.) to reduce boilerplate, consistent with the rest of the codebase.
+- Use Lombok annotations (`@Getter`, `@Slf4j`, etc.) to reduce boilerplate, consistent with the rest of the codebase.
 - Use `var` where the inferred type is obvious from the right-hand side (Java 25 feature in use).
 - Prefer descriptive names to abbreviations. `attackPathDiscovery` is better than `apd`.
 - Avoid raw types; always parameterize generics.
@@ -245,6 +245,25 @@ The html templates in `src/main/resources/templates/` are used for the PDF repor
 **Formatting**
 - Use 4-space indentation (no tabs).
 - Organise imports: standard library → third-party → internal. Remove unused imports before committing.
+
+### Style Expectations
+
+| Rule                                                             | Why it exists                    | Enforced by                      | Auto-fix? |
+|------------------------------------------------------------------|----------------------------------|----------------------------------|-----------|
+| Use 4-space indentation                                          | Consistent Java formatting       | Checkstyle / Spotless            | Yes       |
+| No tabs                                                          | Avoid mixed indentation          | Checkstyle / Spotless            | Yes       |
+| Organize imports (standard → third-party → internal)             | Readability and consistent diffs | Checkstyle / Spotless            | Yes       |
+| Remove unused imports                                            | Keep code clean                  | Checkstyle / Spotless            | Yes       |
+| Use `System.out` only for intentional user-facing summary output | Prevent noisy diagnostics        | Checkstyle + review              | No        |
+| Prefer descriptive names                                         | Improve maintainability          | Review / Checkstyle naming rules | No        |
+| Avoid raw types                                                  | Type safety                      | Checkstyle / compiler            | No        |
+| Add tests for behavior changes                                   | Protect against regressions      | Review / CI                      | No        |
+
+> **Console output exception:** `System.out.println` is allowed only in `AnalysisSummaryPrinter` for deliberate user-facing summaries. Elsewhere, use SLF4J logging.
+
+### Tooling
+
+The machine-enforced style rules live in `.github/linters/sun_checks.xml`. Contributors can run the same checks locally through Maven Checkstyle, and CI can verify them with Super-Linter.
 
 ---
 
