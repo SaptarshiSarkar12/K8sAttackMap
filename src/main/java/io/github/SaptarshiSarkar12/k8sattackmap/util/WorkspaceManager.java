@@ -2,13 +2,11 @@ package io.github.SaptarshiSarkar12.k8sattackmap.util;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.IOException;
 
 @Slf4j
 public class WorkspaceManager {

@@ -1,17 +1,15 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.security.trivy;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
 
+@Slf4j
 public class TrivyJsonParser {
-    private static final Logger log = LoggerFactory.getLogger(TrivyJsonParser.class);
-
     public static ScanResult parse(String trivyJson) {
         try {
             JsonNode root = MAPPER.readTree(trivyJson);

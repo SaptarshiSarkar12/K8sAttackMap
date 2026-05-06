@@ -2,17 +2,14 @@ package io.github.SaptarshiSarkar12.k8sattackmap.security;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.SecurityFacts;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.Set;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
+@Slf4j
 public class AttackSurfaceClassifier {
-    private static final Logger log = LoggerFactory.getLogger(AttackSurfaceClassifier.class);
-
     public static void classifySourceAndTargetCandidates(Set<GraphNode> allNodes, Set<GraphNode> sourceNodes, Set<GraphNode> targetNodes) {
         boolean isSourceNodeProvided = !sourceNodes.isEmpty();
         boolean isTargetNodeProvided = !targetNodes.isEmpty();

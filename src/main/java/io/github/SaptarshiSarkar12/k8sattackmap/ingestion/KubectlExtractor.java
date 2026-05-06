@@ -1,16 +1,14 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.ingestion;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class KubectlExtractor {
-    private static final Logger log = LoggerFactory.getLogger(KubectlExtractor.class);
-
     public static String fetchClusterStateAsJson() {
         log.info("Fetching cluster state from Kubectl...");
         ProcessBuilder pb = new ProcessBuilder("kubectl", "get",
