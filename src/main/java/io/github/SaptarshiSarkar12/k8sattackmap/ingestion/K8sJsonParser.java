@@ -4,21 +4,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.*;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.TrivyScanner;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.ScanResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.util.*;
 
 import static io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType.*;
-import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.*;
+import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.CLUSTER_SCOPED;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
+@Slf4j
 public class K8sJsonParser {
-    private static final Logger log = LoggerFactory.getLogger(K8sJsonParser.class);
-    private static final Map<String, ScanResult> imageRiskCache = new HashMap<>(); // Cache for image risk scores to avoid redundant Trivy scans
+    private static final Map<String, ScanResult> IMAGE_RISK_CACHE = new HashMap<>(); // Cache for image risk scores to avoid redundant Trivy scans
     private static final Set<String> LATERAL_MOVEMENT_VERBS = Set.of(
             "create", "update", "patch", "delete", "exec",
             "escalate", "bind", "impersonate", "deletecollection"
@@ -44,7 +43,7 @@ public class K8sJsonParser {
             for (ParsedItem item : parsedItems) {
                 processEdgesForItem(item, edges, nodes, nodesByKindAndNs, nodesByKindAndName, syntheticNodeIds);
             }
-            log.info("Successfully parsed {} resources and scanned {} unique container images.", parsedItems.size(), imageRiskCache.size());
+            log.info("Successfully parsed {} resources and scanned {} unique container images.", parsedItems.size(), IMAGE_RISK_CACHE.size());
             ClusterGraphData graphData = new ClusterGraphData();
             graphData.setNodes(nodes);
             graphData.setEdges(edges);
@@ -155,7 +154,7 @@ public class K8sJsonParser {
         String roleRefKind = roleRef.path("kind").asText();
         String roleRefName = roleRef.path("name").asText();
 
-        String roleNs = roleRefKind.equals("ClusterRole") ? CLUSTER_SCOPED : item.namespace();
+        String roleNs = "ClusterRole".equals(roleRefKind) ? CLUSTER_SCOPED : item.namespace();
         String roleTargetId = buildNodeId(roleRefKind, roleNs, roleRefName);
 
         JsonNode subjects = item.raw().path("subjects");
@@ -332,7 +331,7 @@ public class K8sJsonParser {
     }
 
     private static ScanSummary scanContainerImages(JsonNode item) {
-        if (!item.path("kind").asText().equals("Pod")) {
+        if (!"Pod".equals(item.path("kind").asText())) {
             return ScanSummary.empty();
         }
 
@@ -366,7 +365,7 @@ public class K8sJsonParser {
             }
 
             if (imageRef != null && !imageRef.isEmpty()) {
-                ScanResult scanResult = imageRiskCache.computeIfAbsent(imageRef, TrivyScanner::scanImage);
+                ScanResult scanResult = IMAGE_RISK_CACHE.computeIfAbsent(imageRef, TrivyScanner::scanImage);
                 List<String> imageCveIds = scanResult.cveIds();
                 if (imageCveIds != null) {
                     cveIds.addAll(imageCveIds);
@@ -388,7 +387,6 @@ public class K8sJsonParser {
                 .computeIfAbsent(buildKindNameKey(parsed.kind(), parsed.name()), _ -> new ArrayList<>())
                 .add(parsed.sourceId());
     }
-
 
     private static Map<String, List<String>> buildNodesAndIndex(
             JsonNode items,

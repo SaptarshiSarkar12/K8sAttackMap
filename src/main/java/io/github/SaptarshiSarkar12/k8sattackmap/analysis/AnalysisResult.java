@@ -15,5 +15,4 @@ public record AnalysisResult(
         List<List<GraphNode>> privilegeLoops,
         List<RemediationPlan> remediationPlans
 ) {
-
 }

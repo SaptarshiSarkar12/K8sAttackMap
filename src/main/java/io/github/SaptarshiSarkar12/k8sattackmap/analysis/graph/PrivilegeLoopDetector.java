@@ -3,19 +3,18 @@ package io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
+import lombok.extern.slf4j.Slf4j;
 import org.jgrapht.Graph;
 import org.jgrapht.alg.cycle.JohnsonSimpleCycles;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedWeightedMultigraph;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 public class PrivilegeLoopDetector {
-    private static final Logger log = LoggerFactory.getLogger(PrivilegeLoopDetector.class);
     private static final Set<EdgeType> RBAC_EDGE_TYPES = Set.of(
             EdgeType.BOUND_TO, EdgeType.CAN_ACCESS, EdgeType.MEMBER_OF
     );
