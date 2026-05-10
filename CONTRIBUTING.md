@@ -273,7 +273,7 @@ structure or styling of the report should be done by editing these templates, no
 **Formatting**
 
 - Use 4-space indentation (no tabs).
-- Organise imports: standard library → third-party → internal. Remove unused imports before committing.
+- Remove unused imports before committing.
 
 ### Style Expectations
 
@@ -299,7 +299,7 @@ You can set up your IDE to automatically format code on save using the Checkstyl
 
 1. Install the Checkstyle plugin.
 2. Configure it to use the `sun_checks.xml` file from the repository.
-3. Enable "Reformat code" and "Optimize imports" on save.
+3. Enable "Optimize imports" on save.
 
 You can also run Checkstyle manually before committing:
 
