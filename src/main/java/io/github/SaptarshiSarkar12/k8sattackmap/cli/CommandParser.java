@@ -65,7 +65,7 @@ public class CommandParser {
                 String[] formats = cmd.getOptionValues("output");
                 for (String format : formats) {
                     String fmt = format.trim().toLowerCase();
-                    if (fmt.equals("html") || fmt.equals("pdf")) {
+                    if ("html".equals(fmt) || "pdf".equals(fmt)) {
                         outputFormats.add(fmt);
                     } else {
                         log.warn("Unsupported output format specified: {}. Supported formats are 'html' and 'pdf'. Ignoring this value.", format);

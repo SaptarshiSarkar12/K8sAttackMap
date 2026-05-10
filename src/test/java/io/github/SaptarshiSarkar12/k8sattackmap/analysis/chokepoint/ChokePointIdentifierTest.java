@@ -1,5 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint;
 
+import org.junit.jupiter.api.Assertions;
 import io.github.SaptarshiSarkar12.k8sattackmap.helper.TestGraphHelper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
@@ -13,22 +14,20 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @DisplayName("ChokePointIdentifier identifies nodes that appear most frequently on attack paths")
 class ChokePointIdentifierTest {
     @Test
     @DisplayName("returns empty result for null input")
     void shouldReturnEmptyResultForNullInput() {
         ChokePointResult result = ChokePointIdentifier.identifyChokePoints(null);
-        assertTrue(result.rankedChokePoints().isEmpty());
+        Assertions.assertTrue(result.rankedChokePoints().isEmpty());
     }
 
     @Test
     @DisplayName("returns empty result for empty path list")
     void shouldReturnEmptyResultForEmptyPaths() {
         ChokePointResult result = ChokePointIdentifier.identifyChokePoints(List.of());
-        assertTrue(result.rankedChokePoints().isEmpty());
+        Assertions.assertTrue(result.rankedChokePoints().isEmpty());
     }
 
     @Test
@@ -41,7 +40,7 @@ class ChokePointIdentifierTest {
         List<GraphPath<GraphNode, GraphEdge>> paths = new AllDirectedPaths<>(graph).getAllPaths(src, tgt, true, 5);
         ChokePointResult result = ChokePointIdentifier.identifyChokePoints(paths);
 
-        assertTrue(result.rankedChokePoints().isEmpty(),
+        Assertions.assertTrue(result.rankedChokePoints().isEmpty(),
                 "A path with only source and target has no intermediate choke point");
     }
 
@@ -70,8 +69,8 @@ class ChokePointIdentifierTest {
 
         ChokePointResult result = ChokePointIdentifier.identifyChokePoints(paths);
 
-        assertFalse(result.rankedChokePoints().isEmpty());
-        assertEquals(mid, result.rankedChokePoints().getFirst().node(),
+        Assertions.assertFalse(result.rankedChokePoints().isEmpty());
+        Assertions.assertEquals(mid, result.rankedChokePoints().getFirst().node(),
                 "The shared intermediate node should be the top-ranked choke point");
     }
 
@@ -94,6 +93,6 @@ class ChokePointIdentifierTest {
                 new AllDirectedPaths<>(graph).getAllPaths(src, tgt, true, 5);
         ChokePointResult result = ChokePointIdentifier.identifyChokePoints(paths);
 
-        assertEquals(1, result.chokePointFrequencies().get(mid), "mid should appear in exactly 1 path");
+        Assertions.assertEquals(1, result.chokePointFrequencies().get(mid), "mid should appear in exactly 1 path");
     }
 }

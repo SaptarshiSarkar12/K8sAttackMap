@@ -1,5 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph;
 
+import org.junit.jupiter.api.Assertions;
 import io.github.SaptarshiSarkar12.k8sattackmap.helper.TestGraphHelper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
@@ -10,8 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @DisplayName("PrivilegeLoopDetector finds RBAC escalation cycles")
 class PrivilegeLoopDetectorTest {
     @Test
@@ -19,7 +18,7 @@ class PrivilegeLoopDetectorTest {
     void shouldReturnEmptyForAcyclicGraph() {
         Graph<GraphNode, GraphEdge> graph = TestGraphHelper.buildLinearGraph(3);
         List<List<GraphNode>> loops = PrivilegeLoopDetector.findEscalationLoops(graph);
-        assertTrue(loops.isEmpty());
+        Assertions.assertTrue(loops.isEmpty());
     }
 
     @Test
@@ -27,7 +26,7 @@ class PrivilegeLoopDetectorTest {
     void shouldDetectRbacCycle() {
         Graph<GraphNode, GraphEdge> graph = TestGraphHelper.buildRbacLoopGraph();
         List<List<GraphNode>> loops = PrivilegeLoopDetector.findEscalationLoops(graph);
-        assertFalse(loops.isEmpty());
+        Assertions.assertFalse(loops.isEmpty());
     }
 
     @Test
@@ -47,7 +46,7 @@ class PrivilegeLoopDetectorTest {
         );
 
         List<List<GraphNode>> loops = PrivilegeLoopDetector.findEscalationLoops(graph);
-        assertTrue(loops.isEmpty());
+        Assertions.assertTrue(loops.isEmpty());
     }
 
     @Test
@@ -55,7 +54,7 @@ class PrivilegeLoopDetectorTest {
     void shouldReturnEmptyForSingleNodeGraph() {
         GraphNode node = TestGraphHelper.makeNode("ServiceAccount:default:sa", "ServiceAccount");
         Graph<GraphNode, GraphEdge> graph = TestGraphHelper.buildGraph(List.of(node), List.of());
-        assertTrue(PrivilegeLoopDetector.findEscalationLoops(graph).isEmpty());
+        Assertions.assertTrue(PrivilegeLoopDetector.findEscalationLoops(graph).isEmpty());
     }
 
     @Test
@@ -66,7 +65,7 @@ class PrivilegeLoopDetectorTest {
 
         for (List<GraphNode> loop : loops) {
             for (GraphNode node : loop) {
-                assertTrue(graph.containsVertex(node),
+                Assertions.assertTrue(graph.containsVertex(node),
                         "Loop node " + node.getId() + " must exist in the original graph");
             }
         }

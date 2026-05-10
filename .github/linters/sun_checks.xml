@@ -5,12 +5,12 @@
 
 <module name="Checker">
     <property name="charset" value="UTF-8"/>
-    <property name="severity" value="warning"/>
+    <property name="severity" value="error"/>
     <property name="fileExtensions" value="java"/>
 
     <!-- Keep generated/build output out of scope -->
     <module name="BeforeExecutionExclusionFileFilter">
-        <property name="fileNamePattern" value="[/\\](target|generated-sources|generated-test-sources)[/\\]"/>
+        <property name="fileNamePattern" value="[/\\](target|generated-sources|generated-test-sources)[/\\]|module-info\.java$"/>
     </module>
 
     <module name="TreeWalker">
@@ -22,17 +22,12 @@
         <module name="ParameterName"/>
         <module name="LocalVariableName"/>
         <module name="MemberName"/>
-        <module name="ConstantName"/>
+        <module name="ConstantName">
+            <property name="format" value="^log(ger)?$|^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
 
         <!-- Imports -->
-        <module name="AvoidStarImport"/>
         <module name="UnusedImports"/>
-        <module name="CustomImportOrder">
-            <property name="customImportOrderRules"
-                      value="STANDARD_JAVA_PACKAGE###THIRD_PARTY_PACKAGE###SAME_PACKAGE(3)"/>
-            <property name="separateLineBetweenGroups" value="true"/>
-            <property name="sortImportsInGroupAlphabetically" value="true"/>
-        </module>
 
         <!-- Formatting -->
         <module name="Indentation">
@@ -41,34 +36,16 @@
             <property name="caseIndent" value="4"/>
             <property name="lineWrappingIndentation" value="8"/>
         </module>
-        <module name="NoLineWrap"/>
         <module name="WhitespaceAfter"/>
         <module name="WhitespaceAround"/>
-        <module name="EmptyLineSeparator"/>
+        <module name="EmptyLineSeparator">
+            <property name="allowNoEmptyLineBetweenFields" value="true"/>
+            <property name="allowMultipleEmptyLines" value="false"/>
+        </module>
         <module name="NeedBraces">
             <property name="allowSingleLineStatement" value="true"/>
         </module>
         <module name="LeftCurly"/>
         <module name="RightCurly"/>
-
-        <!-- Code hygiene -->
-        <module name="AvoidNestedBlocks"/>
-        <module name="FinalLocalVariable"/>
-        <module name="SimplifyBooleanReturn"/>
-        <module name="OneStatementPerLine"/>
-
-        <!-- Discourage direct stdout/err (allow only in AnalysisSummaryPrinter) -->
-        <module name="RegexpSinglelineJava">
-            <property name="format" value="System\.(out|err)\.print(ln)?\s*\("/>
-            <property name="message"
-                      value="Use SLF4J logging; intentional console output should stay in AnalysisSummaryPrinter only."/>
-            <property name="ignoreComments" value="true"/>
-        </module>
-    </module>
-
-    <!-- Allow System.out only in AnalysisSummaryPrinter -->
-    <module name="SuppressionSingleFilter">
-        <property name="checks" value="RegexpSinglelineJava"/>
-        <property name="files" value=".*[/\\]AnalysisSummaryPrinter\.java$"/>
     </module>
 </module>

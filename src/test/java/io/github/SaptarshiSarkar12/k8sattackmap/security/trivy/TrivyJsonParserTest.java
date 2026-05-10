@@ -1,10 +1,9 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.security.trivy;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("TrivyJsonParser CVSS score extraction")
 class TrivyJsonParserTest {
@@ -39,7 +38,7 @@ class TrivyJsonParserTest {
                           """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("my-image:latest", "debian", singleVuln("CVE-2024-0001", cvss)));
-            assertEquals(8.5, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(8.5, result.cvssScore(), 1e-9);
         }
 
         @Test
@@ -50,8 +49,8 @@ class TrivyJsonParserTest {
                           """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("my-image:latest", "debian", singleVuln("CVE-2024-9999", cvss)));
-            assertNotNull(result.cveIds());
-            assertTrue(result.cveIds().contains("CVE-2024-9999"));
+            Assertions.assertNotNull(result.cveIds());
+            Assertions.assertTrue(result.cveIds().contains("CVE-2024-9999"));
         }
     }
 
@@ -66,7 +65,7 @@ class TrivyJsonParserTest {
                           """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("my-image:latest", "debian", singleVuln("GHSA-0001-xxxx", cvss)));
-            assertEquals(9.1, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(9.1, result.cvssScore(), 1e-9);
         }
 
         @Test
@@ -77,7 +76,7 @@ class TrivyJsonParserTest {
                           """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("my-image:latest", "debian", singleVuln("GHSA-0002-xxxx", cvss)));
-            assertEquals(9.8, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(9.8, result.cvssScore(), 1e-9);
         }
     }
 
@@ -92,7 +91,7 @@ class TrivyJsonParserTest {
                           """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("bitnami/redis:7.0", "debian", singleVuln("CVE-2024-bitnami", cvss)));
-            assertEquals(9.5, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(9.5, result.cvssScore(), 1e-9);
         }
 
         @Test
@@ -103,7 +102,7 @@ class TrivyJsonParserTest {
                           """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("redis:7.0", "debian", singleVuln("CVE-2024-0002", cvss)));
-            assertEquals(6.0, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(6.0, result.cvssScore(), 1e-9);
         }
     }
 
@@ -118,7 +117,7 @@ class TrivyJsonParserTest {
                           """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("rhel-image:latest", "redhat", singleVuln("CVE-2024-rhel", cvss)));
-            assertEquals(8.0, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(8.0, result.cvssScore(), 1e-9);
         }
 
         @Test
@@ -129,7 +128,7 @@ class TrivyJsonParserTest {
                           """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("centos-image:latest", "centos", singleVuln("CVE-2024-centos", cvss)));
-            assertEquals(7.5, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(7.5, result.cvssScore(), 1e-9);
         }
     }
 
@@ -142,8 +141,8 @@ class TrivyJsonParserTest {
             ScanResult result = TrivyJsonParser.parse("""
                     {"ArtifactName":"my-image","Results":[]}
                     """);
-            assertEquals(0.0, result.cvssScore(), 1e-9);
-            assertNull(result.cveIds());
+            Assertions.assertEquals(0.0, result.cvssScore(), 1e-9);
+            Assertions.assertNull(result.cveIds());
         }
 
         @Test
@@ -152,15 +151,15 @@ class TrivyJsonParserTest {
             ScanResult result = TrivyJsonParser.parse("""
                     {"ArtifactName":"my-image"}
                     """);
-            assertEquals(0.0, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(0.0, result.cvssScore(), 1e-9);
         }
 
         @Test
         @DisplayName("should handle malformed JSON gracefully")
         void shouldHandleMalformedJson() {
-            ScanResult result = assertDoesNotThrow(
+            ScanResult result = Assertions.assertDoesNotThrow(
                     () -> TrivyJsonParser.parse("{this is not valid json"));
-            assertEquals(0.0, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(0.0, result.cvssScore(), 1e-9);
         }
 
         @Test
@@ -171,9 +170,9 @@ class TrivyJsonParserTest {
                            """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("my-image:latest", "debian", vulns));
-            assertNotNull(result.cveIds());
-            assertTrue(result.cveIds().contains("CVE-2024-nocvss"));
-            assertEquals(0.0, result.cvssScore(), 1e-9);
+            Assertions.assertNotNull(result.cveIds());
+            Assertions.assertTrue(result.cveIds().contains("CVE-2024-nocvss"));
+            Assertions.assertEquals(0.0, result.cvssScore(), 1e-9);
         }
 
         @Test
@@ -188,8 +187,8 @@ class TrivyJsonParserTest {
                            """;
             ScanResult result = TrivyJsonParser.parse(
                     trivyJson("my-image:latest", "debian", vulns));
-            assertEquals(9.9, result.cvssScore(), 1e-9);
-            assertEquals(3, result.cveIds().size());
+            Assertions.assertEquals(9.9, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(3, result.cveIds().size());
         }
 
         @Test
@@ -205,8 +204,8 @@ class TrivyJsonParserTest {
                           }
                           """;
             ScanResult result = TrivyJsonParser.parse(json);
-            assertEquals(9.2, result.cvssScore(), 1e-9);
-            assertEquals(2, result.cveIds().size());
+            Assertions.assertEquals(9.2, result.cvssScore(), 1e-9);
+            Assertions.assertEquals(2, result.cveIds().size());
         }
     }
 }

@@ -12,7 +12,8 @@
 [![GitHub Issues](https://img.shields.io/github/issues/SaptarshiSarkar12/K8sAttackMap)](https://github.com/SaptarshiSarkar12/K8sAttackMap/issues)
 
 **Kubernetes attack surface visualiser and security advisor.**  
-Ingests a live or offline cluster snapshot, builds a directed attack graph across RBAC, workloads, secrets, and node relationships, then surfaces the most dangerous paths, choke points, and remediation steps — all in a single command.
+Ingests a live or offline cluster snapshot, builds a directed attack graph across RBAC, workloads, secrets, and node
+relationships, then surfaces the most dangerous paths, choke points, and remediation steps — all in a single command.
 
 </div>
 
@@ -40,13 +41,16 @@ Ingests a live or offline cluster snapshot, builds a directed attack graph acros
 
 ## Why K8sAttackMap?
 
-Most Kubernetes security tools check policy compliance in isolation — they tell you a pod is privileged or a role has wildcard verbs, but they don't tell you *what an attacker can actually reach* from that misconfiguration. K8sAttackMap connects those dots.
+Most Kubernetes security tools check policy compliance in isolation — they tell you a pod is privileged or a role has
+wildcard verbs, but they don't tell you *what an attacker can actually reach* from that misconfiguration. K8sAttackMap
+connects those dots.
 
 Given a cluster snapshot, the tool:
 
 1. Parses every workload, RBAC binding, secret, and service account relationship.
 2. Scans container images for known CVEs using [Trivy](https://trivy.dev/).
-3. Builds a weighted directed multigraph where edges represent real attack capabilities (`uses_sa`, `bound_to`, `can_access`, `mounts_secret`, `node_escape`, and more).
+3. Builds a weighted directed multigraph where edges represent real attack capabilities (`uses_sa`, `bound_to`,
+   `can_access`, `mounts_secret`, `node_escape`, and more).
 4. Runs `Dijkstra` and `AllDirectedPaths` to find the shortest and all possible compromise routes.
 5. Identifies choke points — the single nodes whose hardening eliminates the most attack paths.
 6. Detects privilege escalation loops (circular RBAC chains).
@@ -58,50 +62,81 @@ Given a cluster snapshot, the tool:
 
 ```mermaid
 flowchart TD
-%% Modern Dark Theme Styling
-  classDef transparentNode fill:none,stroke:none,color:#c9d1d9,font-size:16px,font-family:monospace;
-  classDef processNode fill:#0d1117,stroke:#58a6ff,stroke-width:2px,color:#c9d1d9,rx:8px,ry:8px,font-family:monospace;
-  classDef dataNode fill:#0d1117,stroke:#3fb950,stroke-width:2px,color:#c9d1d9,rx:8px,ry:8px,font-family:monospace;
-  classDef taskNode fill:#161b22,stroke:#8b949e,stroke-width:1px,color:#c9d1d9,rx:6px,ry:6px,font-family:monospace,text-align:left;
-  classDef outputNode fill:#0d1117,stroke:#bc8cff,stroke-width:2px,color:#c9d1d9,rx:8px,ry:8px,font-family:monospace,text-align:left;
-  classDef annotation fill:none,stroke:none,color:#8b949e,font-style:italic,font-family:monospace;
+%% Modern GitHub-inspired Dark Theme
+    classDef inputNode fill: #238636, stroke: #2ea043, stroke-width: 2px, color: #ffffff, font-family: sans-serif, rx: 5px, ry: 5px;
+    classDef processNode fill: #1f6feb, stroke: #388bfd, stroke-width: 2px, color: #ffffff, font-family: sans-serif, rx: 5px, ry: 5px;
+    classDef dataNode fill: #8957e5, stroke: #a371f7, stroke-width: 2px, color: #ffffff, font-family: sans-serif, rx: 5px, ry: 5px;
+    classDef taskNode fill: #21262d, stroke: #30363d, stroke-width: 2px, color: #c9d1d9, font-family: sans-serif, rx: 5px, ry: 5px;
+    classDef outputNode fill: #da3633, stroke: #f85149, stroke-width: 2px, color: #ffffff, font-family: sans-serif, rx: 5px, ry: 5px;
+    classDef noteNode fill: none, stroke: none, color: #8b949e, font-family: sans-serif, font-style: italic, font-size: 12px;
+    classDef subgraphStyle fill: #0d1117, stroke: #30363d, stroke-width: 1px, stroke-dasharray: 5 5, color: #c9d1d9, font-weight: bold;
 
-%% Graph Elements
-  IN["fa:fa-terminal Cluster JSON / kubectl"]:::transparentNode
+%% 1. Input Layer
+    subgraph Stage1 ["1. Data Ingestion"]
+        direction TB
+        IN[("Cluster State\n(JSON / kubectl)")]:::inputNode
+    end
 
-%% Parsing Stage
-  P["<b>K8sJsonParser</b><br/>+ TrivyScanner"]:::processNode
-  P_DESC["<i>Nodes, Edges, SecurityFacts, CVE scores</i>"]:::annotation
+%% 2. Parsing & Scanning Layer
+    subgraph Stage2 ["2. Parsing & Scanning"]
+        direction TB
+        P_Parser["K8sJsonParser"]:::processNode
+        P_Scanner["TrivyScanner"]:::processNode
+        P_Desc["Extracts Nodes → Edges\n& Security Facts (CVEs)"]:::noteNode
+        P_Parser -.-> P_Desc
+        P_Scanner -.-> P_Desc
+    end
 
-%% Graph Data Stage
-  CG["<b>ClusterGraph</b>"]:::dataNode
-  CG_DESC["<i>DirectedWeightedMultigraph<br/>&lt;GraphNode, GraphEdge&gt;</i>"]:::annotation
+%% 3. Core Data Model
+    subgraph Stage3 ["3. Core Data Model"]
+        direction TB
+        CG[("Cluster Graph")]:::dataNode
+        CG_Desc["DirectedWeightedMultigraph\n<GraphNode, GraphEdge>"]:::noteNode
+        CG -.-> CG_Desc
+    end
 
-%% Orchestration Subgraph
-  subgraph Orchestrator ["⚙️ AnalysisOrchestrator"]
-    TASKS["• AttackPathDiscovery (Dijkstra + AllDirectedPaths)<br/>• ChokePointIdentifier<br/>• BlastRadiusAnalyzer (BFS)<br/>• PrivilegeLoopDetector (Johnson's)<br/>• ChokePointRemediationAdvisor"]:::taskNode
-  end
-  style Orchestrator fill:#0d1117,stroke:#d2a8ff,stroke-width:2px,stroke-dasharray: 5 5,color:#d2a8ff,rx:12px,ry:12px,font-family:monospace
+%% 4. Orchestration & Analysis Layer
+    subgraph Stage4 ["4. Analysis Orchestrator"]
+        direction TB
+        T1["Attack Path Discovery\n(Dijkstra + AllDirectedPaths)"]:::taskNode
+        T2["Choke Point Identifier\n(Top impacted nodes)"]:::taskNode
+        T3["Blast Radius Analyzer\n(BFS per entry point)"]:::taskNode
+        T4["Privilege Loop Detector\n(Johnson's cycles)"]:::taskNode
+        T5["Remediation Advisor\n(Actionable Fixes)"]:::taskNode
+    end
 
-%% Output Stage
-  OUT["<b>AnalysisSummaryPrinter</b> &nbsp;➔ CLI output<br/><b>CytoscapeExporter</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;➔ k8s-threat-map.html<br/><b>PdfReportEngine</b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;➔ k8s-threat-report.pdf"]:::outputNode
+%% 5. Output Layer
+    subgraph Stage5 ["5. Reporting & Exports"]
+        direction TB
+        OUT1["Console Summary\n(AnalysisSummaryPrinter)"]:::outputNode
+        OUT2["Cytoscape Map\n(k8s-threat-map.html)"]:::outputNode
+        OUT3["PDF Threat Report\n(k8s-threat-report.pdf)"]:::outputNode
+    end
 
-%% Define Main Flow Pipeline
-  IN --> P
-  P --> CG
-  CG --> Orchestrator
-  Orchestrator --> OUT
+%% Data Flow Routing
+    IN ==>|Raw K8s Data| P_Parser
+    IN ==>|Image Data| P_Scanner
+    P_Parser ==>|Parsed Resources| CG
+    P_Scanner ==>|Vulnerability Scores| CG
+    CG ===>|Graph Traversal & Metrics| Stage4
+    Stage4 ==>|Analysis Results| Stage5
+%% Apply Subgraph Styling
+    class Stage1, Stage2, Stage3, Stage4, Stage5 subgraphStyle;
 
-%% Attach Annotations (using dotted lines for metadata representation)
-  P -.-> P_DESC
-  CG -.-> CG_DESC
-
-%% Edge Styling
-  linkStyle 0,1,2,3 stroke:#8b949e,stroke-width:2px;
-  linkStyle 4,5 stroke:#8b949e,stroke-width:1px,stroke-dasharray: 3 3;
+%% Legend (Compact & integrated)
+    subgraph Legend ["Legend"]
+        direction TB
+        L1(["Input"]):::inputNode
+        L2(["Process"]):::processNode
+        L3(["Data Structure"]):::dataNode
+        L4(["Analysis Task"]):::taskNode
+        L5(["Output Artifact"]):::outputNode
+    end
+    class Legend subgraphStyle;
 ```
 
-Edge weights are computed by `EdgeRiskScorer` from per-node CVE scores, security context flags, and RBAC sensitivity. A lower weight means an easier traversal for an attacker — Dijkstra finds the path of least resistance.
+Edge weights are computed by `EdgeRiskScorer` from per-node CVE scores, security context flags, and RBAC sensitivity. A
+lower weight means an easier traversal for an attacker — Dijkstra finds the path of least resistance.
 
 ---
 
@@ -145,7 +180,8 @@ kubectl get pods,services,serviceaccounts,roles,clusterroles,rolebindings,cluste
 
 ### Native Binary (recommended)
 
-Download the latest pre-built binary for your platform from the [Releases](https://github.com/SaptarshiSarkar12/K8sAttackMap/releases) page.
+Download the latest pre-built binary for your platform from
+the [Releases](https://github.com/SaptarshiSarkar12/K8sAttackMap/releases) page.
 
 ```bash
 # Linux / macOS
@@ -180,9 +216,11 @@ The native binary is written to `target/K8sAttackMap`. You can move it to a dire
 
 ## Quick Start
 
-Run the tool against a live cluster or a saved JSON snapshot. By default, it auto-discovers entry points and targets, finds the most dangerous path, identifies choke points, and prints a console summary.
+Run the tool against a live cluster or a saved JSON snapshot. By default, it auto-discovers entry points and targets,
+finds the most dangerous path, identifies choke points, and prints a console summary.
 
-> **Prerequisites:** Ensure `trivy` is on your `PATH` and you have `kubectl` access (for live cluster mode) or a saved cluster snapshot.
+> **Prerequisites:** Ensure `trivy` is on your `PATH` and you have `kubectl` access (for live cluster mode) or a saved
+> cluster snapshot.
 
 ### Run against live cluster
 
@@ -222,9 +260,11 @@ kubectl get pods,services,serviceaccounts,roles,clusterroles,rolebindings,cluste
 
 > [!NOTE]
 > The source and target node ID format is `<Type>:<namespace>:<name>`.
-> For cluster-scoped resources, use `cluster-scoped` as the namespace. Example: `ClusterRole:cluster-scoped:cluster-admin`.
+> For cluster-scoped resources, use `cluster-scoped` as the namespace. Example:
+`ClusterRole:cluster-scoped:cluster-admin`.
 
-**Output**: HTML visualisation can be opened in your browser; PDF report is written to the current directory. Both are suitable for sharing with security teams.
+**Output**: HTML visualisation can be opened in your browser; PDF report is written to the current directory.
+Both are suitable for sharing with security teams.
 
 ---
 
@@ -252,7 +292,8 @@ Options:
       --verbose                Enable verbose/debug logging
 ```
 
-When `--source-node` and `--target-node` are omitted, the tool runs auto-discovery heuristics: pods, users, and service accounts become sources; secrets, roles, ClusterRoles, and sensitive ConfigMaps become targets.
+When `--source-node` and `--target-node` are omitted, the tool runs auto-discovery heuristics: pods, users, and service
+accounts become sources; secrets, roles, ClusterRoles, and sensitive ConfigMaps become targets.
 
 ### Examples
 
@@ -293,7 +334,9 @@ When `--source-node` and `--target-node` are omitted, the tool runs auto-discove
 
 ### HTML (`-o html`) → `k8s-threat-map.html`
 
-Interactive [Cytoscape.js](https://js.cytoscape.org/) graph displaying the attack surface with colour-coded nodes: entry points bordered in green hexagon, choke points in gray, nodes within blast radius in yellow, and attack paths highlighted in red. Edges are labelled with their relationship type and weighted by risk score.
+Interactive [Cytoscape.js](https://js.cytoscape.org/) graph displaying the attack surface with colour-coded nodes: entry
+points bordered in green hexagon, choke points in gray, nodes within blast radius in yellow, and attack paths
+highlighted in red. Edges are labelled with their relationship type and weighted by risk score.
 
 <table>
   <tr>
@@ -305,6 +348,7 @@ Interactive [Cytoscape.js](https://js.cytoscape.org/) graph displaying the attac
 ### PDF (`-o pdf`) → `k8s-threat-report.pdf`
 
 A structured security audit report containing:
+
 - Executive summary with risk grade and key metrics
 - Top-5 choke points with impact percentages
 - Critical attack path hop-by-hop table
@@ -388,7 +432,8 @@ src/main/java/io/github/SaptarshiSarkar12/k8sattackmap/
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, branching strategy, code style guidelines, and the pull request process.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, branching strategy, code style guidelines, and the pull
+request process.
 
 ---
 

@@ -1,9 +1,8 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.cli;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("CommandParser parses CLI arguments into typed fields")
 class CommandParserTest {
@@ -13,9 +12,9 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         boolean result = parser.parse(new String[]{"-k", "cluster.json"});
 
-        assertTrue(result);
-        assertNotNull(parser.getK8sJsonPath());
-        assertEquals("cluster.json", parser.getK8sJsonPath().toString());
+        Assertions.assertTrue(result);
+        Assertions.assertNotNull(parser.getK8sJsonPath());
+        Assertions.assertEquals("cluster.json", parser.getK8sJsonPath().toString());
     }
 
     @Test
@@ -24,9 +23,9 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"-s", "Pod:default:web,Pod:default:api"});
 
-        assertEquals(2, parser.getSourceNodes().size());
-        assertTrue(parser.getSourceNodes().contains("Pod:default:web"));
-        assertTrue(parser.getSourceNodes().contains("Pod:default:api"));
+        Assertions.assertEquals(2, parser.getSourceNodes().size());
+        Assertions.assertTrue(parser.getSourceNodes().contains("Pod:default:web"));
+        Assertions.assertTrue(parser.getSourceNodes().contains("Pod:default:api"));
     }
 
     @Test
@@ -35,8 +34,8 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"-t", "Secret:default:db-creds"});
 
-        assertEquals(1, parser.getTargetNodes().size());
-        assertTrue(parser.getTargetNodes().contains("Secret:default:db-creds"));
+        Assertions.assertEquals(1, parser.getTargetNodes().size());
+        Assertions.assertTrue(parser.getTargetNodes().contains("Secret:default:db-creds"));
     }
 
     @Test
@@ -45,8 +44,8 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"-o", "html,pdf"});
 
-        assertTrue(parser.getOutputFormats().contains("html"));
-        assertTrue(parser.getOutputFormats().contains("pdf"));
+        Assertions.assertTrue(parser.getOutputFormats().contains("html"));
+        Assertions.assertTrue(parser.getOutputFormats().contains("pdf"));
     }
 
     @Test
@@ -55,8 +54,8 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"-o", "html,json"});
 
-        assertTrue(parser.getOutputFormats().contains("html"));
-        assertFalse(parser.getOutputFormats().contains("json"));
+        Assertions.assertTrue(parser.getOutputFormats().contains("html"));
+        Assertions.assertFalse(parser.getOutputFormats().contains("json"));
     }
 
     @Test
@@ -65,7 +64,7 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"-m", "5"});
 
-        assertEquals(5, parser.getMaxHops());
+        Assertions.assertEquals(5, parser.getMaxHops());
     }
 
     @Test
@@ -74,7 +73,7 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"-k", "cluster.json"});
 
-        assertEquals(3, parser.getMaxHops());
+        Assertions.assertEquals(3, parser.getMaxHops());
     }
 
     @Test
@@ -83,7 +82,7 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"--show-all-paths"});
 
-        assertTrue(parser.isShowAllPaths());
+        Assertions.assertTrue(parser.isShowAllPaths());
     }
 
     @Test
@@ -92,7 +91,7 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"-k", "cluster.json"});
 
-        assertFalse(parser.isShowAllPaths());
+        Assertions.assertFalse(parser.isShowAllPaths());
     }
 
     @Test
@@ -101,31 +100,31 @@ class CommandParserTest {
         CommandParser parser = new CommandParser();
         parser.parse(new String[]{"--verbose"});
 
-        assertTrue(parser.isVerbose());
+        Assertions.assertTrue(parser.isVerbose());
     }
 
     @Test
     @DisplayName("returns false and does not throw when --help flag is provided")
     void shouldReturnFalseForHelpFlag() {
         CommandParser parser = new CommandParser();
-        boolean result = assertDoesNotThrow(() -> parser.parse(new String[]{"--help"}));
-        assertFalse(result);
+        boolean result = Assertions.assertDoesNotThrow(() -> parser.parse(new String[]{"--help"}));
+        Assertions.assertFalse(result);
     }
 
     @Test
     @DisplayName("returns false and does not throw when --version flag is provided")
     void shouldReturnFalseForVersionFlag() {
         CommandParser parser = new CommandParser();
-        boolean result = assertDoesNotThrow(() -> parser.parse(new String[]{"--version"}));
-        assertFalse(result);
+        boolean result = Assertions.assertDoesNotThrow(() -> parser.parse(new String[]{"--version"}));
+        Assertions.assertFalse(result);
     }
 
     @Test
     @DisplayName("returns false and does not throw for an unrecognised flag")
     void shouldReturnFalseForUnknownFlag() {
         CommandParser parser = new CommandParser();
-        boolean result = assertDoesNotThrow(() -> parser.parse(new String[]{"--unknown-flag"}));
-        assertFalse(result);
+        boolean result = Assertions.assertDoesNotThrow(() -> parser.parse(new String[]{"--unknown-flag"}));
+        Assertions.assertFalse(result);
     }
 
     @Test
@@ -139,6 +138,6 @@ class CommandParserTest {
                 "-o", "html",
                 "-m", "4"
         });
-        assertTrue(result);
+        Assertions.assertTrue(result);
     }
 }

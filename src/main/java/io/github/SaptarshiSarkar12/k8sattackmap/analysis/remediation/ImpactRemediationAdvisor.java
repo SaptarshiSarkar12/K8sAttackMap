@@ -15,11 +15,11 @@ public class ImpactRemediationAdvisor {
         String type = safeLower(node.getType());
         String id = safeLower(node.getId());
 
-        boolean isSecret = type.equals("secret") || id.startsWith("secret:");
-        boolean isRoleBinding = type.equals("clusterrolebinding") || type.endsWith("rolebinding");
-        boolean isServiceAccount = type.equals("serviceaccount");
-        boolean isRole = type.equals("role") || type.equals("clusterrole");
-        boolean isPod = type.equals("pod");
+        boolean isSecret = "secret".equals(type) || id.startsWith("secret:");
+        boolean isRoleBinding = "clusterrolebinding".equals(type) || type.endsWith("rolebinding");
+        boolean isServiceAccount = "serviceaccount".equals(type);
+        boolean isRole = "role".equals(type) || "clusterrole".equals(type);
+        boolean isPod = "pod".equals(type);
 
         if (isSecret) {
             return "Rotate secrets and restrict secret access.";
@@ -45,7 +45,7 @@ public class ImpactRemediationAdvisor {
         if (containsAny(id, "prod", "vault", "db", "auth", "key")) {
             return "Segment and harden critical workloads.";
         }
-        if (type.equals("configmap") || type.equals("persistentvolume")) {
+        if ("configmap".equals(type) || "persistentvolume".equals(type)) {
             return "Harden access controls and monitor for suspicious activity.";
         }
         return "Apply least privilege, patching, and configuration hardening.";

@@ -63,7 +63,7 @@ public class TrivyJsonParser {
     private static double getCVSSScore(JsonNode cvss, String imageFamily) {
         List<String> redhatFamily = List.of("redhat", "centos", "fedora", "rocky", "alma", "oracle");
         boolean isRedHatFamily = redhatFamily.contains(imageFamily.toLowerCase());
-        boolean isBitnamiImage = imageFamily.equals("bitnami");
+        boolean isBitnamiImage = "bitnami".equals(imageFamily);
 
         if (isBitnamiImage && cvss.has("bitnami")) {
             return cvss.path("bitnami").path("V3Score").asDouble();

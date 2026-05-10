@@ -1,5 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast;
 
+import org.junit.jupiter.api.Assertions;
 import io.github.SaptarshiSarkar12.k8sattackmap.helper.TestGraphHelper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
@@ -12,8 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @DisplayName("BlastRadiusAnalyzer scores and ranks nodes reachable from a compromised source")
 class BlastRadiusAnalyzerTest {
     @Test
@@ -22,8 +21,8 @@ class BlastRadiusAnalyzerTest {
         Graph<GraphNode, GraphEdge> graph = TestGraphHelper.buildLinearGraph(1);
         BlastRadiusResult result = BlastRadiusAnalyzer.analyze(graph, null, 3);
 
-        assertEquals(0, result.totalImpacted());
-        assertTrue(result.rankedImpactedAssets().isEmpty());
+        Assertions.assertEquals(0, result.totalImpacted());
+        Assertions.assertTrue(result.rankedImpactedAssets().isEmpty());
     }
 
     @Test
@@ -34,7 +33,7 @@ class BlastRadiusAnalyzerTest {
 
         BlastRadiusResult result = BlastRadiusAnalyzer.analyze(graph, outsider, 3);
 
-        assertEquals(0, result.totalImpacted());
+        Assertions.assertEquals(0, result.totalImpacted());
     }
 
     @Test
@@ -45,7 +44,7 @@ class BlastRadiusAnalyzerTest {
 
         BlastRadiusResult result = BlastRadiusAnalyzer.analyze(graph, source, -1);
 
-        assertEquals(0, result.totalImpacted());
+        Assertions.assertEquals(0, result.totalImpacted());
     }
 
     @Test
@@ -58,7 +57,7 @@ class BlastRadiusAnalyzerTest {
 
         boolean sourceInAssets = result.rankedImpactedAssets().stream()
                 .anyMatch(a -> a.node().equals(source));
-        assertFalse(sourceInAssets);
+        Assertions.assertFalse(sourceInAssets);
     }
 
     @Test
@@ -70,7 +69,7 @@ class BlastRadiusAnalyzerTest {
         BlastRadiusResult result = BlastRadiusAnalyzer.analyze(graph, source, 2);
 
         for (ImpactedAsset asset : result.rankedImpactedAssets()) {
-            assertTrue(asset.hopsFromSource() <= 2,
+            Assertions.assertTrue(asset.hopsFromSource() <= 2,
                     "No asset should be further than maxHops=2 from the source");
         }
     }
@@ -93,8 +92,8 @@ class BlastRadiusAnalyzerTest {
         ImpactedAsset asset = result.rankedImpactedAssets().stream()
                 .filter(a -> a.node().equals(target))
                 .findFirst().orElseThrow();
-        assertTrue(asset.impactScore() >= RiskConfig.BLAST_SCORE_CRITICAL);
-        assertEquals(ImpactSeverity.CRITICAL, asset.severity());
+        Assertions.assertTrue(asset.impactScore() >= RiskConfig.BLAST_SCORE_CRITICAL);
+        Assertions.assertEquals(ImpactSeverity.CRITICAL, asset.severity());
     }
 
     @Test
@@ -109,7 +108,7 @@ class BlastRadiusAnalyzerTest {
         ImpactedAsset hop1 = result.rankedImpactedAssets().stream().filter(a -> a.hopsFromSource() == 1).findFirst().orElseThrow();
         ImpactedAsset hop3 = result.rankedImpactedAssets().stream().filter(a -> a.hopsFromSource() == 3).findFirst().orElseThrow();
 
-        assertTrue(hop1.impactScore() >= hop3.impactScore(),
+        Assertions.assertTrue(hop1.impactScore() >= hop3.impactScore(),
                 "A node at hop 1 should have a score >= an equivalent node at hop 3");
     }
 
@@ -123,7 +122,7 @@ class BlastRadiusAnalyzerTest {
 
         List<ImpactedAsset> assets = result.rankedImpactedAssets();
         for (int i = 1; i < assets.size(); i++) {
-            assertTrue(assets.get(i - 1).impactScore() >= assets.get(i).impactScore(),
+            Assertions.assertTrue(assets.get(i - 1).impactScore() >= assets.get(i).impactScore(),
                     "Assets must be sorted by impactScore descending");
         }
     }
@@ -138,7 +137,7 @@ class BlastRadiusAnalyzerTest {
 
         List<BlastRadiusResult> results = BlastRadiusAnalyzer.analyzeMultiple(graph, sources, 3);
 
-        assertEquals(sources.size(), results.size());
+        Assertions.assertEquals(sources.size(), results.size());
     }
 
     @Test
@@ -151,6 +150,6 @@ class BlastRadiusAnalyzerTest {
 
         long criticalCount = result.rankedImpactedAssets().stream()
                 .filter(a -> a.severity() == ImpactSeverity.CRITICAL).count();
-        assertEquals(criticalCount, result.severityCounts().get(ImpactSeverity.CRITICAL));
+        Assertions.assertEquals(criticalCount, result.severityCounts().get(ImpactSeverity.CRITICAL));
     }
 }

@@ -34,7 +34,7 @@ import static io.github.SaptarshiSarkar12.k8sattackmap.util.NodeFinder.findNodes
 public class K8sAttackMapApplication {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(K8sAttackMapApplication.class);
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         System.out.println(AppConstants.HEADER);
         WorkspaceManager.initializeWorkspace();
 

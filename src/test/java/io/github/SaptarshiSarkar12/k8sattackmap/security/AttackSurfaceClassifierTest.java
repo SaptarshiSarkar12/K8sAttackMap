@@ -1,5 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.security;
 
+import org.junit.jupiter.api.Assertions;
 import io.github.SaptarshiSarkar12.k8sattackmap.helper.TestGraphHelper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.SecurityFacts;
@@ -9,8 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("AttackSurfaceClassifier")
 class AttackSurfaceClassifierTest {
@@ -32,7 +31,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(pod, sources, targets);
 
-            assertTrue(sources.contains(pod));
+            Assertions.assertTrue(sources.contains(pod));
         }
 
         @Test
@@ -46,7 +45,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(pod, sources, targets);
 
-            assertTrue(sources.contains(pod));
+            Assertions.assertTrue(sources.contains(pod));
         }
 
         @Test
@@ -60,7 +59,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(pod, sources, targets);
 
-            assertTrue(sources.contains(pod));
+            Assertions.assertTrue(sources.contains(pod));
         }
 
         @Test
@@ -72,7 +71,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(pod, sources, targets);
 
-            assertTrue(sources.contains(pod));
+            Assertions.assertTrue(sources.contains(pod));
         }
 
         @Test
@@ -84,7 +83,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(serviceAccount, sources, targets);
 
-            assertTrue(sources.contains(serviceAccount));
+            Assertions.assertTrue(sources.contains(serviceAccount));
         }
 
         @Test
@@ -96,7 +95,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(pod, sources, targets);
 
-            assertFalse(sources.contains(pod));
+            Assertions.assertFalse(sources.contains(pod));
         }
 
         @Test
@@ -108,7 +107,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(pod, sources, targets);
 
-            assertFalse(sources.contains(pod));
+            Assertions.assertFalse(sources.contains(pod));
         }
 
         @Test
@@ -121,9 +120,9 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             AttackSurfaceClassifier.classifySourceAndTargetCandidates(Set.of(existing, newPod), sources, targets);
 
-            assertEquals(1, sources.size());
-            assertTrue(sources.contains(existing));
-            assertFalse(sources.contains(newPod));
+            Assertions.assertEquals(1, sources.size());
+            Assertions.assertTrue(sources.contains(existing));
+            Assertions.assertFalse(sources.contains(newPod));
         }
     }
 
@@ -141,7 +140,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(secret, sources, targets);
 
-            assertTrue(targets.contains(secret));
+            Assertions.assertTrue(targets.contains(secret));
         }
 
         @Test
@@ -155,7 +154,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(role, sources, targets);
 
-            assertTrue(targets.contains(role));
+            Assertions.assertTrue(targets.contains(role));
         }
 
         @Test
@@ -169,7 +168,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(clusterRole, sources, targets);
 
-            assertTrue(targets.contains(clusterRole));
+            Assertions.assertTrue(targets.contains(clusterRole));
         }
 
         @Test
@@ -181,7 +180,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(secret, sources, targets);
 
-            assertTrue(targets.contains(secret));
+            Assertions.assertTrue(targets.contains(secret));
         }
 
         @Test
@@ -193,7 +192,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(clusterRoleBinding, sources, targets);
 
-            assertTrue(targets.contains(clusterRoleBinding));
+            Assertions.assertTrue(targets.contains(clusterRoleBinding));
         }
 
         @Test
@@ -205,7 +204,7 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>();
             classify(clusterRole, sources, targets);
 
-            assertTrue(targets.contains(clusterRole));
+            Assertions.assertTrue(targets.contains(clusterRole));
         }
 
         @Test
@@ -218,9 +217,9 @@ class AttackSurfaceClassifierTest {
             Set<GraphNode> targets = new HashSet<>(Set.of(existing));
             AttackSurfaceClassifier.classifySourceAndTargetCandidates(Set.of(existing, newSecret), sources, targets);
 
-            assertEquals(1, targets.size());
-            assertTrue(targets.contains(existing));
-            assertFalse(targets.contains(newSecret));
+            Assertions.assertEquals(1, targets.size());
+            Assertions.assertTrue(targets.contains(existing));
+            Assertions.assertFalse(targets.contains(newSecret));
         }
     }
 }
