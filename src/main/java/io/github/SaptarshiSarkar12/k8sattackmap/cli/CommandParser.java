@@ -2,11 +2,10 @@ package io.github.SaptarshiSarkar12.k8sattackmap.cli;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
 import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.commons.cli.help.TextHelpAppendable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
@@ -14,9 +13,9 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
+@Slf4j
 @Getter
 public class CommandParser {
-    private static final Logger log = LoggerFactory.getLogger(CommandParser.class);
     private final Set<String> outputFormats = new HashSet<>();
     private Path k8sJsonPath;
     private Set<String> sourceNodes = new HashSet<>();
@@ -66,7 +65,7 @@ public class CommandParser {
                 String[] formats = cmd.getOptionValues("output");
                 for (String format : formats) {
                     String fmt = format.trim().toLowerCase();
-                    if (fmt.equals("html") || fmt.equals("pdf")) {
+                    if ("html".equals(fmt) || "pdf".equals(fmt)) {
                         outputFormats.add(fmt);
                     } else {
                         log.warn("Unsupported output format specified: {}. Supported formats are 'html' and 'pdf'. Ignoring this value.", format);

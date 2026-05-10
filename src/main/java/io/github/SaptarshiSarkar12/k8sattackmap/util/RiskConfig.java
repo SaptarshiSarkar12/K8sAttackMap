@@ -5,7 +5,8 @@ package io.github.SaptarshiSarkar12.k8sattackmap.util;
  * classification logic. Changing a value here affects every place that uses it.
  */
 public final class RiskConfig {
-    private RiskConfig() {}
+    private RiskConfig() {
+    }
 
     // Blast radius impact scoring thresholds (scale 0–100)
     public static final double BLAST_SCORE_CRITICAL = 70.0;

@@ -125,7 +125,9 @@ public class BlastRadiusAnalyzer {
         double score = 0.0;
 
         if (facts.isRbacWildcardVerb() || facts.isRbacWildcardResource() || facts.isRbacWildcardApiGroup()) {
-            score += 40;
+            // Wildcard RBAC permissions are highly impactful — ensure the score reaches the
+            // critical blast threshold so impacted nodes are classified as CRITICAL.
+            score = RiskConfig.BLAST_SCORE_CRITICAL;
             reasons.add("Wildcard RBAC permissions");
         }
         if (facts.isRbacHasEscalate() || facts.isRbacHasBind() || facts.isRbacHasImpersonate()) {
@@ -236,7 +238,7 @@ public class BlastRadiusAnalyzer {
     }
 
     private static boolean isSecret(String id, String type) {
-        return type.equals("secret") || id.startsWith("secret:");
+        return "secret".equals(type) || id.startsWith("secret:");
     }
 
     private static boolean isClusterRoleBinding(String id, String type) {
@@ -252,23 +254,23 @@ public class BlastRadiusAnalyzer {
     }
 
     private static boolean isRole(String id, String type) {
-        return type.equals("role") || id.startsWith("role:");
+        return "role".equals(type) || id.startsWith("role:");
     }
 
     private static boolean isClusterRole(String id, String type) {
-        return type.equals("clusterrole") || id.startsWith("clusterrole:");
+        return "clusterrole".equals(type) || id.startsWith("clusterrole:");
     }
 
     private static boolean isPod(String id, String type) {
-        return type.equals("pod") || id.startsWith("pod:");
+        return "pod".equals(type) || id.startsWith("pod:");
     }
 
     private static boolean isConfigMap(String id, String type) {
-        return type.equals("configmap") || id.startsWith("configmap:");
+        return "configmap".equals(type) || id.startsWith("configmap:");
     }
 
     private static boolean isGroup(String id, String type) {
-        return type.equals("group") || id.startsWith("group:");
+        return "group".equals(type) || id.startsWith("group:");
     }
 
     private static double distancePenalty(int hopsFromSource) {

@@ -8,7 +8,8 @@ import static io.github.SaptarshiSarkar12.k8sattackmap.util.ConsoleColors.*;
  * For runtime-loaded report templates see {@link TemplateStore}.
  */
 public class AppConstants {
-    private AppConstants() {}
+    private AppConstants() {
+    }
 
     public static final String APP_NAME = "K8sAttackMap";
     public static final String APP_VERSION = "v1.0.0";

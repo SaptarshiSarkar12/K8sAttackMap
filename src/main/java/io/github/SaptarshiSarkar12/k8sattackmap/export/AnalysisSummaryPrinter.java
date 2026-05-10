@@ -1,20 +1,19 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.export;
 
-import io.github.SaptarshiSarkar12.k8sattackmap.analysis.*;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.BlastRadiusResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.ImpactSeverity;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.ChokePointResult;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.RankedChokePoint;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.PathDiscoveryResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.ImpactRemediationAdvisor;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.RemediationPlan;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
-import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.RankedChokePoint;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.RiskConfig;
+import lombok.extern.slf4j.Slf4j;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,9 +21,8 @@ import java.util.stream.Collectors;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.ConsoleColors.*;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
+@Slf4j
 public class AnalysisSummaryPrinter {
-    private static final Logger log = LoggerFactory.getLogger(AnalysisSummaryPrinter.class);
-
     public static void print(Graph<GraphNode, GraphEdge> graph, AnalysisResult result, Map<String, List<String>> podCVEIds, boolean showAllPaths, boolean hasExports) {
         printHeader();
         PathDiscoveryResult pathResult = result.pathDiscoveryResult();
@@ -89,7 +87,8 @@ public class AnalysisSummaryPrinter {
                 .collect(Collectors.toMap(
                         AnalysisSummaryPrinter::pairKey,
                         p -> p,
-                        (a, _) -> a   // if duplicate key, keep first
+                        (a, _) -> a
+                        // if duplicate key, keep first (shouldn't happen since dijkstraPaths should have unique source-target pairs)
                 ));
 
         // Group all paths by pair key, preserving insertion order for readability
@@ -151,7 +150,6 @@ public class AnalysisSummaryPrinter {
                     String.format("%.1f", 10.0 - edgeRiskScores.getOrDefault(edge, 0.0)));
         }
     }
-
 
     private static String pairKey(GraphPath<GraphNode, GraphEdge> path) {
         return path.getStartVertex().getId() + " → " + path.getEndVertex().getId();
@@ -226,7 +224,7 @@ public class AnalysisSummaryPrinter {
             if (!hasBinding && lowerType.contains("rolebinding")) {
                 hasBinding = true;
             }
-            if (!hasRole && (lowerType.equals("role") || lowerType.equals("clusterrole"))) {
+            if (!hasRole && ("role".equals(lowerType) || "clusterrole".equals(lowerType))) {
                 hasRole = true;
             }
             if (!hasSA && "serviceaccount".equalsIgnoreCase(type)) {
@@ -254,7 +252,7 @@ public class AnalysisSummaryPrinter {
             String nodeId = source.getId();
             String nodeType = source.getType();
 
-            if (nodeType.equals("Pod")) {
+            if ("Pod".equals(nodeType)) {
                 log.info("Source: [{}] type={} (Radius: {} hops, CVSS={})",
                         nodeId,
                         nodeType,
@@ -268,7 +266,7 @@ public class AnalysisSummaryPrinter {
                 GraphNode node = asset.node();
                 String assetId = node.getId();
                 String assetType = node.getType();
-                if (assetType.equals("Pod")) {
+                if ("Pod".equals(assetType)) {
                     log.info("  {} [{}] severity={} (Hops: {}, CVSS={})",
                             BOLD_RED + "!!" + RESET, assetId, asset.severity(), asset.hopsFromSource(),
                             node.getRiskScore());
@@ -357,9 +355,9 @@ public class AnalysisSummaryPrinter {
     }
 
     private static void printFooter(boolean hasExports) {
-        System.out.println(BOLD + "=".repeat(80) + RESET);
-        System.out.println(" End of Analysis Summary");
-        System.out.println(BOLD + "=".repeat(80) + RESET);
+        log.info(BOLD + "{}" + RESET, "=".repeat(80));
+        log.info(" End of Analysis Summary");
+        log.info(BOLD + "{}" + RESET, "=".repeat(80));
 
         if (!hasExports) {
             System.out.println();
@@ -372,7 +370,7 @@ public class AnalysisSummaryPrinter {
                     GREEN + "add --show-all-paths" + RESET, "(all attack paths)");
             log.info(BOLD + "└─ Scope:" + RESET + "         {} {}",
                     GREEN + "add --max-hops <N>" + RESET, "(default: 3)");
-            System.out.println(BOLD + "=".repeat(80) + RESET + "\n");
+            log.info(BOLD + "{}" + RESET + "\n", "=".repeat(80));
         }
     }
 }

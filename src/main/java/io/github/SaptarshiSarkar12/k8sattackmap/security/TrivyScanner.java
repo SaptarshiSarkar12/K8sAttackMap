@@ -3,22 +3,21 @@ package io.github.SaptarshiSarkar12.k8sattackmap.security;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.ScanResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.TrivyCache;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.trivy.TrivyJsonParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 public class TrivyScanner {
-    private static final Logger log = LoggerFactory.getLogger(TrivyScanner.class);
-    private static final TrivyCache trivyCache = new TrivyCache();
+    private static final TrivyCache TRIVY_CACHE = new TrivyCache();
 
     public static ScanResult scanImage(String imageRef) {
         if (imageRef == null || imageRef.isEmpty()) {
             log.warn("Image name is null or empty. Returning default risk score of 0.0.");
             return new ScanResult(0.0, null);
         }
-        ScanResult cachedResult = trivyCache.getCachedResult(imageRef);
+        ScanResult cachedResult = TRIVY_CACHE.getCachedResult(imageRef);
         if (cachedResult != null) {
             log.debug("CACHE HIT: Found CVSS {} for image {}", cachedResult.cvssScore(), imageRef);
             return cachedResult;
@@ -30,7 +29,7 @@ public class TrivyScanner {
             return new ScanResult(0.0, null);
         }
         ScanResult scanResult = TrivyJsonParser.parse(trivyJson);
-        trivyCache.saveResultToCache(imageRef, scanResult);
+        TRIVY_CACHE.saveResultToCache(imageRef, scanResult);
         log.debug("💾 Saved CVSS {} for {} to cache.", scanResult.cvssScore(), imageRef);
         return scanResult;
     }
