@@ -94,7 +94,7 @@ public class KubectlExtractor {
                 return context.replace("kind-", "") + " (Local)";
             }
 
-            if (context.equals("minikube")) {
+            if ("minikube".equals(context)) {
                 return "Minikube (Local Development)";
             }
 

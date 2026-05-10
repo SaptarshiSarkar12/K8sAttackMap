@@ -1,5 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint;
 
+import org.junit.jupiter.api.Assertions;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.RemediationPlan;
 import io.github.SaptarshiSarkar12.k8sattackmap.helper.TestGraphHelper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
@@ -8,8 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("ChokePointRemediationAdvisor builds remediation plans for ranked choke points")
 class ChokePointRemediationAdvisorTest {
@@ -22,7 +21,7 @@ class ChokePointRemediationAdvisorTest {
     @DisplayName("returns empty list for null ChokePointResult")
     void shouldReturnEmptyForNullResult() {
         List<RemediationPlan> plans = ChokePointRemediationAdvisor.buildPlans(null, 5);
-        assertTrue(plans.isEmpty());
+        Assertions.assertTrue(plans.isEmpty());
     }
 
     @Test
@@ -30,7 +29,7 @@ class ChokePointRemediationAdvisorTest {
     void shouldReturnEmptyForEmptyRankedList() {
         ChokePointResult emptyResult = new ChokePointResult(List.of(), Map.of(), Map.of());
         List<RemediationPlan> plans = ChokePointRemediationAdvisor.buildPlans(emptyResult, 5);
-        assertTrue(plans.isEmpty());
+        Assertions.assertTrue(plans.isEmpty());
     }
 
     @Test
@@ -53,7 +52,7 @@ class ChokePointRemediationAdvisorTest {
 
         List<RemediationPlan> plans = ChokePointRemediationAdvisor.buildPlans(result, 2);
 
-        assertEquals(2, plans.size());
+        Assertions.assertEquals(2, plans.size());
     }
 
     @Test
@@ -65,7 +64,7 @@ class ChokePointRemediationAdvisorTest {
         RemediationPlan plan = plans.getFirst();
         boolean hasGetCommand = plan.auditCommands().stream()
                 .anyMatch(cmd -> cmd.contains("kubectl get serviceaccount"));
-        assertTrue(hasGetCommand, "ServiceAccount plan should include kubectl get serviceaccount");
+        Assertions.assertTrue(hasGetCommand, "ServiceAccount plan should include kubectl get serviceaccount");
     }
 
     @Test
@@ -77,7 +76,7 @@ class ChokePointRemediationAdvisorTest {
         RemediationPlan plan = plans.getFirst();
         boolean hasRotateCommand = plan.enforceCommands().stream()
                 .anyMatch(cmd -> cmd.contains("kubectl create secret"));
-        assertTrue(hasRotateCommand, "Secret plan should include a kubectl create secret rotation command");
+        Assertions.assertTrue(hasRotateCommand, "Secret plan should include a kubectl create secret rotation command");
     }
 
     @Test
@@ -86,7 +85,7 @@ class ChokePointRemediationAdvisorTest {
         GraphNode rb = TestGraphHelper.makeNode("RoleBinding:default:dev-rb", "RoleBinding");
         List<RemediationPlan> plans = ChokePointRemediationAdvisor.buildPlans(singleNodeResult(rb), 1);
 
-        assertTrue(plans.getFirst().containsDestructiveAction());
+        Assertions.assertTrue(plans.getFirst().containsDestructiveAction());
     }
 
     @Test
@@ -98,7 +97,7 @@ class ChokePointRemediationAdvisorTest {
         RemediationPlan plan = plans.getFirst();
         boolean hasAuditCmd = plan.auditCommands().stream()
                 .anyMatch(cmd -> cmd.contains("kubectl get clusterrolebinding"));
-        assertTrue(hasAuditCmd);
+        Assertions.assertTrue(hasAuditCmd);
     }
 
     @Test
@@ -107,6 +106,6 @@ class ChokePointRemediationAdvisorTest {
         GraphNode sa = TestGraphHelper.makeNode("ServiceAccount:default:app-sa", "ServiceAccount");
         List<RemediationPlan> plans = ChokePointRemediationAdvisor.buildPlans(singleNodeResult(sa), 1);
 
-        assertEquals(sa.getId(), plans.getFirst().nodeId());
+        Assertions.assertEquals(sa.getId(), plans.getFirst().nodeId());
     }
 }

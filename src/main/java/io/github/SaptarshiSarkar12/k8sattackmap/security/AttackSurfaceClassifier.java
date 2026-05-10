@@ -67,7 +67,7 @@ public class AttackSurfaceClassifier {
                 || id.startsWith("serviceaccount:")
                 || id.startsWith("ingress:")
                 || id.contains("system:anonymous")
-                || type.equals("node");
+                || "node".equals(type);
     }
 
     private static boolean isPotentialTargetNode(GraphNode node, String id, SecurityFacts facts) {
@@ -91,8 +91,8 @@ public class AttackSurfaceClassifier {
                 || id.startsWith("serviceaccount:")
                 || id.startsWith("rolebinding:")
                 || id.startsWith("clusterrolebinding:")
-                || type.equals("clusterrole")
-                || type.equals("role")
+                || "clusterrole".equals(type)
+                || "role".equals(type)
                 || id.contains("cluster-admin")
                 || id.contains("system:masters")
                 || (id.startsWith("configmap:") && (id.contains("db") || id.contains("auth") || id.contains("key") || id.contains("prod") || id.contains("vault")))

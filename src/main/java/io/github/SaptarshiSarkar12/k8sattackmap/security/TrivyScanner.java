@@ -10,14 +10,14 @@ import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class TrivyScanner {
-    private static final TrivyCache trivyCache = new TrivyCache();
+    private static final TrivyCache TRIVY_CACHE = new TrivyCache();
 
     public static ScanResult scanImage(String imageRef) {
         if (imageRef == null || imageRef.isEmpty()) {
             log.warn("Image name is null or empty. Returning default risk score of 0.0.");
             return new ScanResult(0.0, null);
         }
-        ScanResult cachedResult = trivyCache.getCachedResult(imageRef);
+        ScanResult cachedResult = TRIVY_CACHE.getCachedResult(imageRef);
         if (cachedResult != null) {
             log.debug("CACHE HIT: Found CVSS {} for image {}", cachedResult.cvssScore(), imageRef);
             return cachedResult;
@@ -29,7 +29,7 @@ public class TrivyScanner {
             return new ScanResult(0.0, null);
         }
         ScanResult scanResult = TrivyJsonParser.parse(trivyJson);
-        trivyCache.saveResultToCache(imageRef, scanResult);
+        TRIVY_CACHE.saveResultToCache(imageRef, scanResult);
         log.debug("💾 Saved CVSS {} for {} to cache.", scanResult.cvssScore(), imageRef);
         return scanResult;
     }

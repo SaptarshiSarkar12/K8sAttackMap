@@ -60,7 +60,7 @@ public class ChokePointIdentifier {
                 return;
             }
             for (int i = 1; i < nodes.size() - 1; i++) {
-                counts.computeIfAbsent(nodes.get(i), k -> new LongAdder()).increment();
+                counts.computeIfAbsent(nodes.get(i), _ -> new LongAdder()).increment();
             }
         });
 

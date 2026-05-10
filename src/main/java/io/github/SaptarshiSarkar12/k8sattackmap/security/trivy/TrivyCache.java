@@ -2,10 +2,9 @@ package io.github.SaptarshiSarkar12.k8sattackmap.security.trivy;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.util.WorkspaceManager;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;

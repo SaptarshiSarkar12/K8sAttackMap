@@ -1,7 +1,8 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.util;
 
 public final class ConsoleColors {
-    private ConsoleColors() {}
+    private ConsoleColors() {
+    }
 
     public static final String RESET = "\u001B[0m";
     public static final String BLUE = "\u001B[94m";

@@ -81,7 +81,6 @@ public final class AttackPathDiscovery {
             case "ClusterRole" -> bonus += 3.0;
             case "ClusterRoleBinding", "RoleBinding" -> bonus += 2.5;
             case "Role" -> bonus += 2.0;
-            default -> {}
         }
 
         if (facts != null) {
