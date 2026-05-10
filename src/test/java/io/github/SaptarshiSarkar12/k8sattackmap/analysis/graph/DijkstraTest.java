@@ -1,5 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph;
 
+import org.junit.jupiter.api.Assertions;
 import io.github.SaptarshiSarkar12.k8sattackmap.helper.TestGraphHelper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
@@ -12,8 +13,6 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Dijkstra finds shortest weighted paths in a directed graph")
 class DijkstraTest {
@@ -36,9 +35,9 @@ class DijkstraTest {
         Dijkstra dijkstra = dijkstraWithUniformWeights(graph);
         GraphPath<GraphNode, GraphEdge> path = dijkstra.findShortestPath(source, target);
 
-        assertNotNull(path);
-        assertEquals(source, path.getStartVertex());
-        assertEquals(target, path.getEndVertex());
+        Assertions.assertNotNull(path);
+        Assertions.assertEquals(source, path.getStartVertex());
+        Assertions.assertEquals(target, path.getEndVertex());
     }
 
     @Test
@@ -50,7 +49,7 @@ class DijkstraTest {
 
         Dijkstra dijkstra = dijkstraWithUniformWeights(graph);
 
-        assertNull(dijkstra.findShortestPath(a, b));
+        Assertions.assertNull(dijkstra.findShortestPath(a, b));
     }
 
     @Test
@@ -75,8 +74,8 @@ class DijkstraTest {
 
         GraphPath<GraphNode, GraphEdge> path = dijkstra.findShortestPath(src, target);
 
-        assertNotNull(path);
-        assertEquals(2, path.getLength(), "Should take the 2-hop route, not the direct high-weight edge");
+        Assertions.assertNotNull(path);
+        Assertions.assertEquals(2, path.getLength(), "Should take the 2-hop route, not the direct high-weight edge");
     }
 
     @Test
@@ -88,6 +87,6 @@ class DijkstraTest {
 
         Dijkstra dijkstra = dijkstraWithUniformWeights(graph);
 
-        assertEquals(1, dijkstra.findShortestPath(source, next).getLength());
+        Assertions.assertEquals(1, dijkstra.findShortestPath(source, next).getLength());
     }
 }

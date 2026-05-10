@@ -15,7 +15,8 @@ import java.util.List;
  * {@link Graph} instances in tests without boilerplate.
  */
 public final class TestGraphHelper {
-    private TestGraphHelper() {}
+    private TestGraphHelper() {
+    }
 
     /** Creates a node with the given ID and type and a risk score of 0.0. */
     public static GraphNode makeNode(String id, String type) {

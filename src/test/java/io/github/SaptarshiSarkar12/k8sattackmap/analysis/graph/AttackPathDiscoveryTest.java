@@ -1,18 +1,17 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jgrapht.Graph;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisInput;
 import io.github.SaptarshiSarkar12.k8sattackmap.helper.TestGraphHelper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
-import org.jgrapht.Graph;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("AttackPathDiscovery identifies attack paths between source and target nodes")
 class AttackPathDiscoveryTest {
@@ -25,9 +24,9 @@ class AttackPathDiscoveryTest {
         AnalysisInput input = new AnalysisInput(graph, Set.of(), Set.of(target), 3);
         PathDiscoveryResult result = AttackPathDiscovery.findAttackPaths(input);
 
-        assertTrue(result.allPossiblePaths().isEmpty());
-        assertTrue(result.dijkstraPaths().isEmpty());
-        assertNull(result.mostDangerousPath());
+        Assertions.assertTrue(result.allPossiblePaths().isEmpty());
+        Assertions.assertTrue(result.dijkstraPaths().isEmpty());
+        Assertions.assertNull(result.mostDangerousPath());
     }
 
     @Test
@@ -39,8 +38,8 @@ class AttackPathDiscoveryTest {
         AnalysisInput input = new AnalysisInput(graph, Set.of(source), Set.of(), 3);
         PathDiscoveryResult result = AttackPathDiscovery.findAttackPaths(input);
 
-        assertTrue(result.allPossiblePaths().isEmpty());
-        assertNull(result.mostDangerousPath());
+        Assertions.assertTrue(result.allPossiblePaths().isEmpty());
+        Assertions.assertNull(result.mostDangerousPath());
     }
 
     @Test
@@ -52,7 +51,7 @@ class AttackPathDiscoveryTest {
         AnalysisInput input = new AnalysisInput(graph, Set.of(node), Set.of(node), 3);
         PathDiscoveryResult result = AttackPathDiscovery.findAttackPaths(input);
 
-        assertNull(result.mostDangerousPath());
+        Assertions.assertNull(result.mostDangerousPath());
     }
 
     @Test
@@ -65,9 +64,9 @@ class AttackPathDiscoveryTest {
         AnalysisInput input = new AnalysisInput(graph, Set.of(source), Set.of(target), 5);
         PathDiscoveryResult result = AttackPathDiscovery.findAttackPaths(input);
 
-        assertNotNull(result.mostDangerousPath());
-        assertEquals(source, result.mostDangerousPath().getStartVertex());
-        assertEquals(target, result.mostDangerousPath().getEndVertex());
+        Assertions.assertNotNull(result.mostDangerousPath());
+        Assertions.assertEquals(source, result.mostDangerousPath().getStartVertex());
+        Assertions.assertEquals(target, result.mostDangerousPath().getEndVertex());
     }
 
     @Test
@@ -80,7 +79,7 @@ class AttackPathDiscoveryTest {
         AnalysisInput input = new AnalysisInput(graph, Set.of(source), Set.of(target), 3);
         PathDiscoveryResult result = AttackPathDiscovery.findAttackPaths(input);
 
-        assertNull(result.mostDangerousPath());
+        Assertions.assertNull(result.mostDangerousPath());
     }
 
     @Test
@@ -93,8 +92,8 @@ class AttackPathDiscoveryTest {
         AnalysisInput input = new AnalysisInput(graph, Set.of(source), Set.of(target), 5);
         PathDiscoveryResult result = AttackPathDiscovery.findAttackPaths(input);
 
-        assertFalse(result.edgeRiskScores().isEmpty());
-        assertEquals(graph.edgeSet().size(), result.edgeRiskScores().size());
+        Assertions.assertFalse(result.edgeRiskScores().isEmpty());
+        Assertions.assertEquals(graph.edgeSet().size(), result.edgeRiskScores().size());
     }
 
     @Test
@@ -118,10 +117,10 @@ class AttackPathDiscoveryTest {
         AnalysisInput input = new AnalysisInput(graph, Set.of(src), Set.of(target), 5);
         PathDiscoveryResult result = AttackPathDiscovery.findAttackPaths(input);
 
-        assertNotNull(result.mostDangerousPath());
-        assertEquals(src, result.mostDangerousPath().getStartVertex());
-        assertEquals(target, result.mostDangerousPath().getEndVertex());
+        Assertions.assertNotNull(result.mostDangerousPath());
+        Assertions.assertEquals(src, result.mostDangerousPath().getStartVertex());
+        Assertions.assertEquals(target, result.mostDangerousPath().getEndVertex());
         // The direct MOUNTS_SECRET edge has lower friction per hop than two MANAGES hops
-        assertEquals(1, result.mostDangerousPath().getLength());
+        Assertions.assertEquals(1, result.mostDangerousPath().getLength());
     }
 }

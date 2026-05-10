@@ -1,5 +1,6 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.security;
 
+import org.junit.jupiter.api.Assertions;
 import io.github.SaptarshiSarkar12.k8sattackmap.helper.TestGraphHelper;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
@@ -13,8 +14,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("EdgeRiskScorer Tests")
 class EdgeRiskScorerTest {
@@ -53,7 +52,7 @@ class EdgeRiskScorerTest {
 
         Map<GraphEdge, Double> weights = EdgeRiskScorer.calculateEdgeWeights(graph);
         for (double weight : weights.values()) {
-            assertTrue(weight >= 0.1 && weight <= 25.0,
+            Assertions.assertTrue(weight >= 0.1 && weight <= 25.0,
                     String.format("Weight %.2f must be between 0.1 and 25.0", weight));
         }
     }
@@ -67,7 +66,7 @@ class EdgeRiskScorerTest {
         double mountsSecret = calculateEdgeWeight(pod, secret, EdgeType.MOUNTS_SECRET);
         double manages = calculateEdgeWeight(pod, secret, EdgeType.MANAGES);
 
-        assertTrue(mountsSecret < manages);
+        Assertions.assertTrue(mountsSecret < manages);
     }
 
     @Test
@@ -79,7 +78,7 @@ class EdgeRiskScorerTest {
         double nodeEscape = calculateEdgeWeight(pod, sa, EdgeType.NODE_ESCAPE);
         double usesSa = calculateEdgeWeight(pod, sa, EdgeType.USES_SA);
 
-        assertTrue(nodeEscape < usesSa);
+        Assertions.assertTrue(nodeEscape < usesSa);
     }
 
     @Test
@@ -91,7 +90,7 @@ class EdgeRiskScorerTest {
         double hostPath = calculateEdgeWeight(pod, configMap, EdgeType.HOST_PATH_ACCESS);
         double configmap = calculateEdgeWeight(pod, configMap, EdgeType.USES_CONFIGMAP);
 
-        assertTrue(hostPath < configmap);
+        Assertions.assertTrue(hostPath < configmap);
     }
 
     @Test
@@ -107,7 +106,7 @@ class EdgeRiskScorerTest {
         double frictionPriv = calculateEdgeWeight(privPod, secret, EdgeType.USES_SECRET);
         double frictionNormal = calculateEdgeWeight(normalPod, secret, EdgeType.USES_SECRET);
 
-        assertTrue(frictionPriv < frictionNormal);
+        Assertions.assertTrue(frictionPriv < frictionNormal);
     }
 
     @Test
@@ -123,7 +122,7 @@ class EdgeRiskScorerTest {
         double nodeWeight = calculateEdgeWeight(nodeSource, secret, EdgeType.CAN_ACCESS);
         double normalWeight = calculateEdgeWeight(normalSource, secret, EdgeType.CAN_ACCESS);
 
-        assertTrue(nodeWeight < normalWeight);
+        Assertions.assertTrue(nodeWeight < normalWeight);
     }
 
     @Test
@@ -139,7 +138,7 @@ class EdgeRiskScorerTest {
         double frictionCred = calculateEdgeWeight(pod, credentialSecret, EdgeType.USES_SECRET);
         double frictionPlain = calculateEdgeWeight(pod, plainSecret, EdgeType.USES_SECRET);
 
-        assertTrue(frictionCred < frictionPlain);
+        Assertions.assertTrue(frictionCred < frictionPlain);
     }
 
     @Test
@@ -157,7 +156,7 @@ class EdgeRiskScorerTest {
         double frictionWildcard = calculateEdgeWeight(sa, wildcardRole, EdgeType.BOUND_TO);
         double frictionNormal = calculateEdgeWeight(sa, normalRole, EdgeType.BOUND_TO);
 
-        assertTrue(frictionWildcard < frictionNormal);
+        Assertions.assertTrue(frictionWildcard < frictionNormal);
     }
 
     @Test
@@ -165,6 +164,6 @@ class EdgeRiskScorerTest {
     void testEmptyGraphReturnsEmptyWeights() {
         Graph<GraphNode, GraphEdge> graph = TestGraphHelper.buildGraph(new ArrayList<>(), new ArrayList<>());
         Map<GraphEdge, Double> weights = EdgeRiskScorer.calculateEdgeWeights(graph);
-        assertTrue(weights.isEmpty());
+        Assertions.assertTrue(weights.isEmpty());
     }
 }

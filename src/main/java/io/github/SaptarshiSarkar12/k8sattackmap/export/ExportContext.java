@@ -10,13 +10,13 @@ import java.util.Map;
 import java.util.Set;
 
 public record ExportContext(
-    AnalysisResult result,
-    Graph<GraphNode, GraphEdge> graph,
-    Set<GraphNode> sourceNodes,
-    int maxHops,
-    Map<String, List<String>> podCVEIds,
-    Map<String, GraphNode> nodeLookup,
-    Map<GraphEdge, Double> edgeRiskScores,
-    String clusterContext
+        AnalysisResult result,
+        Graph<GraphNode, GraphEdge> graph,
+        Set<GraphNode> sourceNodes,
+        int maxHops,
+        Map<String, List<String>> podCVEIds,
+        Map<String, GraphNode> nodeLookup,
+        Map<GraphEdge, Double> edgeRiskScores,
+        String clusterContext
 ) {
 }

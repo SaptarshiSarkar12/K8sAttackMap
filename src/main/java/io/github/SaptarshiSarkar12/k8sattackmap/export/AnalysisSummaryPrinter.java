@@ -151,7 +151,6 @@ public class AnalysisSummaryPrinter {
         }
     }
 
-
     private static String pairKey(GraphPath<GraphNode, GraphEdge> path) {
         return path.getStartVertex().getId() + " → " + path.getEndVertex().getId();
     }
@@ -225,7 +224,7 @@ public class AnalysisSummaryPrinter {
             if (!hasBinding && lowerType.contains("rolebinding")) {
                 hasBinding = true;
             }
-            if (!hasRole && (lowerType.equals("role") || lowerType.equals("clusterrole"))) {
+            if (!hasRole && ("role".equals(lowerType) || "clusterrole".equals(lowerType))) {
                 hasRole = true;
             }
             if (!hasSA && "serviceaccount".equalsIgnoreCase(type)) {
@@ -253,7 +252,7 @@ public class AnalysisSummaryPrinter {
             String nodeId = source.getId();
             String nodeType = source.getType();
 
-            if (nodeType.equals("Pod")) {
+            if ("Pod".equals(nodeType)) {
                 log.info("Source: [{}] type={} (Radius: {} hops, CVSS={})",
                         nodeId,
                         nodeType,
@@ -267,7 +266,7 @@ public class AnalysisSummaryPrinter {
                 GraphNode node = asset.node();
                 String assetId = node.getId();
                 String assetType = node.getType();
-                if (assetType.equals("Pod")) {
+                if ("Pod".equals(assetType)) {
                     log.info("  {} [{}] severity={} (Hops: {}, CVSS={})",
                             BOLD_RED + "!!" + RESET, assetId, asset.severity(), asset.hopsFromSource(),
                             node.getRiskScore());
