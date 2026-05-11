@@ -44,7 +44,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
     permissions:
       contents: write # Required for SBOM generation from setup-graalvm action
     steps:
@@ -62,11 +62,16 @@ jobs:
       - name: Build and Package with Maven
         run: mvn clean package -DskipTests
       - name: Tar executable
+        shell: bash
         run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            EXTENSION=".exe"
+          else
+            EXTENSION=""
+          fi
           cd target
-          EXTENSION=${matrix.os == 'windows-latest' && '.exe' || ''}
           OLD_NAME="K8sAttackMap${EXTENSION}"
-          NEW_NAME="K8sAttackMap-${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'windows-latest' && 'windows' || 'macos' }}${EXTENSION}"
+          NEW_NAME="K8sAttackMap-${{ matrix.os }}${EXTENSION}"
           mv "$OLD_NAME" "$NEW_NAME"
           tar -cvf K8sAttackMap-${{ matrix.os }}.tar "$NEW_NAME"
       - name: Upload Artifact
@@ -79,7 +84,7 @@ jobs:
   publish:
     if: github.event_name == 'workflow_dispatch'
     name: Publish Release
-    needs: [build-and-test, package]
+    needs: [ build-and-test, package ]
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required for creating releases and uploading assets
