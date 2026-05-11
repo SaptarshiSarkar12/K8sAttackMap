@@ -37,6 +37,8 @@ relationships, then surfaces the most dangerous paths, choke points, and remedia
 - [Contributing](#contributing)
 - [License](#license)
 
+> **Note:** For detailed module breakdown and test organization, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ---
 
 ## Why K8sAttackMap?
@@ -178,7 +180,9 @@ To capture a live cluster snapshot:
 kubectl get pods,services,serviceaccounts,roles,clusterroles,rolebindings,clusterrolebindings,secrets,configmaps,deployments,replicasets,daemonsets,statefulsets,nodes -A -o json > cluster-state.json
 ```
 
-> Trivy must be on `PATH`. K8sAttackMap calls `trivy image --format json` for each unique container image it encounters.
+> [!IMPORTANT]
+> Trivy must be on your `PATH`.  
+> K8sAttackMap calls `trivy image --format json` for each unique container image it encounters.
 
 ---
 
@@ -186,8 +190,10 @@ kubectl get pods,services,serviceaccounts,roles,clusterroles,rolebindings,cluste
 
 ### Native Binary (recommended)
 
-Download the latest pre-built binary for your platform from
-the [Releases](https://github.com/SaptarshiSarkar12/K8sAttackMap/releases) page.
+Download the latest pre-built binary for your platform from the [Releases](https://github.com/SaptarshiSarkar12/K8sAttackMap/releases) page.
+
+> [!TIP]
+> For easier global access, move the downloaded binary to a directory included in your system's `PATH` (e.g., `/usr/local/bin` on Linux/macOS).
 
 ```bash
 # Linux / macOS
@@ -200,23 +206,7 @@ k8sattackmap.exe --help
 
 ### Build from Source
 
-**Requirements:** [GraalVM](https://www.graalvm.org/downloads/) 25, JDK 25, Maven 3.9+
-
-```bash
-git clone https://github.com/SaptarshiSarkar12/K8sAttackMap.git
-cd K8sAttackMap
-
-# Set GRAALVM_HOME to your local GraalVM installation path
-export GRAALVM_HOME=/path/to/graalvm
-# Add GraalVM's bin to PATH and lib to LD_LIBRARY_PATH for native-image
-export PATH=$GRAALVM_HOME/bin:$PATH
-export LD_LIBRARY_PATH=$GRAALVM_HOME/lib:$LD_LIBRARY_PATH
-
-# GraalVM Native Image build
-mvn clean package
-```
-
-The native binary is written to `target/K8sAttackMap`. You can move it to a directory on your `PATH` for easier access.
+See [CONTRIBUTING.md - Build from Source](CONTRIBUTING.md#build-from-source) for detailed setup including GraalVM configuration and native image compilation.
 
 ---
 
@@ -225,7 +215,8 @@ The native binary is written to `target/K8sAttackMap`. You can move it to a dire
 Run the tool against a live cluster or a saved JSON snapshot. By default, it auto-discovers entry points and targets,
 finds the most dangerous path, identifies choke points, and prints a console summary.
 
-> **Prerequisites:** Ensure `trivy` is on your `PATH` and you have `kubectl` access (for live cluster mode) or a saved cluster snapshot.
+> [!WARNING]
+> **Prerequisites:** Ensure `trivy` is on your `PATH` and you have `kubectl` access (for live cluster mode) or a saved cluster snapshot before running these commands.
 
 ### Run against live cluster
 
@@ -263,10 +254,12 @@ kubectl get pods,services,serviceaccounts,roles,clusterroles,rolebindings,cluste
   -o html,pdf
 ```
 
-> [!NOTE]
-> The source and target node ID format is `<Type>:<namespace>:<name>`.
-> For cluster-scoped resources, use `cluster-scoped` as the namespace. Example:
-`ClusterRole:cluster-scoped:cluster-admin`.
+> [!CAUTION]
+> The source and target node ID format must be `<Type>:<namespace>:<name>`.  
+> For cluster-scoped resources, use `cluster-scoped` as the namespace. Example: `ClusterRole:cluster-scoped:cluster-admin`.
+
+> [!TIP]
+> Capture your cluster state once and reuse the JSON snapshot for faster offline analysis.
 
 **Output**: HTML visualisation can be opened in your browser; PDF report is written to the current directory.
 Both are suitable for sharing with security teams.
@@ -293,12 +286,12 @@ Options:
   -o, --output <FORMATS>       Comma-separated output formats: html, pdf
   -m, --max-hops <N>           Blast radius hop depth (default: 3)
   -a, --show-all-paths         Show all discovered paths grouped by
-                               source→target pair, not just the worst path
+                               source-target pair, not just the worst path
       --verbose                Enable verbose/debug logging
 ```
 
-When `--source-node` and `--target-node` are omitted, the tool runs auto-discovery heuristics: pods, users, and service
-accounts become sources; secrets, roles, ClusterRoles, and sensitive ConfigMaps become targets.
+> [!NOTE]
+> When `--source-node` and `--target-node` are omitted, the tool auto-discovers sources (pods, users, service accounts) and targets (secrets, roles, ClusterRoles, sensitive ConfigMaps).
 
 ### Examples
 
@@ -328,16 +321,19 @@ accounts become sources; secrets, roles, ClusterRoles, and sensitive ConfigMaps 
 
 <table>
   <tr>
-    <td><img src="img/Output_1.png" alt="Console output 1" width="2560" /></td>
-    <td><img src="img/Output_2.png" alt="Console output 2" width="2560" /></td>
+    <td><img src="https://github.com/user-attachments/assets/4bbf0e13-0215-49ca-99ac-6f46cb81918e" alt="Console output 1" width="2560" /></td>
+    <td><img src="https://github.com/user-attachments/assets/f0408c65-df61-41ce-839f-4c1580d42123" alt="Console output 2" width="2560" /></td>
   </tr>
   <tr>
-    <td><img src="img/Output_3.png" alt="Console output 3" width="2560" /></td>
-    <td><img src="img/Output_4.png" alt="Console output 4" width="2560" /></td>
+    <td><img src="https://github.com/user-attachments/assets/0093dc51-73c4-4810-9c9c-11b03fd02b6f" alt="Console output 3" width="2560" /></td>
+    <td><img src="https://github.com/user-attachments/assets/03c3a280-3fe8-4cf1-9ee0-41bc83e45769" alt="Console output 4" width="2560" /></td>
   </tr>
 </table>
 
-### HTML (`-o html`) → `k8s-threat-map.html`
+> [!TIP]
+> Use the HTML visualisation for exploratory analysis, and the PDF report for audits or executive reviews.
+
+### HTML (`-o html`) ➔ `k8s-threat-map.html`
 
 Interactive [Cytoscape.js](https://js.cytoscape.org/) graph displaying the attack surface with colour-coded nodes: entry
 points bordered in green hexagon, choke points in gray, nodes within blast radius in yellow, and attack paths
@@ -345,12 +341,12 @@ highlighted in red. Edges are labelled with their relationship type and weighted
 
 <table>
   <tr>
-    <td><img width="2560" alt="Graph highlighting nodes within blast radius" src=img/NodesWithinBlastRadius.png /></td>
-    <td><img width="2560" alt="Graph showing the most impactful choke point" src=img/ChokePointHighlighted.png /></td>
+    <td><img width="2560" alt="Graph highlighting nodes within blast radius" src="https://github.com/user-attachments/assets/2f6298f9-fe28-4712-a0bb-1b750c3b1909" /></td>
+    <td><img width="2560" alt="Graph showing the most impactful choke point" src="https://github.com/user-attachments/assets/510c620d-e8ec-4b48-a35a-6c1b83680786" /></td>
   </tr>
 </table>
 
-### PDF (`-o pdf`) → `k8s-threat-report.pdf`
+### PDF (`-o pdf`) ➔ `k8s-threat-report.pdf`
 
 A structured security audit report containing:
 
@@ -361,84 +357,31 @@ A structured security audit report containing:
 - Privilege escalation loop table
 - Pod CVE summary sorted by count
 
-<img width="1585" alt="Overview of PDF report" src="img/PdfOverview.png" />
+<img width="1585" alt="Overview of PDF report" src="https://github.com/user-attachments/assets/d621ee50-d25f-4859-90d1-b4c309a5bad5" />
 
 ---
 
 ## Architecture
 
-```
-src/main/java/io/github/SaptarshiSarkar12/k8sattackmap/
-│
-├── K8sAttackMapApplication.java   # Entry point, wiring
-│
-├── cli/                           # Argument parsing (Apache Commons CLI)
-│   └── CommandParser.java
-│
-├── ingestion/                     # Cluster data parsing
-│   ├── K8sJsonParser.java         # JSON → nodes, edges, SecurityFacts
-│   └── KubectlExtractor.java      # Live kubectl capture
-│
-├── model/                         # Core domain types
-│   ├── GraphNode.java             # Vertex with type, namespace, risk score
-│   ├── GraphEdge.java             # Edge with EdgeType relationship
-│   ├── EdgeType.java              # Enum: USES_SA, BOUND_TO, CAN_ACCESS, …
-│   ├── SecurityFacts.java         # RBAC flags, container posture, credential material
-│   ├── ClusterGraphFactory.java   # Builds DirectedWeightedMultigraph
-│   └── ClusterGraphData.java      # Parser output container
-│
-├── security/                      # Scanning and scoring
-│   ├── AttackSurfaceClassifier.java  # Auto-discovers entry points and targets
-│   ├── EdgeRiskScorer.java           # Computes edge weights from CVE/SecurityFacts
-│   ├── TrivyScanner.java             # Invokes Trivy CLI
-│   └── trivy/                        # Trivy JSON parsing and caching
-│
-├── analysis/                      # Core analysis algorithms
-│   ├── AnalysisOrchestrator.java  # Coordinates all analysis stages
-│   ├── AnalysisInput.java
-│   ├── AnalysisResult.java
-│   ├── graph/                     # Path finding
-│   │   ├── AttackPathDiscovery.java   # Dijkstra + AllDirectedPaths
-│   │   ├── Dijkstra.java
-│   │   ├── PathDiscoveryResult.java
-│   │   └── PrivilegeLoopDetector.java # Johnson's cycle detection
-│   ├── chokepoint/                # Choke point ranking and remediation
-│   │   ├── ChokePointIdentifier.java
-│   │   ├── ChokePointRemediationAdvisor.java
-│   │   ├── ChokePointResult.java
-│   │   └── RankedChokePoint.java
-│   ├── blast/                     # Blast radius BFS
-│   │   ├── BlastRadiusAnalyzer.java
-│   │   ├── BlastRadiusResult.java
-│   │   ├── ImpactedAsset.java
-│   │   └── ImpactSeverity.java
-│   └── remediation/               # Remediation plan records
-│       ├── RemediationPlan.java
-│       └── ImpactRemediationAdvisor.java
-│
-├── export/                        # Output generation
-│   ├── AnalysisSummaryPrinter.java  # Console output
-│   ├── CytoscapeExporter.java       # HTML/JS visualisation
-│   ├── PdfReportEngine.java         # PDF report
-│   └── ExportService.java           # Coordinates export formats
-│
-└── util/                          # Shared utilities
-    ├── AppConstants.java
-    ├── RiskConfig.java            # Centralised risk thresholds
-    ├── TemplateStore.java         # Runtime-loaded HTML/PDF templates
-    ├── JacksonConfig.java         # Shared ObjectMapper
-    ├── StringUtils.java
-    ├── NodeFinder.java
-    ├── WorkspaceManager.java
-    └── ConsoleColors.java
-```
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a detailed breakdown of the source code and test organization, including module responsibilities, design patterns, and testing strategy.
+
+### Core Modules Overview
+
+| Module      | Responsibility                                   |
+|-------------|--------------------------------------------------|
+| `cli`       | CLI argument parsing and validation              |
+| `ingestion` | Kubernetes JSON parsing and live cluster capture |
+| `model`     | Core domain types (nodes, edges, graph factory)  |
+| `security`  | CVE scanning (Trivy) and edge risk scoring       |
+| `analysis`  | Path discovery, choke points, blast radius       |
+| `export`    | Console, HTML (Cytoscape), PDF report outputs    |
+| `util`      | Shared configuration, constants, helpers         |
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, branching strategy, code style guidelines, and the pull
-request process.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, branching strategy, code style guidelines, and the pull request process.
 
 ---
 

@@ -81,35 +81,30 @@ Make sure you have the following installed before you begin:
 
 ### Build from Source
 
-Set up your GraalVM environment and build the native binary:
+1. Set up your GraalVM environment variables (adjust the path to your local GraalVM installation):
 
-```bash
-# Point to your local GraalVM installation
-export GRAALVM_HOME=/path/to/graalvm
-export PATH=$GRAALVM_HOME/bin:$PATH
-export LD_LIBRARY_PATH=$GRAALVM_HOME/lib:$LD_LIBRARY_PATH
+   ```bash
+   # Point to your local GraalVM installation
+   export GRAALVM_HOME=/path/to/graalvm
+   export PATH=$GRAALVM_HOME/bin:$PATH
+   export LD_LIBRARY_PATH=$GRAALVM_HOME/lib:$LD_LIBRARY_PATH
+   ```
 
-# Build the native binary (output: target/K8sAttackMap)
-mvn clean package
-```
+2. Generate GraalVM Native Image metadata (needed when reflection/serialization usage changes):
 
-To run the tool against a saved cluster snapshot after building:
+   ```bash
+   # If you wish to use a saved cluster snapshot during metadata generation,
+   # add arguments like `-k /path/to/cluster-state.json` to the plugin configuration in pom.xml first.
+   mvn -P generate-graalvm-metadata exec:exec@java-agent
+   ```
+   This will run the tool with the GraalVM agent, which observes runtime behavior and generates metadata files under `src/main/resources/META-INF/native-image/`.
+   Commit any updated metadata files if your change affects reflection or dynamic class loading.
 
-```bash
-./target/K8sAttackMap -k cluster-state.json
-```
+3. Build the native binary (output: target/K8sAttackMap):
 
-To regenerate GraalVM Native Image metadata (needed when reflection/serialization usage changes):
-
-```bash
-mvn -P generate-graalvm-metadata exec:exec@java-agent
-```
-
-This will run the tool with the GraalVM agent, which observes runtime behavior and generates metadata files under
-`src/main/resources/META-INF/native-image/`.
-Commit any updated metadata files if your change affects reflection or dynamic class loading.
-You may need to add arguments (`-k` and `/path/to/cluster-state.json`) to the agent run configuration if you want the
-tool to use a saved cluster snapshot during metadata generation.
+   ```bash
+   mvn clean package
+   ```
 
 ### Project Structure
 
@@ -381,11 +376,7 @@ you'd expect.
 
 ## Security Vulnerabilities
 
-**Please do not report security vulnerabilities via public GitHub issues.**
-
-K8sAttackMap itself analyses cluster security — it would be ironic to have a vulnerable tool. If you discover a
-vulnerability in K8sAttackMap (not in an analysed cluster), contact the maintainer privately before disclosing publicly.
-Check the [SECURITY.md](SECURITY.md) file for details on how to report securely.
+For detailed vulnerability reporting procedures, severity classification, and disclosure policy, see [SECURITY.md](SECURITY.md).
 
 ---
 
