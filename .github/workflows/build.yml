@@ -1,4 +1,4 @@
-name: Build, Test and Package K8sAttackMap
+name: Build, Test and Package
 on:
   push:
     paths:
