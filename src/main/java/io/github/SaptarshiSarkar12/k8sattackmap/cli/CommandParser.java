@@ -31,10 +31,23 @@ public class CommandParser {
         options.addOption("s", "source-node", true, "Comma-separated list of source node IDs for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Pod:default:web\"");
         options.addOption("t", "target-node", true, "Comma-separated list of target node IDs for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Secret:default:my-secret\"");
         options.addOption("k", "k8s-json", true, "Path to Kubernetes cluster configuration JSON file");
-        options.addOption(Option.builder("m").longOpt("max-hops").hasArg().desc("Maximum number of hops for finding affected components for a compromised node (default: 3)").type(Integer.class).get());
+        options.addOption(Option.builder("m")
+                .longOpt("max-hops")
+                .hasArg()
+                .desc("Maximum number of hops for finding affected components for a compromised node (default: 3)")
+                .type(Integer.class).get());
         options.addOption("a", "show-all-paths", false, "Show all discovered attack paths. By default, only the single highest-risk path is shown.");
-        options.addOption(Option.builder("o").longOpt("output").hasArgs().valueSeparator(',').desc("Comma-separated list of output formats ('html' for Cytoscape.js graph, 'pdf' for report)").get());
-        options.addOption(Option.builder().longOpt("verbose").desc("Enable verbose output for debugging").get());
+        options.addOption(Option.builder("o")
+                .longOpt("output")
+                .hasArgs().valueSeparator(',')
+                .desc("Comma-separated list of output formats ('html' for Cytoscape.js graph, 'pdf' for report)").get());
+        options.addOption(Option.builder()
+                .longOpt("no-color")
+                .desc("Disable colored output (automatically enabled if NO_COLOR env var is set)")
+                .get());
+        options.addOption(Option.builder()
+                .longOpt("verbose")
+                .desc("Enable verbose output for debugging").get());
         CommandLineParser parser = new DefaultParser();
         try {
             CommandLine cmd = parser.parse(options, args);

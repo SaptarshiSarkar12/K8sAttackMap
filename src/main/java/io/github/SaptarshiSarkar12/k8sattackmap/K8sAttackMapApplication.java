@@ -16,9 +16,7 @@ import io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphFactory;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.security.AttackSurfaceClassifier;
-import io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants;
-import io.github.SaptarshiSarkar12.k8sattackmap.util.TemplateStore;
-import io.github.SaptarshiSarkar12.k8sattackmap.util.WorkspaceManager;
+import io.github.SaptarshiSarkar12.k8sattackmap.util.*;
 import org.jgrapht.Graph;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +33,10 @@ public class K8sAttackMapApplication {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(K8sAttackMapApplication.class);
 
     static void main(String[] args) {
+        if (!TerminalCapabilities.supportsAnsiColors(args)) {
+            ConsoleColors.disableColors();
+        }
+
         System.out.println(AppConstants.HEADER);
         WorkspaceManager.initializeWorkspace();
 
