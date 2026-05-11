@@ -17,6 +17,22 @@ import org.jgrapht.GraphPath;
 
 import java.util.List;
 
+/**
+ * Orchestrates end-to-end security analysis across all analysis modules.
+ * <p>
+ * The core entry point is {@link #performAnalysis(AnalysisInput)}, which sequentially invokes:
+ * <ol>
+ *   <li><strong>Attack Path Discovery:</strong> Dijkstra shortest-friction paths from sources to targets</li>
+ *   <li><strong>Choke Point Identification:</strong> Critical resources that block/filter attack paths</li>
+ *   <li><strong>Blast Radius Analysis:</strong> Impact scope from each potential compromise</li>
+ *   <li><strong>Privilege Loop Detection:</strong> Privilege escalation cycles in the graph</li>
+ *   <li><strong>Remediation Planning:</strong> Actionable mitigation strategies</li>
+ * </ol>
+ * <p>
+ * Results are aggregated into an immutable {@link AnalysisResult} for downstream export and reporting.
+ * This class operates as a stateless orchestrator; all state is managed by input/output records
+ * and individual analysis modules (dependency injection via static methods).
+ */
 @Slf4j
 public class AnalysisOrchestrator {
     private static final ProgressReporter PROGRESS_REPORTER = new ProgressReporter(log);

@@ -2,10 +2,10 @@ package io.github.SaptarshiSarkar12.k8sattackmap.export;
 
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.AnalysisResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.BlastRadiusResult;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.RankedChokePoint;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.PathDiscoveryResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
-import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.RankedChokePoint;
 import org.jgrapht.Graph;
 
 import java.util.List;
@@ -13,6 +13,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Coordinates export of analysis results to multiple output formats.
+ * <p>
+ * Primary entry point: {@link #export(ExportContext, Set)} handles:
+ * <ul>
+ *   <li>{@code "html"} → {@link CytoscapeExporter}: Interactive Cytoscape.js graph visualization
+ *       (default filename: {@link io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants#OUTPUT_HTML_FILENAME})</li>
+ *   <li>{@code "pdf"} → {@link PdfReportEngine}: Formatted PDF security report
+ *       (default filename: {@link io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants#OUTPUT_PDF_FILENAME})</li>
+ * </ul>
+ * <p>
+ * Delegates to specialized exporters; this class acts as a facade/router for export logic.
+ */
 public final class ExportService {
     public static void export(ExportContext ctx, Set<String> outputFormats) {
         AnalysisResult result = ctx.result();

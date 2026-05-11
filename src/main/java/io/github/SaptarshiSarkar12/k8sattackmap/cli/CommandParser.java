@@ -13,6 +13,25 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Parses and validates command-line arguments for K8sAttackMap.
+ * <p>
+ * Supports options:
+ * <ul>
+ *   <li>{@code -k, --k8s-json <path>}: Path to Kubernetes cluster JSON export (optional; defaults to kubectl)</li>
+ *   <li>{@code -s, --source-node <list>}: Comma-separated attack entry points (format: {@code Type:namespace:name})</li>
+ *   <li>{@code -t, --target-node <list>}: Comma-separated high-value targets</li>
+ *   <li>{@code -m, --max-hops <n>}: Max hops for blast radius analysis (default: 3)</li>
+ *   <li>{@code -a, --show-all-paths}: Display all discovered attack paths (default: only top-risk path)</li>
+ *   <li>{@code -o, --output <formats>}: Export formats (comma-separated: {@code html}, {@code pdf})</li>
+ *   <li>{@code --no-color}: Disable ANSI colors (auto-enabled if NO_COLOR env var set)</li>
+ *   <li>{@code --verbose}: Enable debug logging</li>
+ *   <li>{@code -v, --version}: Print version</li>
+ *   <li>{@code -h, --help}: Print help message</li>
+ * </ul>
+ * <p>
+ * The {@link #parse(String[])} method returns {@code true} on success, {@code false} on parse error or help/version request.
+ */
 @Slf4j
 @Getter
 public class CommandParser {

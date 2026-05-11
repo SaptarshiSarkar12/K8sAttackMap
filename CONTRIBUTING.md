@@ -243,6 +243,10 @@ The project follows standard Java conventions. Please keep these in mind:
 - Use Lombok annotations (`@Getter`, `@Slf4j`, etc.) to reduce boilerplate, consistent with the rest of the codebase.
 - Prefer descriptive names to abbreviations. `attackPathDiscovery` is better than `apd`.
 - Avoid raw types; always parameterize generics.
+- Use Javadoc for public classes, records, and public methods that are part of the project’s API
+  - Prefer simple `{@link ClassName}` references when imported or in the same package
+  - Use fully qualified names only when needed to avoid ambiguity
+  - Avoid importing classes only for Javadocs if they are not used in code
 
 **Logging**
 
@@ -269,6 +273,13 @@ structure or styling of the report should be done by editing these templates, no
 
 - Use 4-space indentation (no tabs).
 - Remove unused imports before committing.
+
+**Output and Terminal Colors**
+
+- The tool respects standard Unix conventions: `NO_COLOR`, `FORCE_COLOR`, `CI` environment variables
+- The `--no-color` flag disables ANSI colors for console output
+- Color support is automatic based on: TTY detection, CI environment, TERM value, and env vars
+- See `TerminalCapabilities.java` for the detection logic
 
 ### Style Expectations
 

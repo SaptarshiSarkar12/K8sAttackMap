@@ -1,5 +1,17 @@
 package io.github.SaptarshiSarkar12.k8sattackmap.util;
 
+/**
+ * Controls ANSI color output for console printing.
+ * <p>
+ * Color support is automatically detected based on:
+ * <ul>
+ *     <li>Whether the terminal is interactive (not a CI environment or non-TTY)</li>
+ *     <li>NO_COLOR, FORCE_COLOR, CI environment variables</li>
+ *     <li>TERM environment variable</li>
+ *     <li>--no-color CLI flag</li>
+ * </ul>
+ * Use {@link TerminalCapabilities#supportsAnsiColors(String[])} to check support.
+ */
 public final class ConsoleColors {
     private ConsoleColors() {
     }

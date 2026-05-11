@@ -289,6 +289,7 @@ Options:
   -m, --max-hops <N>           Blast radius hop depth (default: 3)
   -a, --show-all-paths         Show all discovered paths grouped by
                                source-target pair, not just the worst path
+      --no-color               Disable colored output (respects NO_COLOR env var)
       --verbose                Enable verbose/debug logging
 ```
 
@@ -313,6 +314,12 @@ Options:
 ./k8sattackmap -k cluster-state.json \
   -s "Pod:default:api-server,ServiceAccount:default:ci-runner" \
   -t "Secret:default:jwt-key,Secret:prod:stripe-key"
+  
+# Disable colored output for scripting or CI environments
+./k8sattackmap -k cluster-state.json --no-color
+
+# Or use the NO_COLOR env var
+NO_COLOR=1 ./k8sattackmap -k cluster-state.json
 ```
 
 ---

@@ -18,15 +18,20 @@
 - `AnalysisInput` and `AnalysisResult` are records; prefer immutable payloads at analysis boundaries.
 
 ## Output and template conventions
-- Console output is deliberate: `System.out` is allowed mainly in `AnalysisSummaryPrinter`.
-- HTML/PDF templates live in `src/main/resources/templates/` and are loaded through `TemplateStore`; don’t hardcode report HTML in Java.
+- Console output: `System.out` is allowed in **user-facing layers** including `AnalysisSummaryPrinter`, `ProgressReporter`, and CLI utilities. Use `ProgressReporter` for colored progress/status messages with logging.
+- CLI formatting: `CliPrefixConverter` is a Logback custom converter (exported in `module-info.java`) for error/debug prefix coloring; use it in logback config patterns.
+- Color support: `ConsoleColors` provides ANSI color constants; `TerminalCapabilities` detects terminal color support and can disable colors via `--no-color` or `NO_COLOR` env var.
+- HTML/PDF templates live in `src/main/resources/templates/` and are loaded through `TemplateStore` at runtime; don't hardcode report HTML in Java.
 - Default export filenames are `k8s-threat-map.html` and `k8s-threat-report.pdf`.
 
 ## Developer workflows
 - Local test run: `mvn test`.
-- Style checks: `mvn checkstyle:check`.
+- Style checks: `mvn checkstyle:check` (uses external config: `.github/linters/sun_checks.xml`).
+- Code health inspection: `mvn rewrite:dryRun` (OpenRewrite recommendations for CodeHealth and Maven best practices).
+- Apply code health recommendations: `mvn rewrite:run`.
 - Build native image: `mvn clean package` (requires GraalVM).
-- If reflection/serialization changes affect native image metadata, regenerate `src/main/resources/META-INF/native-image/` using the documented GraalVM agent profile.
+- Generate GraalVM metadata with Java agent: `mvn clean package -Pgenerate-graalvm-metadata` (runs the application with `-agentlib:native-image-agent` to collect reflection/serialization metadata).
+- If reflection/serialization changes affect native image metadata, regenerate `src/main/resources/META-INF/native-image/` (can use the `generate-graalvm-metadata` profile or manual agent runs).
 
 ## Test patterns
 - Tests mirror production packages under `src/test/java/...` and usually use `*Test.java` names.
@@ -44,5 +49,7 @@
 - CLI details: `src/main/java/.../cli/CommandParser.java`
 - Graph construction: `src/main/java/.../model/ClusterGraphFactory.java`
 - Risk scoring: `src/main/java/.../security/EdgeRiskScorer.java`
+- Attack surface auto-discovery: `src/main/java/.../security/AttackSurfaceClassifier.java`
 - Console/report output: `src/main/java/.../export/AnalysisSummaryPrinter.java`
+- CLI output formatting: `src/main/java/.../util/ProgressReporter.java`, `ConsoleColors.java`, `TerminalCapabilities.java`
 - Contributor workflow: `CONTRIBUTING.md`

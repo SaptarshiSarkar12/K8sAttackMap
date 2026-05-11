@@ -15,6 +15,26 @@ import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.CLUSTER
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.JacksonConfig.MAPPER;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
+/**
+ * Parses Kubernetes JSON cluster export into attack graph nodes and edges.
+ * <p>
+ * Accepts a Reader (file or stdin) containing Kubernetes resource list (expected structure: {@code {"items": [...]}}),
+ * and constructs {@link io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode} and
+ * {@link io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge} collections.
+ * <p>
+ * Key behaviors:
+ * <ul>
+ *   <li>Extracts Pod container images and shells out to {@code trivy image --format json} for vulnerability scanning
+ *       (results cached in {@link #IMAGE_RISK_CACHE} to avoid redundant scans)</li>
+ *   <li>Parses RBAC (Roles, RoleBindings, ClusterRoles, ClusterRoleBindings) to infer permission edges</li>
+ *   <li>Extracts SecurityContext, mounted secrets/configmaps, ServiceAccount references</li>
+ *   <li>Synthesizes User, Group, and Node entries as needed for completeness</li>
+ *   <li>Returns {@link io.github.SaptarshiSarkar12.k8sattackmap.model.ClusterGraphData} for downstream graph construction</li>
+ * </ul>
+ * <p>
+ * <strong>Note:</strong> Runtime requires {@code trivy} CLI on PATH for image scanning.
+ * If EdgeType or attack surface semantics change, update corresponding edge-building logic here.
+ */
 @Slf4j
 public class K8sJsonParser {
     private static final Map<String, ScanResult> IMAGE_RISK_CACHE = new HashMap<>(); // Cache for image risk scores to avoid redundant Trivy scans

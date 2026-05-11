@@ -9,9 +9,26 @@ import org.jgrapht.Graph;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.github.SaptarshiSarkar12.k8sattackmap.model.EdgeType.*;
-import static io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants.*;
-
+/**
+ * Computes risk-weighted edge friction for Dijkstra shortest-path attack graph traversal.
+ * <p>
+ * Primary entry point: {@link #calculateEdgeWeights(Graph)}, which assigns a friction weight to each edge:
+ * <ul>
+ *   <li><strong>Lower friction = easier attacker movement = more dangerous edge</strong></li>
+ *   <li>Friction is clamped to [0.1, 25.0] to ensure numeric stability</li>
+ *   <li>Dijkstra uses these weights to find the lowest-friction (most dangerous) attack path</li>
+ * </ul>
+ * <p>
+ * Friction is computed from:
+ * <ul>
+ *   <li><strong>Intrinsic friction:</strong> Base difficulty of source/target resources (from {@link io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode#getIntrinsicFriction()})</li>
+ *   <li><strong>Security deductions:</strong> Privileged containers, hostPath mounts, RBAC wildcards, etc. reduce friction
+ *       (making exploitation easier for attacker)</li>
+ *   <li><strong>Edge semantics:</strong> Certain edge types (e.g., EXEC_INTO, NODE_ESCAPE) are inherently lower friction</li>
+ * </ul>
+ * <p>
+ * If you add/modify edge types or scoring logic, ensure alignment with {@link io.github.SaptarshiSarkar12.k8sattackmap.ingestion.K8sJsonParser} and {@link io.github.SaptarshiSarkar12.k8sattackmap.export.AnalysisSummaryPrinter}.
+ */
 public class EdgeRiskScorer {
     private EdgeRiskScorer() {
     }

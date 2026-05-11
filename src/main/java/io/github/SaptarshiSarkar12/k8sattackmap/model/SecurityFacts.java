@@ -8,6 +8,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Stores security-relevant metadata about a Kubernetes resource for risk assessment.
+ * <p>
+ * Populated during parsing by {@link io.github.SaptarshiSarkar12.k8sattackmap.ingestion.K8sJsonParser}
+ * and used by {@link io.github.SaptarshiSarkar12.k8sattackmap.security.EdgeRiskScorer} to compute
+ * edge weights (friction). Risk scoring considers:
+ * <ul>
+ *   <li><strong>RBAC:</strong> Wildcard verbs/resources/apiGroups, escalate/bind/impersonate capabilities</li>
+ *   <li><strong>Identity:</strong> ServiceAccount token automount, credential material presence</li>
+ *   <li><strong>Runtime Posture:</strong> Privileged containers, allowPrivilegeEscalation, hostPath mounts,
+ *       hostPID/Network/IPC, running as root, added Linux capabilities</li>
+ *   <li><strong>Infrastructure:</strong> Node-level surface exposure, ingress/service exposure</li>
+ * </ul>
+ */
 @Getter
 @Setter
 public class SecurityFacts {

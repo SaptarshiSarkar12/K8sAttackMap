@@ -7,6 +7,22 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Fetches Kubernetes cluster state JSON via the {@code kubectl} CLI.
+ * <p>
+ * Primary entry point: {@link #fetchClusterStateAsJson()}, which shells out to:
+ * <pre>
+ * kubectl get pods,services,configmaps,secrets,serviceaccounts,replicasets,deployments,
+ *            statefulsets,daemonsets,jobs,cronjobs,ingresses,roles,rolebindings,
+ *            clusterroles,clusterrolebindings,nodes -A -o json
+ * </pre>
+ * <p>
+ * Returns the JSON string on success, or {@code null} if kubectl is not available,
+ * unauthorized, times out (5s), or the cluster is unreachable.
+ * <p>
+ * The JSON output is then fed to {@link io.github.SaptarshiSarkar12.k8sattackmap.ingestion.K8sJsonParser}
+ * for graph construction.
+ */
 @Slf4j
 public class KubectlExtractor {
     public static String fetchClusterStateAsJson() {

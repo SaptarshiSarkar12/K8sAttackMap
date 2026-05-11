@@ -6,6 +6,18 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * Represents a Kubernetes resource node in the attack graph.
+ * <p>
+ * Node IDs follow the format: {@code <Type>:<namespace>:<name>} (e.g., {@code Pod:default:web}).
+ * For cluster-scoped resources, namespace is {@link io.github.SaptarshiSarkar12.k8sattackmap.util.AppConstants#CLUSTER_SCOPED}.
+ * <p>
+ * Nodes contain security-relevant metadata via {@link SecurityFacts}, including RBAC permissions,
+ * runtime posture (privileged containers, hostPath mounts), and infrastructure surface indicators.
+ * <p>
+ * The intrinsic friction of a node (computed by {@link #getIntrinsicFriction()}) represents
+ * the ease with which an attacker can move through or exploit that resource. Lower friction = easier exploitation.
+ */
 @Setter
 @Getter
 public class GraphNode {

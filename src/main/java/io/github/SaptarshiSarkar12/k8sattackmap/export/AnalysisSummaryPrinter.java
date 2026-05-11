@@ -21,6 +21,23 @@ import java.util.stream.Collectors;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.ConsoleColors.*;
 import static io.github.SaptarshiSarkar12.k8sattackmap.util.StringUtils.safeLower;
 
+/**
+ * Prints a comprehensive console summary of security analysis results.
+ * <p>
+ * Primary entry point: {@link #print(Graph, AnalysisResult, Map, boolean, boolean)}, which outputs:
+ * <ul>
+ *   <li><strong>Executive Summary:</strong> High-level counts of paths, choke points, privilege loops</li>
+ *   <li><strong>Attack Paths:</strong> Discovered routes from entry points to crown jewels</li>
+ *   <li><strong>Choke Points:</strong> Critical resources for defense (bottlenecks in attack flows)</li>
+ *   <li><strong>Privilege Loops:</strong> Cycles enabling escalation</li>
+ *   <li><strong>Blast Radius:</strong> Cascading impact of resource compromises</li>
+ *   <li><strong>Pod Vulnerabilities:</strong> Scanned CVE counts per Pod</li>
+ *   <li><strong>Remediation Plans:</strong> Specific mitigation strategies</li>
+ * </ul>
+ * <p>
+ * Uses {@link io.github.SaptarshiSarkar12.k8sattackmap.util.ConsoleColors} for ANSI-colored output
+ * when supported. <strong>This is the primary user-facing output; use System.out here (not SLF4J).</strong>
+ */
 @Slf4j
 public class AnalysisSummaryPrinter {
     public static void print(Graph<GraphNode, GraphEdge> graph, AnalysisResult result, Map<String, List<String>> podCVEIds, boolean showAllPaths, boolean hasExports) {
@@ -47,7 +64,7 @@ public class AnalysisSummaryPrinter {
     }
 
     private static void printExecutiveSummary(PathDiscoveryResult pathResult, ChokePointResult chokeResult, List<List<GraphNode>> privilegeLoops, List<BlastRadiusResult> blastResults) {
-        log.info(CYAN + "--- EXECUTIVE OVERVIEW ---" + RESET);
+        log.info("{}--- EXECUTIVE OVERVIEW ---{}", CYAN, RESET);
         log.info("  • Discovered Attack Paths: {}", pathResult.allPossiblePaths().size());
         log.info("  • Critical Choke Points: {}", chokeResult.rankedChokePoints().size());
         log.info("  • Privilege Escalation Loops: {}", privilegeLoops.size());
@@ -60,7 +77,7 @@ public class AnalysisSummaryPrinter {
     }
 
     private static void printAttackPathAnalysis(Graph<GraphNode, GraphEdge> graph, PathDiscoveryResult pathResult, boolean showAllPaths) {
-        log.info(CYAN + "--- ATTACK PATH ANALYSIS ---" + RESET);
+        log.info("{}--- ATTACK PATH ANALYSIS ---{}", CYAN, RESET);
 
         GraphPath<GraphNode, GraphEdge> mostDangerous = pathResult.mostDangerousPath();
         Map<GraphEdge, Double> edgeRiskScores = pathResult.edgeRiskScores();
@@ -72,7 +89,7 @@ public class AnalysisSummaryPrinter {
         }
 
         // Always show the most dangerous path
-        log.info(BOLD_RED + "[!] MOST DANGEROUS PATH IDENTIFIED:" + RESET);
+        log.info("{}[!] MOST DANGEROUS PATH IDENTIFIED:{}", BOLD_RED, RESET);
         printSinglePath(graph, mostDangerous, edgeRiskScores, true, true);
 
         if (!showAllPaths) {
@@ -102,7 +119,7 @@ public class AnalysisSummaryPrinter {
             return;
         }
 
-        log.info(YELLOW + "All Discovered Paths:" + RESET);
+        log.info("{}All Discovered Paths:{}", YELLOW, RESET);
         int pairIndex = 1;
         for (Map.Entry<String, List<GraphPath<GraphNode, GraphEdge>>> entry : grouped.entrySet()) {
             List<GraphPath<GraphNode, GraphEdge>> paths = entry.getValue();
@@ -161,7 +178,7 @@ public class AnalysisSummaryPrinter {
             return;
         }
 
-        log.info(CYAN + "--- CRITICAL CHOKE POINTS (Top Priority for Fixes) ---" + RESET);
+        log.info("{}--- CRITICAL CHOKE POINTS (Top Priority for Fixes) ---{}", CYAN, RESET);
         ranked.stream()
                 .limit(5)
                 .forEach(cp -> log.info(
@@ -175,7 +192,7 @@ public class AnalysisSummaryPrinter {
     }
 
     private static void printPrivilegeLoopAnalysis(List<List<GraphNode>> privilegeLoops) {
-        log.info(CYAN + "--- PRIVILEGE ESCALATION LOOPS ---" + RESET);
+        log.info("{}--- PRIVILEGE ESCALATION LOOPS ---{}", CYAN, RESET);
 
         if (privilegeLoops == null || privilegeLoops.isEmpty()) {
             log.info("  • No privilege escalation loops detected.");
@@ -245,7 +262,7 @@ public class AnalysisSummaryPrinter {
     private static void printBlastRadiusAnalysis(List<BlastRadiusResult> blastResults) {
         if (blastResults.isEmpty()) return;
 
-        log.info(CYAN + "--- BLAST RADIUS HIGHLIGHTS ---" + RESET);
+        log.info("{}--- BLAST RADIUS HIGHLIGHTS ---{}", CYAN, RESET);
         for (BlastRadiusResult br : blastResults) {
             if (br.totalImpacted() == 0) continue;
             GraphNode source = br.source();
@@ -302,7 +319,7 @@ public class AnalysisSummaryPrinter {
                         .thenComparing(Map.Entry::getKey, String.CASE_INSENSITIVE_ORDER)
         );
 
-        log.info(CYAN + "--- POD VULNERABILITY DETAILS ---" + RESET);
+        log.info("{}--- POD VULNERABILITY DETAILS ---{}", CYAN, RESET);
 
         final int maxCvesToPrint = 12;
         for (Map.Entry<String, List<String>> entry : vulnerablePods) {
@@ -325,21 +342,21 @@ public class AnalysisSummaryPrinter {
 
     private static void printRemediationPlans(List<RemediationPlan> plans) {
         if (plans.isEmpty()) return;
-        log.info(CYAN + "--- PROPOSED REMEDIATION ACTIONS ---" + RESET);
+        log.info("{}--- PROPOSED REMEDIATION ACTIONS ---{}", CYAN, RESET);
         for (RemediationPlan plan : plans) {
-            log.info(GREEN + "Fix for Choke Point: " + RESET + "[{}]", plan.nodeId());
+            log.info("{}Fix for Choke Point: {}[{}]", GREEN, RESET, plan.nodeId());
             log.info("  Rationale: {}", plan.rationale());
 
             if (!plan.auditCommands().isEmpty()) {
-                log.info("  " + BOLD + "Audit first:" + RESET);
+                log.info("  {}Audit first:{}", BOLD, RESET);
                 plan.auditCommands().forEach(cmd -> log.info("     {}", cmd));
             }
             if (!plan.enforceCommands().isEmpty()) {
-                log.info("  " + BOLD + "Then enforce:" + RESET);
-                plan.enforceCommands().forEach(cmd -> log.info(YELLOW + "     {}" + RESET, cmd));
+                log.info("  {}Then enforce:{}", BOLD, RESET);
+                plan.enforceCommands().forEach(cmd -> log.info("{}     {}{}", YELLOW, cmd, RESET));
             }
             if (plan.containsDestructiveAction()) {
-                log.warn(BOLD_RED + "  [!] WARNING: Plan contains destructive actions." + RESET);
+                log.warn("{}  [!] WARNING: Plan contains destructive actions.{}", BOLD_RED, RESET);
             }
         }
         System.out.println();
@@ -355,22 +372,18 @@ public class AnalysisSummaryPrinter {
     }
 
     private static void printFooter(boolean hasExports) {
-        log.info(BOLD + "{}" + RESET, "=".repeat(80));
+        log.info("{}{}{}", BOLD, "=".repeat(80), RESET);
         log.info(" End of Analysis Summary");
-        log.info(BOLD + "{}" + RESET, "=".repeat(80));
+        log.info("{}{}{}", BOLD, "=".repeat(80), RESET);
 
         if (!hasExports) {
             System.out.println();
-            log.info(CYAN + BOLD + "╔ NEXT STEPS ╗" + RESET);
-            log.info(BOLD + "├─ Visualization:" + RESET + "  {} {}",
-                    GREEN + "add -o html" + RESET, "(visual graph)");
-            log.info(BOLD + "├─ Documentation:" + RESET + " {} {}",
-                    GREEN + "add -o pdf" + RESET, "(PDF report)");
-            log.info(BOLD + "├─ Analysis:" + RESET + "      {} {}",
-                    GREEN + "add --show-all-paths" + RESET, "(all attack paths)");
-            log.info(BOLD + "└─ Scope:" + RESET + "         {} {}",
-                    GREEN + "add --max-hops <N>" + RESET, "(default: 3)");
-            log.info(BOLD + "{}" + RESET + "\n", "=".repeat(80));
+            log.info("{}{}╔ NEXT STEPS ╗{}", CYAN, BOLD, RESET);
+            log.info("{}├─ Visualization:{}  {} {}", BOLD, RESET, GREEN + "add -o html" + RESET, "(visual graph)");
+            log.info("{}├─ Documentation:{} {} {}", BOLD, RESET, GREEN + "add -o pdf" + RESET, "(PDF report)");
+            log.info("{}├─ Analysis:{}      {} {}", BOLD, RESET, GREEN + "add --show-all-paths" + RESET, "(all attack paths)");
+            log.info("{}└─ Scope:{}         {} {}", BOLD, RESET, GREEN + "add --max-hops <N>" + RESET, "(default: 3)");
+            log.info("{}{}{}\n", BOLD, "=".repeat(80), RESET);
         }
     }
 }

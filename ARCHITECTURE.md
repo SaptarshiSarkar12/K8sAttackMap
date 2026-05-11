@@ -66,14 +66,15 @@ src/main/java/io/github/SaptarshiSarkar12/k8sattackmap/
 │
 └── util/                          # Shared utilities
     ├── AppConstants.java
+    ├── ConsoleColors.java
+    ├── TerminalCapabilities.java  # Terminal capability detection
     ├── RiskConfig.java            # Centralised risk thresholds
     │                              # (test: RiskConfigTest.java)
     ├── TemplateStore.java         # Runtime-loaded HTML/PDF templates
     ├── JacksonConfig.java         # Shared ObjectMapper
     ├── StringUtils.java           # (test: StringUtilsTest.java)
     ├── NodeFinder.java            # (test: NodeFinderTest.java)
-    ├── WorkspaceManager.java
-    └── ConsoleColors.java
+    └── WorkspaceManager.java      # Manages app working directory
 ```
 
 ## Test Structure
