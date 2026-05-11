@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # Runtime and test dependencies
+  # Runtime, test dependencies, and build plugins
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
@@ -34,13 +34,6 @@ updates:
       lombok:
         patterns:
           - "org.projectlombok:*"
-
-  # Build plugins (compiler, surefire, checkstyle, rewrite, graalvm)
-  - package-ecosystem: "maven"
-    directory: "/"
-    schedule:
-      interval: "monthly" # plugins change less often, monthly is enough
-    groups:
       maven-core-plugins:
         patterns:
           - "org.apache.maven.plugins:*"

@@ -5,6 +5,7 @@
 
   <br/>
 
+[![CI: Build, Test & Package (GitHub Actions)](https://github.com/SaptarshiSarkar12/K8sAttackMap/actions/workflows/build.yml/badge.svg)](https://github.com/SaptarshiSarkar12/K8sAttackMap/actions/workflows/build.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://openjdk.org/)
 [![GraalVM](https://img.shields.io/badge/GraalVM-Native_Image-red.svg)](https://www.graalvm.org/)
@@ -37,7 +38,8 @@ relationships, then surfaces the most dangerous paths, choke points, and remedia
 - [Contributing](#contributing)
 - [License](#license)
 
-> **Note:** For detailed module breakdown and test organization, see [ARCHITECTURE.md](ARCHITECTURE.md).
+> [!NOTE]
+> For detailed module breakdown and test organization, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
