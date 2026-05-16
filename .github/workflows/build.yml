@@ -77,11 +77,11 @@ jobs:
         shell: bash
         run: |
           RAW_ARCH=$(uname -m)
-          ARCH=$( [[ "$RAW_ARCH" == "x86_64" ]] && echo "amd64" || echo "arm64" )
+          ARCH=$( [[ "$RAW_ARCH" == "x86_64" ]] && echo "x86_64" || echo "arm64" )
           VERSION="${{ needs.build-and-test.outputs.version }}"
           cd target
           OLD_NAME="K8sAttackMap${{ matrix.ext }}"
-          NEW_NAME="K8sAttackMap-${VERSION}-${{ matrix.os_name }}-${ARCH}${{ matrix.ext }}"
+          NEW_NAME="K8sAttackMap-v${VERSION}-${{ matrix.os_name }}-${ARCH}${{ matrix.ext }}"
           mv "$OLD_NAME" "$NEW_NAME"
           tar -cvf K8sAttackMap-${{ matrix.os }}.tar "$NEW_NAME"
       - name: Upload Artifact
@@ -112,7 +112,7 @@ jobs:
         run: |
           VERSION="${{ needs.build-and-test.outputs.version }}"
           gh release create "v$VERSION" \
-            K8sAttackMap-$VERSION-* \
+            K8sAttackMap-v$VERSION-* \
             --title "K8sAttackMap v$VERSION" \
             --draft
         env:
