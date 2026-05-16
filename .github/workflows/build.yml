@@ -44,7 +44,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        include:
+          - os: ubuntu-latest
+            os_name: linux
+            ext: ''
+          - os: ubuntu-24.04-arm
+            os_name: linux
+            ext: ''
+          - os: windows-latest
+            os_name: windows
+            ext: '.exe'
+          - os: macos-latest
+            os_name: macos
+            ext: ''
     permissions:
       contents: write # Required for SBOM generation from setup-graalvm action
     steps:
@@ -64,14 +76,12 @@ jobs:
       - name: Tar executable
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            EXTENSION=".exe"
-          else
-            EXTENSION=""
-          fi
+          RAW_ARCH=$(uname -m)
+          ARCH=$( [[ "$RAW_ARCH" == "x86_64" ]] && echo "amd64" || echo "arm64" )
+          VERSION="${{ needs.build-and-test.outputs.version }}"
           cd target
-          OLD_NAME="K8sAttackMap${EXTENSION}"
-          NEW_NAME="K8sAttackMap-${{ matrix.os }}${EXTENSION}"
+          OLD_NAME="K8sAttackMap${{ matrix.ext }}"
+          NEW_NAME="K8sAttackMap-${VERSION}-${{ matrix.os_name }}-${ARCH}${{ matrix.ext }}"
           mv "$OLD_NAME" "$NEW_NAME"
           tar -cvf K8sAttackMap-${{ matrix.os }}.tar "$NEW_NAME"
       - name: Upload Artifact
@@ -100,9 +110,10 @@ jobs:
           done
       - name: Create Draft Release
         run: |
-          gh release create "v${{ needs.build.outputs.version }}" \
-            linux/* windows/* macos/* \
-            --title "v${{ needs.build.outputs.version }}" \
+          VERSION="${{ needs.build-and-test.outputs.version }}"
+          gh release create "v$VERSION" \
+            K8sAttackMap-$VERSION-* \
+            --title "K8sAttackMap v$VERSION" \
             --draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
