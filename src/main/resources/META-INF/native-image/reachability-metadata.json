@@ -2809,6 +2809,9 @@
       ]
     },
     {
+      "type": "double"
+    },
+    {
       "type": "io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge"
     },
     {
@@ -2820,6 +2823,14 @@
             "double",
             "java.util.List"
           ]
+        },
+        {
+          "name": "cveIds",
+          "parameterTypes": []
+        },
+        {
+          "name": "cvssScore",
+          "parameterTypes": []
         }
       ]
     },

@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web
+  namespace: default
+spec:
+  serviceAccountName: web-sa
+  automountServiceAccountToken: true
+  containers:
+    - name: web
+      image: nginx:1.25
+      envFrom:
+        - secretRef:
+            name: db-credentials
+        - configMapRef:
+            name: app-config
+      volumeMounts:
+        - name: tls
+          mountPath: /etc/tls
+  volumes:
+    - name: tls
+      secret:
+        secretName: tls-cert
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: privileged-worker
+  namespace: default
+spec:
+  serviceAccountName: web-sa
+  hostPID: true
+  hostNetwork: true
+  hostIPC: true
+  volumes:
+    - name: host-root
+      hostPath:
+        path: /
+  containers:
+    - name: worker
+      image: busybox:1.36
+      securityContext:
+        privileged: true
+        allowPrivilegeEscalation: true
+        runAsUser: 0
+        capabilities:
+          add: ["SYS_ADMIN", "NET_ADMIN"]
+      volumeMounts:
+        - name: host-root
+          mountPath: /host
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: restricted-app
+  namespace: default
+spec:
+  serviceAccountName: restricted-sa
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: alpine:3.19
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1000

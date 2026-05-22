@@ -10,7 +10,6 @@
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://openjdk.org/)
 [![GraalVM](https://img.shields.io/badge/GraalVM-Native_Image-red.svg)](https://www.graalvm.org/)
 [![Trivy](https://img.shields.io/badge/Scanner-Trivy-1904DA.svg)](https://trivy.dev/)
-[![GitHub Issues](https://img.shields.io/github/issues/SaptarshiSarkar12/K8sAttackMap)](https://github.com/SaptarshiSarkar12/K8sAttackMap/issues)
 
 **Kubernetes attack surface visualiser and security advisor.**  
 Ingests a live or offline cluster snapshot, builds a directed attack graph across RBAC, workloads, secrets, and node
@@ -219,6 +218,9 @@ finds the most dangerous path, identifies choke points, and prints a console sum
 
 > [!WARNING]
 > **Prerequisites:** Ensure `trivy` is on your `PATH` and you have `kubectl` access (for live cluster mode) or a saved cluster snapshot before running these commands.
+
+> [!TIP]
+> The repo includes `testdata/cluster-state.json` for a quick offline run and example manifests under `examples/` if you want to generate a similar snapshot.
 
 ### Run against live cluster
 

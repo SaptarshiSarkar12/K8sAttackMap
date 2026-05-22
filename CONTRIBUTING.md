@@ -93,8 +93,8 @@ Make sure you have the following installed before you begin:
 2. Generate GraalVM Native Image metadata (needed when reflection/serialization usage changes):
 
    ```bash
-   # If you wish to use a saved cluster snapshot during metadata generation,
-   # add arguments like `-k /path/to/cluster-state.json` to the plugin configuration in pom.xml first.
+   # The default configuration uses testdata/cluster-state.json. To use your own
+   # snapshot, update the arguments in pom.xml before running this.
    mvn -P generate-graalvm-metadata exec:exec@java-agent
    ```
    This will run the tool with the GraalVM agent, which observes runtime behavior and generates metadata files under `src/main/resources/META-INF/native-image/`.
@@ -231,6 +231,15 @@ mvn clean package -P build-macos-latest   # → target/macos/K8sAttackMap
 ```
 
 Native images are automatically built by GitHub Actions CI/CD workflow.
+
+For PGO runs, build the instrumented binary and drive it with the workload script:
+
+```bash
+mvn clean package -P pgo-instrument
+bash scripts/run-pgo.sh target/K8sAttackMap
+```
+
+The script reuses `testdata/cluster-state.json` by default; update that file or edit the script if you want to profile a different snapshot.
 
 ---
 

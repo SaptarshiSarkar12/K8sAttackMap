@@ -28,6 +28,13 @@ jobs:
         with:
           java-version: '25'
           distribution: 'oracle'
+      - name: Install Trivy
+        run: |
+          sudo apt-get install wget gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
       - name: Build with Maven
         run: mvn clean compile
       - name: Test with Maven
@@ -38,9 +45,45 @@ jobs:
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+  pgo-profile:
+    name: Generate PGO Profile
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Oracle GraalVM 25
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: 'maven'
+      - name: Install Trivy
+        run: |
+          sudo apt-get install wget gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+      - name: Build instrumented native image
+        run: mvn clean package -DskipTests -P pgo-instrument
+      - name: Run PGO workload
+        run: bash scripts/run-pgo.sh target/K8sAttackMap
+      - name: Ensure PGO profile exists
+        run: test -f default.iprof
+      - name: Upload PGO profile
+        uses: actions/upload-artifact@v7
+        with:
+          name: pgo-profile
+          path: default.iprof
+          archive: false
+
   package:
     name: Package for ${{ matrix.os }}
-    needs: build-and-test
+    needs: [ build-and-test, pgo-profile ]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -71,8 +114,15 @@ jobs:
           cache: 'maven'
           native-image-job-reports: 'true'
           native-image-enable-sbom: 'true'
+      - name: Download PGO profile
+        uses: actions/download-artifact@v8
+        with:
+          name: pgo-profile
+          path: .
+      - name: Verify PGO profile present
+        run: test -f default.iprof
       - name: Build and Package with Maven
-        run: mvn clean package -DskipTests
+        run: mvn clean package -DskipTests -P pgo-optimise
       - name: Tar executable
         shell: bash
         run: |
@@ -104,6 +154,7 @@ jobs:
         with:
           merge-multiple: true # Merges all artifacts into a single directory
       - name: Unpack artifacts
+        shell: bash
         run: |
           for file in *.tar; do
               tar -xvf "$file"

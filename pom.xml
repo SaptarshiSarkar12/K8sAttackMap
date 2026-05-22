@@ -14,6 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <main.class>io.github.SaptarshiSarkar12.k8sattackmap.K8sAttackMapApplication</main.class>
         <native.outputDirectory>target/</native.outputDirectory>
+        <native.pgo.arg>-O2</native.pgo.arg> <!-- Default to -O2 (default optimization level) when no PGO profile is used -->
     </properties>
 
     <dependencies>
@@ -158,6 +159,7 @@
                         <buildArg>-march=compatibility</buildArg>
                         <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                         <buildArg>--verbose</buildArg>
+                        <buildArg>${native.pgo.arg}</buildArg>
                     </buildArgs>
                 </configuration>
                 <executions>
@@ -212,8 +214,8 @@
                                         <classpath/>
                                         <argument>-agentlib:native-image-agent=config-merge-dir=${project.basedir}/src/main/resources/META-INF/native-image</argument>
                                         <argument>${main.class}</argument>
-                                        <!--<argument>-k</argument>-->
-                                        <!--<argument>cluster-state.json</argument>-->
+                                        <argument>-k</argument>
+                                        <argument>testdata/cluster-state.json</argument>
                                         <argument>--show-all-paths</argument>
                                         <argument>-o</argument>
                                         <argument>html,pdf</argument>
@@ -225,6 +227,20 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <!-- Profile to instrument the application for PGO data collection -->
+        <profile>
+            <id>pgo-instrument</id>
+            <properties>
+                <native.pgo.arg>--pgo-instrument</native.pgo.arg>
+            </properties>
+        </profile>
+        <!-- Profile to optimize the application using collected PGO data -->
+        <profile>
+            <id>pgo-optimise</id>
+            <properties>
+                <native.pgo.arg>--pgo</native.pgo.arg>
+            </properties>
         </profile>
     </profiles>
 </project>
