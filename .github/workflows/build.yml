@@ -77,9 +77,8 @@ jobs:
       - name: Upload PGO profile
         uses: actions/upload-artifact@v7
         with:
-          name: pgo-profile
           path: default.iprof
-          archive: false
+          archive: 'false'
 
   package:
     name: Package for ${{ matrix.os }}
@@ -117,8 +116,7 @@ jobs:
       - name: Download PGO profile
         uses: actions/download-artifact@v8
         with:
-          name: pgo-profile
-          path: .
+          name: default.iprof
       - name: Verify PGO profile present
         run: test -f default.iprof
       - name: Build and Package with Maven
