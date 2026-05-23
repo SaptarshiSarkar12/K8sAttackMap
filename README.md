@@ -396,6 +396,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, branching strategy
 
 ---
 
+## Community
+
+Join the project Discord for discussion and announcements: https://discord.gg/DeT4jXPfkG (channel: `#k8sattackmap`).
+Please report security issues privately via GitHub Security Advisories, not on Discord.
+
+---
+
 ## License
 
 [Apache License 2.0](LICENSE)

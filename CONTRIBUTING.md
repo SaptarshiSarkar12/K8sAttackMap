@@ -375,6 +375,13 @@ reformatting code. However, not all issues can be auto-fixed, so it's important 
 
 ---
 
+## Community & Discussion
+
+For project discussion and announcements, join the Discord server: https://discord.gg/DeT4jXPfkG (channel: `#k8sattackmap`).
+Security issues should be reported privately via GitHub Security Advisories, not on Discord.
+
+---
+
 ## Reporting Issues
 
 Before opening a new issue, please [search existing issues](https://github.com/SaptarshiSarkar12/K8sAttackMap/issues) to

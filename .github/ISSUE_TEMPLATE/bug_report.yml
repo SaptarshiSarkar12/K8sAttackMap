@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a reproducible problem with K8sAttackMap.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      options:
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true
+        - label: This is not a security vulnerability (see SECURITY.md for private reporting).
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: K8sAttackMap version
+      description: Output of `./k8sattackmap --version` or the commit SHA.
+      placeholder: v1.2.3 or 1a2b3c4
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installation method
+      options:
+        - Native binary (release)
+        - Build from source
+        - Other (describe below)
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, and runtime details if relevant (Java/GraalVM, Maven).
+      placeholder: Ubuntu 24.04 x86_64, Java 25, Maven 3.9.7
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command used
+      description: Include the exact command and flags.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output / logs
+      description: Run with `--verbose` if possible and paste the full output.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: snapshot
+    attributes:
+      label: Minimal redacted cluster snapshot (if relevant)
+      description: Provide a minimal anonymized JSON snippet that reproduces the issue.
+      render: json
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Links, screenshots, or anything else that helps triage.

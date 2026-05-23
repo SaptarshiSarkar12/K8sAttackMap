@@ -21,6 +21,7 @@ Only the latest release of K8sAttackMap receives security fixes. We encourage al
 
 > [!WARNING]
 > **Please do not report security vulnerabilities through public GitHub issues.**
+> Do not disclose vulnerabilities on Discord or other public channels.
 
 To report a vulnerability, please use one of the following private channels:
 
