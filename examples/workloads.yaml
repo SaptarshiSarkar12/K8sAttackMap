@@ -59,7 +59,7 @@ spec:
     spec:
       containers:
         - name: fluentd
-          image: fluentd:v1.16
+          image: fluentd:v1.19-1
 ---
 apiVersion: batch/v1
 kind: Job
