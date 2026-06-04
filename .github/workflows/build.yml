@@ -147,6 +147,8 @@ jobs:
     permissions:
       contents: write # Required for creating releases and uploading assets
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
       - name: Download Artifacts
         uses: actions/download-artifact@v8
         with:
