@@ -1,0 +1,87 @@
+---
+title: Submitting a Pull Request
+description: How to open, format, and get a PR merged into K8sAttackMap.
+---
+
+## Before You Open the PR
+
+1. **Sync your branch** with `upstream/main`:
+   ```bash
+   git fetch upstream
+   git rebase upstream/main
+   ```
+
+2. **Run the test suite** — all tests must pass:
+   ```bash
+   mvn test
+   ```
+
+3. **Run Checkstyle** — no violations:
+   ```bash
+   mvn checkstyle:check
+   ```
+
+4. **Test with a real cluster snapshot** — if your change touches ingestion, analysis, or export.
+
+## Commit Message Format
+
+Use a short imperative subject line (≤ 72 characters), optionally followed by a blank line and a longer body:
+
+```
+Add node_escape edge type for privileged container breakout
+
+Containers running with hostPID=true or securityContext.privileged=true
+now get a node_escape edge to the host Node resource. EdgeRiskScorer
+assigns weight 0.1 (very easy traversal) to these edges.
+
+Fixes #42
+```
+
+Subject line conventions:
+- Imperative mood: "Add", "Fix", "Remove", "Update" — not "Added" or "Adding"
+- No period at the end
+- Reference issues with `Fixes #N` or `Closes #N` in the body
+
+## Opening the PR
+
+1. Push your branch to your fork:
+   ```bash
+   git push origin feat/add-node-escape-edge
+   ```
+
+2. Open a Pull Request against `main` in the upstream repository.
+
+3. In the PR description, include:
+   - **What** changed and **why**
+   - Related issues with `Fixes #<number>` or `Closes #<number>`
+   - Before/after console output or screenshots for user-facing changes
+   - Whether the change requires regenerated GraalVM metadata
+
+## PR Review Process
+
+- A maintainer will review your PR, typically within a few days
+- Address comments with new commits or by revising existing ones
+- Avoid force-pushing once a review is in progress (unless asked)
+- A clean, logical commit history is preferred — squash "fix typo" commits before the PR is merged
+
+## Security Vulnerabilities
+
+**Do not** open public issues for security vulnerabilities. Report them privately via
+[GitHub Security Advisories](https://github.com/SaptarshiSarkar12/K8sAttackMap/security/advisories).
+
+## Reporting Bugs
+
+Before opening a new issue, [search existing issues](https://github.com/SaptarshiSarkar12/K8sAttackMap/issues)
+to avoid duplicates.
+
+When filing a bug report, include:
+- K8sAttackMap version or commit SHA
+- Operating system and architecture
+- Exact command you ran
+- Full console output (use `--verbose` for debug logs)
+- For parsing issues: a **minimal anonymised cluster JSON** that reproduces the problem
+
+## Community
+
+For project discussion and announcements, join the [Discord server](https://discord.gg/DeT4jXPfkG)
+(channel: `#k8sattackmap`). Security issues should be reported privately via GitHub Security Advisories, not on Discord.

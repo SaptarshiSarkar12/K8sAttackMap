@@ -1,0 +1,12 @@
+{
+  "title": "K8sAttackMap Docs",
+  "pages": [
+    "index",
+    "getting-started",
+    "usage",
+    "features",
+    "output-formats",
+    "architecture",
+    "contributing"
+  ]
+}

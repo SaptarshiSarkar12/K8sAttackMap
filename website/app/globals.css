@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+@config "../tailwind.config.ts";
+
+:root {
+  --font-syne: 'Syne', sans-serif;
+  --font-jetbrains: 'JetBrains Mono', monospace;
+
+  /* K8sAttackMap brand tokens */
+  --color-attack: #ef4444;
+  --color-attack-dim: #991b1b;
+  --color-safe: #22d3ee;
+  --color-node: #a3e635;
+  --color-bg: #050a0e;
+  --color-surface: #090f15;
+  --color-border: rgba(34, 211, 238, 0.1);
+  --color-text: #e2e8f0;
+  --color-text-dim: #64748b;
+}
+
+/* Fumadocs theme overrides — dark cyber palette */
+:root {
+  --background: 220 28% 4%;
+  --foreground: 210 40% 90%;
+  --muted: 215 25% 10%;
+  --muted-foreground: 215 16% 47%;
+  --border: 215 20% 14%;
+  --accent: 358 90% 58%;
+  --accent-foreground: 0 0% 100%;
+  --card: 216 28% 7%;
+  --card-foreground: 210 40% 90%;
+  --primary: 197 90% 48%;
+  --primary-foreground: 0 0% 4%;
+  --secondary: 215 25% 12%;
+  --secondary-foreground: 210 40% 90%;
+  --ring: 197 90% 48%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 220 28% 4%;
+  --foreground: 210 40% 90%;
+  --muted: 215 25% 10%;
+  --muted-foreground: 215 16% 47%;
+  --border: 215 20% 14%;
+  --accent: 358 90% 58%;
+  --accent-foreground: 0 0% 100%;
+  --card: 216 28% 7%;
+  --card-foreground: 210 40% 90%;
+  --primary: 197 90% 48%;
+  --primary-foreground: 0 0% 4%;
+  --secondary: 215 25% 12%;
+  --secondary-foreground: 210 40% 90%;
+  --ring: 197 90% 48%;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  .dark html {
+    background-color: #050a0e;
+  }
+
+  body {
+    @apply antialiased;
+    font-family: var(--font-geist, system-ui, sans-serif);
+  }
+
+  .dark body {
+    @apply bg-surface-900 text-slate-200;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #050a0e;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(34, 211, 238, 0.2);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(34, 211, 238, 0.4);
+  }
+}
+
+@layer components {
+  /* Grid background for hero / sections */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(34, 211, 238, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.035) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Attack-path line animation  */
+  .attack-path-glow {
+    box-shadow:
+      0 0 8px rgba(239, 68, 68, 0.6),
+      0 0 20px rgba(239, 68, 68, 0.3);
+  }
+
+  .safe-glow {
+    box-shadow:
+      0 0 8px rgba(34, 211, 238, 0.5),
+      0 0 20px rgba(34, 211, 238, 0.2);
+  }
+
+  /* Terminal-style code */
+  .terminal {
+    background: #020609;
+    border: 1px solid rgba(34, 211, 238, 0.15);
+    border-radius: 8px;
+    font-family: var(--font-jetbrains), monospace;
+  }
+
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(34, 211, 238, 0.1);
+    background: rgba(34, 211, 238, 0.03);
+  }
+
+  .terminal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  /* Feature card */
+  .feature-card {
+    @apply rounded-lg border p-6 transition-all duration-300;
+    background: rgba(9, 15, 21, 0.8);
+    border-color: rgba(34, 211, 238, 0.1);
+  }
+
+  .feature-card:hover {
+    border-color: rgba(34, 211, 238, 0.3);
+    background: rgba(9, 15, 21, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(34, 211, 238, 0.08);
+  }
+
+  /* Gradient text */
+  .text-gradient-attack {
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-safe {
+    background: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Pipeline node */
+  .pipeline-node {
+    @apply flex flex-col items-center text-center;
+  }
+
+  .pipeline-icon {
+    @apply w-14 h-14 rounded-xl flex items-center justify-center mb-3;
+    border: 1px solid rgba(34, 211, 238, 0.2);
+    background: rgba(34, 211, 238, 0.06);
+  }
+}
+
+/* Animated scan line */
+@keyframes scanLine {
+  0% { transform: translateY(-100%); opacity: 0.3; }
+  50% { opacity: 0.7; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+.scan-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.6), transparent);
+  animation: scanLine 8s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Fumadocs docs page overrides */
+.prose pre {
+  font-family: var(--font-jetbrains), monospace !important;
+  font-size: 0.85rem !important;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+}

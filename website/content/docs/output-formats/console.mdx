@@ -1,0 +1,125 @@
+---
+title: Console Output
+description: Understanding the color-coded terminal output produced by every K8sAttackMap run.
+---
+
+## Overview
+
+The console output is **always produced** — no flags required. It is the primary interface for quick
+cluster assessment and is suitable for piping to a file or CI log.
+
+Use `--no-color` (or set `NO_COLOR=1`) to strip ANSI colour codes for log files or CI environments.
+
+## Output Sections
+
+A typical run produces these sections in order:
+
+### 1. ASCII Art Header
+
+The tool prints a large ASCII art banner with the version number on startup.
+
+### 2. Parsing Progress
+
+```
+[INFO] Loaded cluster state from: cluster-state.json
+[INFO] Parsed 248 resources: 42 Pods, 18 ServiceAccounts, 31 Secrets, ...
+[INFO] Running Trivy CVE scan on 12 unique container images...
+[INFO] Trivy scan complete: 847 CVEs found across 12 images
+```
+
+### 3. Graph Construction Summary
+
+```
+[INFO] Built attack graph: 248 nodes, 394 edges
+[INFO] Auto-discovery: 42 entry points, 31 crown jewels identified
+```
+
+### 4. Attack Paths
+
+For each source→target pair where a path exists:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CRITICAL ATTACK PATH
+ Source: Pod:default:api-server
+ Target: Secret:production:stripe-key
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [1] Pod:default:api-server
+        ──[uses_sa]──▶  ServiceAccount:default:ci-runner
+        friction: 0.3
+
+  [2] ServiceAccount:default:ci-runner
+        ──[bound_to]──▶  ClusterRole:cluster-scoped:deployer
+        friction: 0.5
+
+  [3] ClusterRole:cluster-scoped:deployer
+        ──[can_access]──▶  Secret:production:stripe-key
+        friction: 0.4
+
+  Total friction: 1.2  |  Risk grade: CRITICAL
+  Remediation: kubectl delete clusterrolebinding ci-runner-deployer
+```
+
+{/* ─── IMAGE PLACEHOLDER ────────────────────────────────────────────────────
+    Add screenshots of the actual console output here.
+    Four screenshots are available from the README:
+    - https://github.com/user-attachments/assets/4bbf0e13-...  (output 1)
+    - https://github.com/user-attachments/assets/f0408c65-...  (output 2)
+    - https://github.com/user-attachments/assets/0093dc51-...  (output 3)
+    - https://github.com/user-attachments/assets/03c3a280-...  (output 4)
+    Use a 2-column grid layout for best appearance.
+    ────────────────────────────────────────────────────────────────────────── */}
+
+### 5. Choke Points
+
+```
+TOP CHOKE POINTS
+  #1  ServiceAccount:default:ci-runner   paths severed: 7   score: 14.2
+  #2  Pod:monitoring:prometheus          paths severed: 4   score:  8.6
+  #3  ClusterRole:cluster-scoped:admin   paths severed: 3   score:  7.1
+  ...
+```
+
+### 6. Blast Radius Summary
+
+```
+BLAST RADIUS (depth: 3)
+  Entry: Pod:default:api-server → 6 assets reachable
+    CRITICAL: 2  HIGH: 3  MEDIUM: 1
+  ...
+```
+
+### 7. Privilege Escalation Loops
+
+```
+PRIVILEGE ESCALATION LOOPS: 1 detected
+  Loop: ServiceAccount:default:ci-runner
+    →[bound_to]→ ClusterRole:cluster-scoped:deployer
+    →[can_access]→ ServiceAccount:default:ci-runner  ⬅ CYCLE
+```
+
+### 8. Export Summary
+
+```
+[INFO] k8s-threat-map.html  written to ./k8s-threat-map.html
+[INFO] k8s-threat-report.pdf written to ./k8s-threat-report.pdf
+```
+
+## Verbose Mode
+
+Enable debug logging with `--verbose` to see:
+- Detailed Trivy scan progress per image
+- Graph construction steps
+- Edge weight calculations
+- Path finder iteration counts
+
+```bash
+./k8sattackmap -k cluster-state.json --verbose
+```
+
+## Implementation Details
+
+- `export/AnalysisSummaryPrinter.java` — formats and prints all console sections
+- `util/ConsoleColors.java` — ANSI colour constants
+- `util/TerminalCapabilities.java` — detects colour/unicode support

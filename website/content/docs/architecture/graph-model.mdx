@@ -1,0 +1,110 @@
+---
+title: Graph Model
+description: How the attack graph is structured — nodes, edges, weights, and the multigraph model.
+---
+
+## Graph Type
+
+K8sAttackMap uses a **`DirectedWeightedMultigraph<GraphNode, GraphEdge>`** from JGraphT.
+
+| Property   | Value                                                                |
+|------------|----------------------------------------------------------------------|
+| Directed   | Yes — edges go from attacker-controlled to reachable resource        |
+| Weighted   | Yes — edge weight represents traversal friction                      |
+| Multigraph | Yes — multiple parallel edges between the same two nodes are allowed |
+
+The multigraph property is important: a ServiceAccount can be both `bound_to` a Role
+(one edge) and simultaneously a target of a `can_access` edge from another ClusterRole.
+Both edges exist independently with their own friction weights.
+
+## Nodes (`GraphNode`)
+
+Each `GraphNode` represents one Kubernetes resource:
+
+```
+GraphNode {
+  type:             "Pod" | "ServiceAccount" | "Secret" | "Role" | ...
+  namespace:        "default" | "kube-system" | "cluster-scoped" | ...
+  name:             "api-server" | "ci-runner" | ...
+  intrinsicFriction: double   // baseline traversal difficulty for this resource type
+  securityFacts:    SecurityFacts  // RBAC flags, privileged state, CVE data
+  riskScore:        double    // composite score used in reports
+  id:               "Pod:default:api-server"  // Type:namespace:name
+}
+```
+
+### Intrinsic Friction by Resource Type
+
+| Resource Type                  | Intrinsic Friction | Rationale                     |
+|--------------------------------|--------------------|-------------------------------|
+| Node (host)                    | 0.5                | Very high-value target        |
+| ClusterRole (with wildcards)   | 0.6                | Broad access grants           |
+| Secret                         | 0.7                | Direct credential access      |
+| ServiceAccount (broad binding) | 0.8                | Identity escalation pivot     |
+| Pod (privileged)               | 0.9                | Easy container escape         |
+| Pod (standard)                 | 2.0                | Normal workload               |
+| ConfigMap (sensitive)          | 1.5                | Potential credential exposure |
+| ConfigMap (standard)           | 5.0                | Low-value resource            |
+
+Lower friction = easier to exploit = more dangerous target.
+
+## Edges (`GraphEdge`)
+
+Each `GraphEdge` has:
+- An `EdgeType` enum value (one of 19 types)
+- A label string (the `EdgeType.label` value, e.g., `"uses_sa"`)
+- A weight assigned by `EdgeRiskScorer` (Dijkstra uses this for path optimisation)
+
+## Edge Weight Computation
+
+`EdgeRiskScorer.calculateEdgeWeights(graph)` iterates every edge and computes:
+
+```
+friction = (0.45 × source.intrinsicFriction) + (0.55 × target.intrinsicFriction)
+
+// CVE deductions (lower friction for vulnerable images)
+if source has CRITICAL CVE: friction -= 1.5
+if source has HIGH CVE:     friction -= 0.8
+if source has MEDIUM CVE:   friction -= 0.2
+
+// Security context deductions
+if source is privileged:      friction -= 1.0
+if source has hostPID:        friction -= 0.8
+if source has hostPath:       friction -= 0.5
+if target is RBAC wildcard:   friction -= 0.7
+
+// Edge type semantics
+if edgeType == NODE_ESCAPE:   friction -= 1.2  // very easy container escape
+if edgeType == EXEC_INTO:     friction -= 0.9  // direct shell access
+
+friction = clamp(friction, 0.1, 25.0)
+```
+
+## Group Expansion
+
+The parser expands Kubernetes RBAC group subjects into individual ServiceAccount edges:
+
+- `system:serviceaccounts` → edge to every ServiceAccount in the cluster
+- `system:serviceaccounts:default` → edge to every ServiceAccount in the `default` namespace
+
+This expansion ensures that group-scoped ClusterRoleBindings are correctly modelled
+as individual edges in the graph, preventing missed attack paths.
+
+## ClusterRole Cross-Namespace Edges
+
+`ClusterRole` subjects with `can_access` edges correctly cover **all namespaces** — not just
+the namespace where the RoleBinding is defined. This models the reality that ClusterRoles
+grant permissions cluster-wide unless the binding is a namespace-scoped `RoleBinding`.
+
+## Workload Ownership Chains
+
+The parser creates `MANAGES` edges for workload ownership via `ownerReferences`:
+
+```
+Deployment → ReplicaSet → Pod
+StatefulSet → Pod
+DaemonSet → Pod
+```
+
+This allows the blast radius analysis to trace how compromising a Deployment gives
+indirect control over all its managed Pods.

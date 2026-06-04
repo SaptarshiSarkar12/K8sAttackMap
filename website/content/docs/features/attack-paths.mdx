@@ -1,0 +1,89 @@
+---
+title: Attack Path Discovery
+description: How K8sAttackMap finds the shortest and all possible attack routes through your cluster.
+---
+
+## Overview
+
+Attack path discovery is the core of K8sAttackMap. Given a set of source nodes (entry points) and target nodes
+(crown jewels), the tool finds all reachable routes through the cluster's attack graph and ranks them by risk.
+
+Two algorithms run in combination:
+
+| Algorithm | Purpose |
+|-----------|---------|
+| **Dijkstra** | Finds the single lowest-friction (most dangerous) path from each source to each target |
+| **AllDirectedPaths** | Finds all simple paths up to a depth limit, revealing the full attack surface |
+
+## Edge Weights and Friction
+
+The attack graph uses **edge weights representing friction** — how difficult it is for an attacker to traverse
+that edge. Lower friction = easier traversal = more dangerous path.
+
+Dijkstra's algorithm minimises total friction, finding the *path of least resistance* — the route an
+attacker is most likely to take.
+
+Friction per edge is computed by `EdgeRiskScorer` from:
+
+- **Node intrinsic friction** — each resource type carries a baseline difficulty (e.g., a privileged
+  Pod has lower intrinsic friction than a read-only ConfigMap)
+- **CVE bonuses** — critical/high CVEs on container images reduce friction further
+- **Security deductions** — privileged containers, hostPath mounts, RBAC wildcard verbs all reduce friction
+- **Edge type semantics** — `EXEC_INTO` and `NODE_ESCAPE` are inherently low-friction edge types
+
+```
+friction = (0.45 × source.intrinsic) + (0.55 × target.intrinsic)
+friction -= cveBonus           // critical CVE → lower friction
+friction -= privilegedPenalty  // privileged container → easier traversal
+friction  = clamp(friction, 0.1, 25.0)
+```
+
+## Path Depth Limit
+
+For `AllDirectedPaths`, the depth limit is computed dynamically:
+
+```
+maxDepth = max(baseLen + 2, 8, 10)
+```
+
+Where `baseLen` is the length of the shortest path found by Dijkstra. This ensures all
+practically relevant paths are captured without combinatorial explosion on large graphs.
+
+## Output
+
+### Default Mode
+
+By default, K8sAttackMap shows only the **single highest-risk path** per source→target pair in the console:
+
+```
+[CRITICAL] Attack Path: Pod:default:api-server → ServiceAccount:default:ci-runner → Secret:prod:stripe-key
+  Hop 1: Pod:default:api-server  --[uses_sa]-->  ServiceAccount:default:ci-runner  (friction: 0.3)
+  Hop 2: ServiceAccount:default:ci-runner  --[can_access]-->  Secret:prod:stripe-key  (friction: 0.5)
+  Total path friction: 0.8  |  Risk: CRITICAL
+```
+
+### All Paths Mode (`--show-all-paths`)
+
+With `--show-all-paths`, every discovered path is shown grouped by source→target pair:
+
+```bash
+./k8sattackmap -k cluster-state.json --show-all-paths
+```
+
+{/* ─── IMAGE PLACEHOLDER ────────────────────────────────────────────────────
+    Add a screenshot of the console output showing multiple attack paths
+    grouped by source→target pair with the --show-all-paths flag.
+    Recommended: use the GitHub-hosted console output screenshots from README.
+    ────────────────────────────────────────────────────────────────────────── */}
+
+## Implementation Details
+
+The path discovery logic lives in:
+
+- `analysis/graph/AttackPathDiscovery.java` — main orchestrator for path finding
+- `analysis/graph/Dijkstra.java` — wrapper around JGraphT's `DijkstraShortestPath`
+- `security/EdgeRiskScorer.java` — computes per-edge friction weights
+- `model/EdgeType.java` — defines the 19 semantic edge types
+
+The analysis runs after `ClusterGraphFactory` has built the directed weighted multigraph from
+the parsed cluster data and Trivy scan results.

@@ -1,0 +1,129 @@
+---
+title: Module Reference
+description: Detailed breakdown of every source module, its responsibility, and key classes.
+---
+
+## Source Tree
+
+```
+src/main/java/io/github/SaptarshiSarkar12/k8sattackmap/
+│
+├── K8sAttackMapApplication.java   # Entry point, top-level wiring
+├── cli/                           # Argument parsing
+├── ingestion/                     # Cluster data parsing
+├── model/                         # Core domain types
+├── security/                      # CVE scanning and risk scoring
+├── analysis/                      # Core analysis algorithms
+│   ├── graph/                     # Path discovery
+│   ├── chokepoint/                # Choke point ranking + remediation
+│   ├── blast/                     # Blast radius BFS
+│   └── remediation/               # Remediation plan generation
+├── export/                        # Output generation
+└── util/                          # Shared utilities
+```
+
+## Module Responsibilities
+
+### `cli` — Command-Line Interface
+
+**`CommandParser`** parses and validates all CLI arguments using Apache Commons CLI.
+Supports short flags (`-k`, `-s`, `-t`, `-m`, `-a`, `-o`) and long forms.
+Returns `true` on success, `false` on error or when `--help` / `--version` is requested.
+
+---
+
+### `ingestion` — Cluster Data Parsing
+
+**`K8sJsonParser`** is the largest module. It parses the Kubernetes API JSON into a
+`ClusterGraphData` containing all node and edge lists. Handles: Pods, Deployments,
+ReplicaSets, StatefulSets, DaemonSets, Services, Ingresses, ServiceAccounts, Roles,
+ClusterRoles, RoleBindings, ClusterRoleBindings, Secrets, ConfigMaps, Nodes,
+PersistentVolumes, and PersistentVolumeClaims.
+
+**`KubectlExtractor`** runs `kubectl get ... -A -o json` to capture a live cluster snapshot.
+
+---
+
+### `model` — Core Domain Types
+
+| Class                 | Description                                                                 |
+|-----------------------|-----------------------------------------------------------------------------|
+| `GraphNode`           | Vertex: resource type, namespace, name, intrinsic friction, `SecurityFacts` |
+| `GraphEdge`           | Edge: `EdgeType` + label string                                             |
+| `EdgeType`            | Enum of all 19 semantic edge types                                          |
+| `SecurityFacts`       | RBAC flags, container security context, credential material                 |
+| `ClusterGraphFactory` | Builds the `DirectedWeightedMultigraph` from `ClusterGraphData`             |
+| `ClusterGraphData`    | DTO: parsed nodes, edges, security facts, node lookup map                   |
+
+---
+
+### `security` — CVE Scanning & Risk Scoring
+
+**`AttackSurfaceClassifier`** — Heuristic auto-discovery of entry points and crown jewels.
+
+**`EdgeRiskScorer`** — Computes friction weights from node intrinsic friction, CVE scores,
+and security context deductions. Clamped to `[0.1, 25.0]`.
+
+**`TrivyScanner`** — Invokes Trivy CLI per unique container image; results cached in `TrivyCache`.
+
+**`TrivyJsonParser`** — Parses Trivy JSON output, normalising CVSS scores from NVD, GHSA, Red Hat, Bitnami.
+
+---
+
+### `analysis` — Core Algorithms
+
+| Class                          | Algorithm                                                 |
+|--------------------------------|-----------------------------------------------------------|
+| `AttackPathDiscovery`          | Dijkstra + `AllDirectedPaths`                             |
+| `ChokePointIdentifier`         | Ranking by path coverage                                  |
+| `ChokePointRemediationAdvisor` | kubectl command generation per choke point type           |
+| `BlastRadiusAnalyzer`          | BFS with hop counting and `ImpactSeverity` classification |
+| `PrivilegeLoopDetector`        | Johnson's simple cycles on RBAC-filtered subgraph         |
+| `ImpactRemediationAdvisor`     | Per-path remediation plan records                         |
+| `AnalysisOrchestrator`         | Coordinates all phases; produces `AnalysisResult`         |
+
+---
+
+### `export` — Output Generation
+
+| Class                    | Output                                       |
+|--------------------------|----------------------------------------------|
+| `AnalysisSummaryPrinter` | ANSI-coloured console                        |
+| `CytoscapeExporter`      | `k8s-threat-map.html`                        |
+| `PdfReportEngine`        | `k8s-threat-report.pdf` (via iText html2pdf) |
+| `ExportService`          | Orchestrates all requested formats           |
+
+---
+
+### `util` — Shared Utilities
+
+| Class                  | Purpose                                                          |
+|------------------------|------------------------------------------------------------------|
+| `AppConstants`         | Version string, file names, resource paths, ASCII banner         |
+| `ConsoleColors`        | ANSI colour constants and disable switch                         |
+| `TerminalCapabilities` | Detect colour/Unicode support                                    |
+| `RiskConfig`           | Centralised risk thresholds (CVE cutoffs, friction clamp values) |
+| `TemplateStore`        | Loads HTML/PDF templates from classpath at runtime               |
+| `JacksonConfig`        | Shared `ObjectMapper` configuration                              |
+| `NodeFinder`           | Looks up `GraphNode` by string ID                                |
+| `WorkspaceManager`     | Manages working directory for output files                       |
+
+## Test Structure
+
+Tests mirror the source structure under `src/test/` and use the `*Test.java` naming convention.
+`TestGraphHelper` provides reusable mock nodes, edges, and cluster graphs shared across test classes.
+
+```
+src/test/java/.../k8sattackmap/
+├── cli/CommandParserTest.java
+├── ingestion/{K8sJsonParserTest,KubectlExtractorTest}.java
+├── model/{GraphNodeTest,ClusterGraphFactoryTest}.java
+├── security/{EdgeRiskScorerTest,AttackSurfaceClassifierTest,trivy/TrivyJsonParserTest}.java
+├── analysis/
+│   ├── graph/{AttackPathDiscoveryTest,DijkstraTest,PrivilegeLoopDetectorTest}.java
+│   ├── chokepoint/{ChokePointIdentifierTest,ChokePointRemediationAdvisorTest}.java
+│   ├── blast/BlastRadiusAnalyzerTest.java
+│   └── remediation/ImpactRemediationAdvisorTest.java
+├── util/{RiskConfigTest,NodeFinderTest,StringUtilsTest}.java
+└── helper/TestGraphHelper.java
+```

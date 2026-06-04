@@ -1,0 +1,103 @@
+---
+title: Installation
+description: Install K8sAttackMap via pre-built native binary or build from source with GraalVM.
+---
+
+## Option 1 — Native Binary (Recommended)
+
+Download the latest pre-built binary for your platform from the
+[GitHub Releases page](https://github.com/SaptarshiSarkar12/K8sAttackMap/releases).
+
+### Linux / macOS
+
+```bash
+# Make executable
+chmod +x k8sattackmap
+
+# Verify it works
+./k8sattackmap --version
+
+# (Optional) Move to a directory on your PATH for global access
+sudo mv k8sattackmap /usr/local/bin/
+```
+
+### Windows
+
+```powershell
+# In PowerShell or Command Prompt
+k8sattackmap.exe --help
+```
+
+> **Tip:** Add the directory containing `k8sattackmap.exe` to your system `PATH` for convenient global access.
+
+---
+
+## Option 2 — Build from Source
+
+Use this option if you want to modify the tool, contribute, or build for an unsupported platform.
+
+### Prerequisites for Building
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [GraalVM](https://www.graalvm.org/downloads/) | 25 (JDK 25) | Compile and build native images |
+| [Maven](https://maven.apache.org/) | 3.9+ | Build system |
+| [Trivy](https://trivy.dev/docs/latest/getting-started/installation/) | ≥ 0.70.0 | CVE scanning (runtime) |
+| Git | any | Version control |
+
+### 1. Fork & Clone
+
+```bash
+# Fork the repository on GitHub, then:
+git clone https://github.com/<your-username>/K8sAttackMap.git
+cd K8sAttackMap
+
+# Add upstream remote
+git remote add upstream https://github.com/SaptarshiSarkar12/K8sAttackMap.git
+```
+
+### 2. Set Up GraalVM Environment
+
+```bash
+export GRAALVM_HOME=/path/to/graalvm
+export PATH=$GRAALVM_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$GRAALVM_HOME/lib:$LD_LIBRARY_PATH
+
+# Verify
+java -version   # Should show GraalVM JDK 25
+native-image --version
+```
+
+### 3. (Optional) Regenerate GraalVM Metadata
+
+Only needed if you add new code paths that use reflection, serialization, or dynamic class loading:
+
+```bash
+# Uses testdata/cluster-state.json by default
+mvn -P generate-graalvm-metadata exec:exec@java-agent
+```
+
+This runs the tool under the GraalVM agent, which observes runtime behaviour and writes metadata to
+`src/main/resources/META-INF/native-image/`. Commit updated metadata files with your change.
+
+### 4. Build the Native Binary
+
+```bash
+mvn clean package
+```
+
+The compiled binary is written to `target/K8sAttackMap`. This step compiles both the Java sources and runs
+`native-image` to produce a standalone native executable.
+
+```bash
+./target/K8sAttackMap --version
+```
+
+### Running Tests Only (No Native Image)
+
+```bash
+mvn test
+```
+
+Tests run against the JVM without requiring `native-image`. See [Contributing → Testing](/docs/contributing/workflow)
+for details on writing and running tests.

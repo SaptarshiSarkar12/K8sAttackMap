@@ -1,0 +1,70 @@
+---
+title: Blast Radius Analysis
+description: BFS-based analysis of how far an attacker can propagate from any compromised entry point.
+---
+
+import {ImageZoom} from "fumadocs-ui/components/image-zoom";
+
+## What is Blast Radius?
+
+**Blast radius** answers the question: *"If this node is compromised, what else can an attacker reach?"*
+
+K8sAttackMap runs a **Breadth-First Search (BFS)** from each auto-detected or explicitly specified entry
+point, up to a configurable hop depth. Every reachable asset is classified by impact severity.
+
+## Hop Depth
+
+Control the blast radius depth with `--max-hops` (`-m`):
+
+| Flag      | Depth | Use Case                                             |
+|-----------|-------|------------------------------------------------------|
+| (default) | 3     | Typical cluster — fast and thorough                  |
+| `-m 5`    | 5     | Deeper analysis for complex RBAC graphs              |
+| `-m 10`   | 10    | Exhaustive — large or highly interconnected clusters |
+
+```bash
+# 5-hop blast radius analysis with PDF report
+./k8sattackmap -k cluster-state.json -m 5 -o pdf
+```
+
+## Severity Classification
+
+Each impacted asset is labelled with an `ImpactSeverity`:
+
+| Severity     | Criteria                                             |
+|--------------|------------------------------------------------------|
+| **CRITICAL** | Secrets, ClusterRoles, cluster-admin bindings, nodes |
+| **HIGH**     | ServiceAccounts with broad bindings, privileged pods |
+| **MEDIUM**   | Standard pods, roles with limited scope              |
+| **LOW**      | ConfigMaps, read-only resources                      |
+
+## Console Output
+
+```
+Blast Radius from Pod:default:api-server (depth: 3)
+  Direct (hop 1):
+    → ServiceAccount:default:ci-runner  [HIGH]
+    → Secret:default:app-config         [MEDIUM]
+  Hop 2:
+    → ClusterRole:cluster-scoped:deployer  [CRITICAL]
+    → Pod:production:payment-worker        [HIGH]
+  Hop 3:
+    → Secret:production:stripe-key  [CRITICAL]
+    → Node:cluster-scoped:worker-1  [HIGH]
+
+  Total impacted assets: 6  |  Critical: 2  |  High: 3  |  Medium: 1
+```
+
+## HTML Visualisation
+
+In the HTML attack map, nodes within the blast radius are highlighted in **yellow**. Hovering over a node shows
+a tooltip with its details.
+
+<ImageZoom src={"/html_visualisation_screenshot.png"} alt={"Screenshot of HTML visualisation of kubernetes cluster"} width={2560} height={1600} />
+
+## Implementation Details
+
+- `analysis/blast/BlastRadiusAnalyzer.java` — BFS traversal with hop counting and severity classification
+- `analysis/blast/BlastRadiusResult.java` — container for the result set
+- `analysis/blast/ImpactedAsset.java` — value object: node + severity + hop distance
+- `analysis/blast/ImpactSeverity.java` — severity enum: CRITICAL, HIGH, MEDIUM, LOW

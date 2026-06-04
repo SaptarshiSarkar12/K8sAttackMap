@@ -1,0 +1,102 @@
+---
+title: CLI Reference
+description: Full reference for all K8sAttackMap command-line options and flags.
+---
+
+## Synopsis
+
+```
+k8sattackmap [OPTIONS]
+```
+
+## Options
+
+### Core Options
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--k8s-json` | `-k` | `PATH` | *(kubectl)* | Path to Kubernetes cluster state JSON file. When omitted, K8sAttackMap captures the cluster live via `kubectl`. |
+| `--source-node` | `-s` | `IDS` | *(auto-discover)* | Comma-separated source node IDs. Format: `<Type>:<namespace>:<name>`. |
+| `--target-node` | `-t` | `IDS` | *(auto-discover)* | Comma-separated target node IDs. Same format as source. |
+| `--output` | `-o` | `FORMATS` | *(none)* | Comma-separated export formats: `html`, `pdf`. |
+| `--max-hops` | `-m` | `N` | `3` | Blast radius hop depth. Higher values find more impacted assets at the cost of analysis time. |
+| `--show-all-paths` | `-a` | flag | `false` | Show all discovered paths grouped by source→target pair. By default only the single highest-risk path is displayed. |
+
+### Utility Options
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--help` | `-h` | Print help message and exit. |
+| `--version` | `-v` | Print version and exit. |
+| `--verbose` | | Enable verbose/debug logging via Logback. |
+| `--no-color` | | Disable ANSI colour output. Also auto-enabled when the `NO_COLOR` environment variable is set. |
+
+## Node ID Format
+
+All node identifiers use the format `<Type>:<namespace>:<name>`.
+
+```
+Pod:default:web-app
+ServiceAccount:kube-system:coredns
+Secret:production:stripe-api-key
+Deployment:default:frontend
+ClusterRole:cluster-scoped:cluster-admin
+ClusterRoleBinding:cluster-scoped:admin-binding
+Node:cluster-scoped:worker-node-1
+```
+
+> **Cluster-scoped resources** — `ClusterRole`, `ClusterRoleBinding`, `Node`, `PersistentVolume`,
+> and other non-namespaced resources use `cluster-scoped` as the namespace segment.
+
+## Auto-Discovery
+
+When `--source-node` and `--target-node` are both omitted, K8sAttackMap runs an automatic heuristic
+to classify entry points and crown jewels:
+
+**Auto-detected sources (entry points):**
+- `Pod` resources (directly reachable workloads)
+- `User` and `Group` subjects from `RoleBinding` / `ClusterRoleBinding`
+- `ServiceAccount` resources with external-facing bindings
+
+**Auto-detected targets (crown jewels):**
+- `Secret` resources
+- `Role` and `ClusterRole` resources
+- `ConfigMap` resources flagged as sensitive (containing token-like keys)
+
+If auto-discovery finds no candidates (empty or minimal cluster), use explicit `--source-node` and `--target-node`.
+
+## Environment Variables
+
+| Variable | Effect |
+|----------|--------|
+| `NO_COLOR` | When set to any non-empty value, disables ANSI colour output (same as `--no-color`). |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Fatal error (parse failure, no candidates found, I/O error) |
+
+## Printed Help Output
+
+```
+K8sAttackMap [OPTIONS]
+
+Options:
+  -h, --help                   Print this message
+  -v, --version                Print version
+  -k, --k8s-json <PATH>        Path to Kubernetes cluster state JSON file
+  -s, --source-node <IDS>      Comma-separated source node IDs
+                               Format: <Type>:<namespace>:<name>
+                               Example: Pod:default:web-app
+  -t, --target-node <IDS>      Comma-separated target node IDs
+                               Format: <Type>:<namespace>:<name>
+                               Example: Secret:default:db-credentials
+  -o, --output <FORMATS>       Comma-separated output formats: html, pdf
+  -m, --max-hops <N>           Blast radius hop depth (default: 3)
+  -a, --show-all-paths         Show all discovered paths grouped by
+                               source-target pair, not just the worst path
+      --no-color               Disable colored output (respects NO_COLOR env var)
+      --verbose                Enable verbose/debug logging
+```

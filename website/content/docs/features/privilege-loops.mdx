@@ -1,0 +1,72 @@
+---
+title: Privilege Escalation Loops
+description: Detect circular RBAC chains that allow indefinite privilege escalation.
+---
+
+import {ImageZoom} from "fumadocs-ui/components/image-zoom";
+
+## What is a Privilege Escalation Loop?
+
+A **privilege escalation loop** is a circular chain in the RBAC graph where:
+
+ServiceAccount A → (via RoleBinding) → Role B → (grants access to) → ServiceAccount C → ... → back to A
+
+This creates a situation where a compromised ServiceAccount can indefinitely escalate its own privileges
+by exploiting the cycle. Even without a direct path to a secret, an attacker can gain access to
+progressively more powerful RBAC subjects through the loop.
+
+## Detection Algorithm
+
+K8sAttackMap uses **Johnson's simple cycle algorithm** (via JGraphT) to enumerate all simple cycles
+in the attack graph. The algorithm:
+
+1. Extracts a simplified subgraph containing only RBAC-semantics edges (`BOUND_TO`, `CAN_ACCESS`, `MEMBER_OF`)
+2. Removes infrastructure ownership edges (`MANAGES`) to prevent false positives from `Deployment→ReplicaSet→Pod` chains
+3. Runs Johnson's algorithm to find all simple cycles
+4. Reports cycles that contain at least one `ServiceAccount` and one `Role` or `ClusterRole` node
+
+## RBAC-Only Filter
+
+The **RBAC-only filter** is critical for accuracy. Without it, normal workload ownership chains
+(`Deployment → ReplicaSet → Pod → Pod`) would be flagged as privilege escalation loops.
+The filter ensures only semantically meaningful RBAC cycles are reported.
+
+## Console Output
+
+```
+Privilege Escalation Loops Detected: 2
+
+  Loop 1 (length: 3):
+    ServiceAccount:default:ci-runner
+      →[bound_to]→ ClusterRole:cluster-scoped:deployer
+      →[can_access]→ ServiceAccount:default:ci-runner  ⬅ CYCLE
+
+  Loop 2 (length: 4):
+    ServiceAccount:monitoring:prometheus
+      →[bound_to]→ ClusterRole:cluster-scoped:node-reader
+      →[can_access]→ ServiceAccount:kube-system:node-problem-detector
+      →[can_access]→ ServiceAccount:monitoring:prometheus  ⬅ CYCLE
+```
+
+## PDF Report
+
+The PDF audit report includes a privilege escalation loop table with:
+- Loop number and length
+- Each node in the cycle, in order
+- The edge type connecting consecutive nodes
+- Suggested remediation (review and break the binding that creates the cycle)
+
+<ImageZoom src="/privilege_escalation_report.png" alt="PDF report showing privilege escalation loops" width={2218} height={1173} />
+
+## Why Loops Matter
+
+Privilege escalation loops are particularly dangerous because:
+
+1. They are **not visible** from a single-node audit — you need graph traversal to spot them
+2. They allow an attacker to **persist** after initial compromise by rotating through the cycle
+3. They can be **exploited incrementally** — each round of the cycle may grant slightly more access
+
+## Implementation Details
+
+- `analysis/graph/PrivilegeLoopDetector.java` — Johnson's cycle detection with RBAC filter
+- Uses JGraphT's `JohnsonSimpleCycles` with a subgraph filtered to RBAC edge types only

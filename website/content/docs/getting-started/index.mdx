@@ -1,0 +1,60 @@
+---
+title: Prerequisites
+description: What you need before running K8sAttackMap.
+---
+
+## Required Dependencies
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [Trivy](https://trivy.dev/docs/latest/getting-started/installation/) | ≥ 0.70.0 | Container image CVE scanning |
+| `kubectl` | any | Live cluster extraction *(optional — JSON file can be provided directly)* |
+
+### Why Trivy?
+
+K8sAttackMap calls `trivy image --format json` for each unique container image it encounters in your cluster.
+Trivy must be available on your `PATH` at runtime. Its scan results feed directly into edge risk weights,
+making CVE data a first-class input to the attack graph.
+
+```bash
+# Verify Trivy is installed and reachable
+trivy --version
+```
+
+### kubectl (Optional)
+
+`kubectl` is only needed if you want K8sAttackMap to capture the cluster state itself (live mode).
+You can always pass a pre-captured JSON snapshot with `-k` instead, which avoids the `kubectl` requirement entirely.
+
+```bash
+# Verify kubectl access (live mode only)
+kubectl cluster-info
+```
+
+## Supported Platforms
+
+Pre-built native binaries are available for:
+
+| Platform | Architecture |
+|----------|-------------|
+| Linux | x86-64, aarch64 |
+| macOS | x86-64, Apple Silicon (arm64) |
+| Windows | x86-64 |
+
+> **No JVM required.** K8sAttackMap is compiled to a native binary using GraalVM Native Image.
+> You do not need Java installed to run the pre-built release.
+
+## Capturing a Cluster Snapshot
+
+If you want to work offline or share a snapshot with a colleague, capture the full cluster state once:
+
+```bash
+kubectl get \
+  pods,services,serviceaccounts,roles,clusterroles,\
+  rolebindings,clusterrolebindings,secrets,configmaps,\
+  deployments,replicasets,daemonsets,statefulsets,nodes \
+  -A -o json > cluster-state.json
+```
+
+The resulting `cluster-state.json` can be passed to K8sAttackMap with `-k cluster-state.json`.
+The file does **not** contain secret values — only Kubernetes resource metadata and RBAC relationships.

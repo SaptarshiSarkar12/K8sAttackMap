@@ -1,0 +1,4 @@
+{
+  "title": "Features",
+  "pages": ["attack-paths", "choke-points", "blast-radius", "privilege-loops", "cve-scoring", "edge-types"]
+}

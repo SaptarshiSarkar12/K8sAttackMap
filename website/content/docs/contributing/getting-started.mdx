@@ -1,0 +1,63 @@
+---
+title: Getting Started
+description: Development environment setup for contributing to K8sAttackMap.
+---
+
+Thank you for your interest in contributing to **K8sAttackMap**! This guide covers everything
+you need to get up and running as a contributor.
+
+## Ways to Contribute
+
+- **Bug reports** — Found something broken? Open an issue with a clear reproduction case.
+- **Feature requests** — Have an idea to improve attack path analysis or add a new edge type? Share it!
+- **Code contributions** — Fix bugs, implement features, or improve test coverage.
+- **Documentation** — Improve these docs or add inline code comments.
+- **Real-cluster testing** — Run K8sAttackMap against your own snapshots and report edge cases.
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant Code of Conduct](https://github.com/SaptarshiSarkar12/K8sAttackMap/blob/main/CODE_OF_CONDUCT.md).
+
+## Prerequisites
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [GraalVM](https://www.graalvm.org/downloads/) | 25 (JDK 25) | Compile and build native images |
+| [Maven](https://maven.apache.org/) | 3.9+ | Build system |
+| [Trivy](https://trivy.dev/docs/latest/getting-started/installation/) | ≥ 0.70.0 | CVE scanning (runtime) |
+| `kubectl` | any | Live cluster extraction (optional) |
+| Git | any | Version control |
+
+## Fork & Clone
+
+```bash
+git clone https://github.com/<your-username>/K8sAttackMap.git
+cd K8sAttackMap
+git remote add upstream https://github.com/SaptarshiSarkar12/K8sAttackMap.git
+```
+
+## Build from Source
+
+```bash
+export GRAALVM_HOME=/path/to/graalvm
+export PATH=$GRAALVM_HOME/bin:$PATH
+mvn clean package
+./target/K8sAttackMap --version
+```
+
+## Running Tests
+
+```bash
+mvn test                                       # full suite
+mvn -Dtest=BlastRadiusAnalyzerTest test        # single class
+mvn -Dtest=BlastRadiusAnalyzerTest#testBfs test  # single method
+```
+
+## Understanding the Codebase
+
+Read the [Architecture Overview](/docs/architecture/overview) and [Module Reference](/docs/architecture/modules)
+before making changes. Key areas to understand first:
+
+- **`GraphNode`, `GraphEdge`, `EdgeType`** — changes ripple across parsing, analysis, and export
+- **`EdgeRiskScorer`** — any weight change affects Dijkstra paths; document the rationale
+- **GraalVM metadata** — new reflection/serialisation requires regenerating metadata files

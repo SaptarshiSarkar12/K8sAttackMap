@@ -1,0 +1,56 @@
+---
+title: Introduction
+description: K8sAttackMap is a Kubernetes attack surface visualiser and security advisor that maps the real paths an attacker can traverse through your cluster.
+---
+
+## What is K8sAttackMap?
+
+**K8sAttackMap** is an open-source, GraalVM-native CLI tool that ingests a live or offline Kubernetes cluster
+snapshot, builds a **directed attack graph** across RBAC, workloads, secrets, and node relationships, then surfaces
+the most dangerous attack paths, choke points, and actionable remediation — all in a single command.
+
+Most Kubernetes security tools check policy compliance in isolation — they tell you a pod is privileged or a role
+has wildcard verbs, but they don't tell you *what an attacker can actually reach* from that misconfiguration.
+K8sAttackMap connects those dots.
+
+## Core Capabilities
+
+| Capability                     | Description                                                                      |
+|--------------------------------|----------------------------------------------------------------------------------|
+| **Attack path discovery**      | Shortest paths (Dijkstra) and all simple paths up to configurable depth          |
+| **Choke point ranking**        | Nodes whose hardening severs the most attack paths, ranked by weighted impact    |
+| **Blast radius analysis**      | BFS from each entry point, labelled with Critical / High / Medium / Low severity |
+| **Privilege escalation loops** | Circular RBAC chain detection via Johnson's algorithm                            |
+| **CVE-aware scoring**          | Trivy scan results integrated into edge weights                                  |
+| **Native binary**              | GraalVM Native Image; no JVM required at runtime                                 |
+| **HTML visualisation**         | Interactive Cytoscape.js attack map                                              |
+| **PDF audit report**           | Executive summary, choke point table, remediation cards, CVE summary             |
+
+## Quick Example
+
+```bash
+# Analyse a saved cluster snapshot and produce all output formats
+./k8sattackmap -k cluster-state.json -o html,pdf
+```
+
+```bash
+# Target a specific source→target pair
+./k8sattackmap -k cluster-state.json \
+  -s Pod:default:compromised-app \
+  -t Secret:production:db-password \
+  --show-all-paths
+```
+
+## How to Use These Docs
+
+- **[Getting Started](/docs/getting-started)** — prerequisites, installation (native binary or build from source), and your first run.
+- **[Usage](/docs/usage/cli-reference)** — full CLI reference and real-world examples.
+- **[Features](/docs/features/attack-paths)** — deep dives into each analysis capability.
+- **[Output Formats](/docs/output-formats/console)** — understanding the console, HTML map, and PDF report.
+- **[Architecture](/docs/architecture/overview)** — module breakdown, graph model, and design patterns.
+- **[Contributing](/docs/contributing/getting-started)** — development setup, workflow, and PR process.
+
+## License & Community
+
+K8sAttackMap is licensed under the [Apache License 2.0](https://github.com/SaptarshiSarkar12/K8sAttackMap/blob/main/LICENSE).
+Join the community on [Discord](https://discord.gg/DeT4jXPfkG) (channel: `#k8sattackmap`).

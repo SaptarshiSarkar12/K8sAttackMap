@@ -1,0 +1,106 @@
+---
+title: Quick Start
+description: Run K8sAttackMap against a live cluster or saved snapshot in under two minutes.
+---
+
+> **Prerequisites:** Make sure `trivy` is on your `PATH` and you have `kubectl` access (live mode)
+> or a saved snapshot before running these commands.
+
+## Run Against a Live Cluster
+
+The simplest invocation. K8sAttackMap calls `kubectl` to capture the cluster state, then runs full analysis:
+
+```bash
+./k8sattackmap
+```
+
+## Run Against a Saved Snapshot
+
+Recommended for repeatability, offline use, or when sharing analysis with a team:
+
+```bash
+# Step 1 — capture the cluster state once
+kubectl get \
+  pods,services,serviceaccounts,roles,clusterroles,\
+  rolebindings,clusterrolebindings,secrets,configmaps,\
+  deployments,replicasets,daemonsets,statefulsets,nodes \
+  -A -o json > cluster-state.json
+
+# Step 2 — analyse and produce all outputs
+./k8sattackmap -k cluster-state.json -o html,pdf
+```
+
+After the run you will find:
+- **`k8s-threat-map.html`** — interactive Cytoscape.js attack graph (open in any browser)
+- **`k8s-threat-report.pdf`** — structured audit report ready to share with a security team
+
+## Example Use Cases
+
+### Target a Specific Source → Target Pair
+
+Useful for red-team validation or investigating a specific misconfiguration:
+
+```bash
+./k8sattackmap -k cluster-state.json \
+  -s Pod:default:compromised-app \
+  -t Secret:production:db-password \
+  --show-all-paths
+```
+
+### Deep Blast Radius Analysis
+
+Expand the blast radius hop depth and generate a PDF report for audit:
+
+```bash
+./k8sattackmap -k cluster-state.json -m 5 -o pdf
+```
+
+### Multiple Sources and Targets
+
+```bash
+./k8sattackmap -k cluster-state.json \
+  -s "Pod:default:api-server,ServiceAccount:default:ci-runner" \
+  -t "Secret:default:jwt-key,Secret:prod:stripe-key" \
+  -o html,pdf
+```
+
+### CI/CD or Scripting (No Colour)
+
+```bash
+# Use --no-color flag
+./k8sattackmap -k cluster-state.json --no-color
+
+# Or use the NO_COLOR environment variable (honoured automatically)
+NO_COLOR=1 ./k8sattackmap -k cluster-state.json
+```
+
+## Using the Included Test Data
+
+The repository ships with `testdata/cluster-state.json` for a quick offline run without a real cluster:
+
+```bash
+./k8sattackmap -k testdata/cluster-state.json -o html,pdf
+```
+
+Example manifests under `examples/` show you how to reproduce a similar snapshot on your own cluster.
+
+## Node ID Format
+
+When specifying source and target nodes explicitly, use the format `<Type>:<namespace>:<name>`:
+
+```
+Pod:default:web-app
+ServiceAccount:kube-system:default
+Secret:production:db-password
+ClusterRole:cluster-scoped:cluster-admin    # cluster-scoped resources use "cluster-scoped" namespace
+```
+
+> **Important:** The namespace segment must be `cluster-scoped` for cluster-scoped resources
+> such as `ClusterRole` and `ClusterRoleBinding`.
+
+{/* ─── IMAGE PLACEHOLDER ────────────────────────────────────────────────────
+    Add a screenshot or screen recording of a full K8sAttackMap run here.
+    Recommended: animated GIF or video embed showing the terminal output
+    progressing from parsing → scanning → analysis → report generation.
+    <Image src="/images/quickstart-demo.gif" alt="K8sAttackMap quick start demo" width={900} height={500} />
+    ────────────────────────────────────────────────────────────────────────── */}

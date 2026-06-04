@@ -1,0 +1,133 @@
+---
+title: Architecture Overview
+description: High-level pipeline and design patterns powering K8sAttackMap.
+---
+import {Mermaid} from "../../../components/mdx/mermaid.tsx";
+
+## Five-Stage Pipeline
+
+K8sAttackMap processes a cluster through five sequential stages:
+
+<Mermaid chart={`flowchart TD
+    %% Modern GitHub-inspired Dark Theme
+    classDef inputNode fill:#238636,stroke:#2ea043,stroke-width:2px,color:#ffffff,font-family:sans-serif,rx:5px,ry:5px;
+    classDef processNode fill:#1f6feb,stroke:#388bfd,stroke-width:2px,color:#ffffff,font-family:sans-serif,rx:5px,ry:5px;
+    classDef dataNode fill:#8957e5,stroke:#a371f7,stroke-width:2px,color:#ffffff,font-family:sans-serif,rx:5px,ry:5px;
+    classDef taskNode fill:#21262d,stroke:#30363d,stroke-width:2px,color:#c9d1d9,font-family:sans-serif,rx:5px,ry:5px;
+    classDef outputNode fill:#da3633,stroke:#f85149,stroke-width:2px,color:#ffffff,font-family:sans-serif,rx:5px,ry:5px;
+    classDef noteNode fill:none,stroke:none,color:#8b949e,font-family:sans-serif,font-style:italic,font-size:12px;
+    classDef subgraphStyle fill:#0d1117,stroke:#30363d,stroke-width:1px,stroke-dasharray: 5 5,color:#c9d1d9,font-weight:bold;
+
+    %% 1. Input Layer
+    subgraph Stage1 ["1. Data Ingestion"]
+        direction TB
+        IN[("Cluster State\n(JSON / kubectl)")]:::inputNode
+    end
+
+    %% 2. Parsing & Scanning Layer
+    subgraph Stage2 ["2. Parsing & Scanning"]
+        direction TB
+        P_Parser["K8sJsonParser"]:::processNode
+        P_Scanner["TrivyScanner"]:::processNode
+        P_Desc["Extracts Nodes → Edges\n& Security Facts (CVEs)"]:::noteNode
+
+        P_Parser -.-> P_Desc
+        P_Scanner -.-> P_Desc
+    end
+
+    %% 3. Core Data Model
+    subgraph Stage3 ["3. Core Data Model"]
+        direction TB
+        CG[("Cluster Graph")]:::dataNode
+        CG_Desc["DirectedWeightedMultigraph\n<GraphNode, GraphEdge>"]:::noteNode
+
+        CG -.-> CG_Desc
+    end
+
+    %% 4. Orchestration & Analysis Layer
+    subgraph Stage4 ["4. Analysis Orchestrator"]
+        direction TB
+        T1["Attack Path Discovery\n(Dijkstra + AllDirectedPaths)"]:::taskNode
+        T2["Choke Point Identifier\n(Top impacted nodes)"]:::taskNode
+        T3["Blast Radius Analyzer\n(BFS per entry point)"]:::taskNode
+        T4["Privilege Loop Detector\n(Johnson's cycles)"]:::taskNode
+        T5["Remediation Advisor\n(Actionable Fixes)"]:::taskNode
+    end
+
+    %% 5. Output Layer
+    subgraph Stage5 ["5. Reporting & Exports"]
+        direction TB
+        OUT1["Console Summary\n(AnalysisSummaryPrinter)"]:::outputNode
+        OUT2["Cytoscape Map\n(k8s-threat-map.html)"]:::outputNode
+        OUT3["PDF Threat Report\n(k8s-threat-report.pdf)"]:::outputNode
+    end
+
+    %% Data Flow Routing
+    IN ==>|Raw K8s Data| P_Parser
+    IN ==>|Image Data| P_Scanner
+
+    P_Parser ==>|Parsed Resources| CG
+    P_Scanner ==>|Vulnerability Scores| CG
+
+    CG ===>|Graph Traversal & Metrics| Stage4
+
+    Stage4 ==>|Analysis Results| Stage5
+
+    %% Apply Subgraph Styling
+    class Stage1,Stage2,Stage3,Stage4,Stage5 subgraphStyle;
+
+    %% Legend (Compact & integrated)
+    subgraph Legend ["Legend"]
+        direction TB
+        L1(["Input"]):::inputNode
+        L2(["Process"]):::processNode
+        L3(["Data Structure"]):::dataNode
+        L4(["Analysis Task"]):::taskNode
+        L5(["Output Artifact"]):::outputNode
+    end
+    class Legend subgraphStyle;`}/>
+
+## Key Design Patterns
+
+### Factory Pattern
+`ClusterGraphFactory` is the sole constructor of the attack graph. It accepts parsed
+`ClusterGraphData` from the ingestion layer and produces a fully weighted
+`DirectedWeightedMultigraph<GraphNode, GraphEdge>`. Keeping construction centralised
+means the rest of the codebase never mutates the graph directly.
+
+### Strategy Pattern
+Edge risk scoring uses a strategy-like approach: `EdgeRiskScorer.calculateEdgeWeights(graph)`
+iterates every edge and applies a combination of source intrinsic friction, target intrinsic
+friction, CVE bonuses, and security context deductions. Adding a new scoring factor means
+modifying a single method without touching the graph or analysis layers.
+
+### Orchestrator Pattern
+`AnalysisOrchestrator` coordinates all five analysis phases in the correct order with explicit
+data dependencies. Each phase is independent — choke point ranking does not call blast radius
+analysis and vice versa. The orchestrator composes their results into a single `AnalysisResult`.
+
+### Fluent Builder
+`AnalysisInput` uses a fluent builder to configure the analysis: source nodes, target nodes,
+max hops, and show-all-paths flag. This keeps the orchestrator's constructor clean and
+makes test setups readable.
+
+## Core Dependencies
+
+| Library                | Role                                                                         |
+|------------------------|------------------------------------------------------------------------------|
+| **JGraphT**            | `DirectedWeightedMultigraph`, Dijkstra, `AllDirectedPaths`, Johnson's cycles |
+| **Jackson**            | Kubernetes JSON parsing (`K8sJsonParser`)                                    |
+| **iText html2pdf**     | PDF report rendering from HTML template                                      |
+| **Apache Commons CLI** | CLI argument parsing (`CommandParser`)                                       |
+| **Logback / SLF4J**    | Structured logging throughout                                                |
+| **Lombok**             | Boilerplate reduction (`@Getter`, `@RequiredArgsConstructor`, `@Slf4j`)      |
+| **JUnit Jupiter**      | Unit testing (JUnit 6)                                                       |
+
+## Testing Strategy
+
+Tests live under `src/test/` mirroring the source package structure. Key principles:
+
+- **Unit tests** — each module tested in isolation via `TestGraphHelper` fixtures
+- **No mocking frameworks** — test graphs are built programmatically with `TestGraphHelper`
+- **Edge coverage** — each analysis module has tests for normal paths, empty graphs, and edge cases
+- **Naming convention** — `*Test.java` with JUnit 5 `@Test` annotations

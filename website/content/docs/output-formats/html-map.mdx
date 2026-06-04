@@ -1,0 +1,78 @@
+---
+title: HTML Visualisation
+description: Interactive Cytoscape.js attack graph — explore your cluster's attack surface visually.
+---
+
+## Overview
+
+The HTML visualisation (`k8s-threat-map.html`) is an interactive, self-contained single-file graph
+rendered with [Cytoscape.js](https://js.cytoscape.org/). Open it in any modern browser — no server required.
+
+Generate it with:
+
+```bash
+./k8sattackmap -k cluster-state.json -o html
+# Output: ./k8s-threat-map.html
+```
+
+## Node Colour Coding
+
+| Colour | Meaning |
+|--------|---------|
+| 🟢 **Green hexagon** (thick border) | Entry point / attack source |
+| 🟡 **Yellow** | Within blast radius of an entry point |
+| 🔴 **Red** | On a critical attack path |
+| ⬜ **Grey** | Choke point — hardening this node severs the most paths |
+| 🔵 **Blue** (default) | Standard cluster resource |
+
+## Edge Labels
+
+Each edge is labelled with its `EdgeType` label (e.g., `uses_sa`, `can_access`, `node_escape`) and
+annotated with the computed risk friction weight. Lower weight = easier traversal = brighter red edge.
+
+## Interactive Controls
+
+| Action | Result |
+|--------|--------|
+| Click a node | Show node details, risk score, security facts |
+| Click an edge | Show edge type, friction weight, and relationship explanation |
+| Hover a choke point | Highlight all paths that pass through it |
+| Scroll / pinch | Zoom in/out |
+| Drag | Pan the canvas |
+| Double-click background | Reset zoom and layout |
+
+{/* ─── IMAGE PLACEHOLDER ────────────────────────────────────────────────────
+    Add two screenshots of the HTML visualisation:
+    1. Graph highlighting nodes within blast radius (yellow nodes)
+       src: https://github.com/user-attachments/assets/2f6298f9-...
+    2. Graph showing the most impactful choke point (grey highlighted node)
+       src: https://github.com/user-attachments/assets/510c620d-...
+    Use a 2-column grid or stacked layout.
+    ────────────────────────────────────────────────────────────────────────── */}
+
+## Layout Algorithm
+
+The default layout is `cose-bilkent` (force-directed), which clusters related nodes together.
+Kubernetes namespaces tend to form natural clusters, making namespace boundaries visible in the graph.
+
+## Self-Contained File
+
+`k8s-threat-map.html` embeds all JavaScript, CSS, and cluster data inline.
+It can be:
+- Opened directly in a browser with no internet connection
+- Shared via email or Slack as a single attachment
+- Checked into a repository for historical comparison
+- Hosted on any static file server
+
+## Typical Use Cases
+
+- **Exploratory analysis** — visually trace attack paths, understand how resources connect
+- **Stakeholder demos** — show non-technical stakeholders which resources are at risk
+- **PR reviews** — attach the HTML map to a security-related pull request
+- **Historical comparison** — open maps from different dates side-by-side to see what changed
+
+## Implementation Details
+
+- `export/CytoscapeExporter.java` — serialises the attack graph to Cytoscape.js JSON format
+- `resources/templates/html-template.html` — Cytoscape.js shell template with embedded CSS/JS
+- The exporter injects node styles (colour, shape), edge labels, and the full graph JSON into the template

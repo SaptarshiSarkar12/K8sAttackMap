@@ -1,0 +1,95 @@
+---
+title: PDF Threat Report
+description: Structured security audit report suitable for sharing with security teams and executives.
+---
+
+## Overview
+
+The PDF threat report (`k8s-threat-report.pdf`) is a structured, printable audit document generated
+by [iText html2pdf](https://itextpdf.com/). It is designed to be shared with security teams,
+compliance reviewers, or executive stakeholders.
+
+Generate it with:
+
+```bash
+./k8sattackmap -k cluster-state.json -o pdf
+# Output: ./k8s-threat-report.pdf
+```
+
+## Report Sections
+
+### 1. Executive Summary
+
+A single-page overview containing:
+- **Risk Grade** — an overall cluster risk classification (Critical / High / Medium / Low)
+- **Key Metrics** — total nodes, edges, paths found, choke points identified, CVEs detected
+- **Top Finding** — the single highest-risk attack path in plain language
+- **Recommended Action** — the single highest-impact remediation step
+
+### 2. Top-5 Choke Points Table
+
+| Column | Description |
+|--------|-------------|
+| Rank | 1–5 |
+| Node | Resource type, namespace, and name |
+| Paths Severed | Number of attack paths eliminated if hardened |
+| Impact Score | Weighted score (path count × average risk) |
+| Primary Recommendation | One-line kubectl remediation |
+
+### 3. Critical Attack Path — Hop-by-Hop Table
+
+A detailed breakdown of the single highest-risk path:
+
+| Hop | From Node | Edge Type | To Node | Friction |
+|-----|-----------|-----------|---------|----------|
+| 1 | `Pod:default:api-server` | `uses_sa` | `ServiceAccount:default:ci-runner` | 0.30 |
+| 2 | `ServiceAccount:default:ci-runner` | `bound_to` | `ClusterRole:cluster-scoped:deployer` | 0.50 |
+| 3 | `ClusterRole:cluster-scoped:deployer` | `can_access` | `Secret:production:stripe-key` | 0.40 |
+
+### 4. Per-Choke-Point Remediation Cards
+
+Each of the top-5 choke points gets a dedicated remediation card with:
+- Node identifier and type
+- Why it is a choke point (number of paths, impact score)
+- **Audit commands** — kubectl commands to inspect the current state
+- **Enforcement commands** — kubectl commands to apply the fix
+- Expected outcome after remediation
+
+### 5. Privilege Escalation Loop Table
+
+Lists all detected circular RBAC chains with:
+- Loop length (node count)
+- Each node in the cycle in order
+- The binding or access edge type connecting consecutive nodes
+
+### 6. Pod CVE Summary
+
+Table of pods with container images that have known vulnerabilities, sorted by CVE count:
+
+| Pod | Namespace | Image | Critical | High | Medium | Low | Total |
+|-----|-----------|-------|----------|------|--------|-----|-------|
+| `api-server` | `default` | `nginx:1.24.0` | 2 | 5 | 12 | 8 | 27 |
+| `payment` | `production` | `node:18-alpine` | 0 | 3 | 7 | 4 | 14 |
+
+{/* ─── IMAGE PLACEHOLDER ────────────────────────────────────────────────────
+    Add a screenshot or thumbnail of the PDF report here.
+    The README includes this image:
+    src: https://github.com/user-attachments/assets/d621ee50-...
+    alt: "Overview of PDF report showing executive summary and choke point table"
+    Recommended: show the first page (executive summary) and one remediation card.
+    ────────────────────────────────────────────────────────────────────────── */}
+
+## Sharing the Report
+
+The PDF is self-contained and can be:
+- Emailed to a CISO or security team
+- Attached to a JIRA/Linear ticket
+- Included in a compliance audit package
+- Committed to a repository as a security snapshot
+
+## Implementation Details
+
+- `export/PdfReportEngine.java` — orchestrates report section rendering using iText html2pdf
+- `export/PdfReportData.java` — data container passed to the PDF engine
+- `resources/templates/report-template.html` — HTML/CSS template that iText converts to PDF
+- The template uses print-optimised CSS with proper page breaks between sections

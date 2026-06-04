@@ -1,0 +1,85 @@
+---
+title: Code Style
+description: Code style guidelines and conventions for the K8sAttackMap codebase.
+---
+
+## Java Code Style
+
+K8sAttackMap follows Sun Java Code Conventions enforced by Checkstyle.
+
+```bash
+# Verify style compliance
+mvn checkstyle:check
+
+# Auto-fix some violations (via OpenRewrite)
+mvn rewrite:run
+```
+
+## Key Conventions
+
+### Naming
+
+- **Classes** — `UpperCamelCase` (e.g., `ChokePointIdentifier`, `EdgeRiskScorer`)
+- **Methods** — `lowerCamelCase` (e.g., `calculateEdgeWeights`, `identifyChokePoints`)
+- **Constants** — `UPPER_SNAKE_CASE` (e.g., `APP_VERSION`, `CLUSTER_SCOPED`)
+- **Test classes** — `<Subject>Test.java` (e.g., `BlastRadiusAnalyzerTest.java`)
+
+### Imports
+
+- No wildcard imports
+- Unused imports must be removed (Checkstyle enforces this)
+- Static imports only for constants and test assertion methods
+
+### Lombok Usage
+
+Lombok is used to reduce boilerplate. Preferred annotations:
+- `@Getter` / `@Setter` instead of manual accessors
+- `@RequiredArgsConstructor` for constructor injection
+- `@Slf4j` for logging (`log.info(...)`, `log.warn(...)`)
+- `@Builder` for complex DTOs
+
+Avoid `@Data` on domain objects — it generates `equals`/`hashCode` based on all fields, which can
+cause issues with JGraphT graph operations.
+
+### Logging
+
+Use SLF4J with Logback. Use parameterised logging — never string concatenation:
+
+```java
+// Good
+log.info("Parsed {} nodes from cluster JSON", nodeCount);
+
+// Bad
+log.info("Parsed " + nodeCount + " nodes from cluster JSON");
+```
+
+Use log levels consistently:
+- `DEBUG` — internal iteration, per-edge calculations, skipped resources
+- `INFO` — stage progress, resource counts, output file paths
+- `WARN` — recoverable issues (missing optional fields, skipped images)
+- `ERROR` — fatal errors that will cause exit
+
+### Comments & Javadoc
+
+- All `public` classes must have a Javadoc comment explaining their purpose
+- Complex algorithms (Dijkstra setup, CVE score normalisation, friction clamping) must have inline comments
+- When adding or modifying an `EdgeType`, update the Javadoc in `EdgeType.java` and add a cross-reference comment
+
+### Null Safety
+
+Avoid `null` returns from public methods. Prefer:
+- `Optional<T>` for single optional values
+- Empty collections (`Collections.emptyList()`) for missing lists
+- Explicit null checks with early returns for nullable parameters
+
+### Adding a New Edge Type
+
+When adding a new `EdgeType`, you **must** update all of these:
+
+1. `model/EdgeType.java` — add the enum constant and Javadoc
+2. `ingestion/K8sJsonParser.java` — add parsing logic that creates the edge
+3. `security/EdgeRiskScorer.java` — add friction weight calculation
+4. `export/AnalysisSummaryPrinter.java` — add display label
+5. Corresponding test in `ingestion/K8sJsonParserTest.java` or `security/EdgeRiskScorerTest.java`
+
+The `EdgeType` Javadoc includes this checklist as a reminder.

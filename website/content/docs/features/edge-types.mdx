@@ -1,0 +1,70 @@
+---
+title: Edge Types
+description: Complete reference for all 19 semantic edge types in the K8sAttackMap attack graph.
+---
+
+## Overview
+
+Edges in the K8sAttackMap attack graph represent **real attack capabilities** — each edge type encodes
+a specific relationship between Kubernetes resources that an attacker can exploit.
+
+The 19 edge types are defined in `model/EdgeType.java`. When adding new edge types to the codebase,
+the corresponding parsing logic in `K8sJsonParser`, the weight calculation in `EdgeRiskScorer`,
+and the console printer in `AnalysisSummaryPrinter` must all be updated.
+
+## RBAC Edges
+
+| Edge Type | Label | Description |
+|-----------|-------|-------------|
+| `USES_SA` | `uses_sa` | Pod or workload uses a ServiceAccount. Represents identity assignment — the pod gains all permissions of the SA. |
+| `BOUND_TO` | `bound_to` | ServiceAccount bound to a Role or ClusterRole via a RoleBinding or ClusterRoleBinding. |
+| `CAN_ACCESS` | `can_access` | Subject has RBAC permission to access/manipulate a resource. Created for each rule in a Role. |
+| `MEMBER_OF` | `member_of` | ServiceAccount is a member of a Group (e.g., `system:serviceaccounts:default`). Indirect permission grant. |
+| `EXEC_INTO` | `exec_into` | Subject has `pods/exec` subresource access — can shell into a pod. High-risk lateral movement edge. |
+| `MINTS_TOKEN` | `mints_token` | Subject has access to `serviceaccounts/token` — can mint arbitrary tokens for the SA. |
+
+## Secret / ConfigMap Access Edges
+
+| Edge Type | Label | Description |
+|-----------|-------|-------------|
+| `USES_SECRET` | `uses_secret` | Pod references a secret (via `envFrom.secretRef` or volume) |
+| `MOUNTS_SECRET` | `mounts_secret` | Pod mounts a secret as a volume — **broader access** than env var reference |
+| `ENV_FROM_SECRET` | `env_from_secret` | Pod reads a specific secret key via `env[].valueFrom.secretKeyRef` |
+| `USES_CONFIGMAP` | `uses_configmap` | Pod references a ConfigMap |
+| `MOUNTS_CONFIGMAP` | `mounts_configmap` | Pod mounts a ConfigMap as a volume |
+| `ENV_FROM_CONFIGMAP` | `env_from_configmap` | Pod reads a ConfigMap key via `env[].valueFrom.configMapKeyRef` |
+
+## Node Escape Edges
+
+| Edge Type | Label | Description |
+|-----------|-------|-------------|
+| `NODE_ESCAPE` | `node_escape` | Privileged container can escape to the host node. Created when `securityContext.privileged=true` or `hostPID=true`. Assigned very low friction (easy escape). |
+| `HOST_PATH_ACCESS` | `host_path_access` | Pod has a hostPath volume mount — direct access to node filesystem. |
+
+## Workload Relationship Edges
+
+| Edge Type | Label | Description |
+|-----------|-------|-------------|
+| `MANAGES` | `manages` | Deployment → ReplicaSet → Pod ownership via `ownerReferences`. Represents workload inheritance. |
+| `EXPOSES` | `exposes` | Service or Ingress exposes a Pod or another Service. Represents external access risk. |
+| `EXPOSES_TO_NODE` | `exposes_to_node` | Service with `NodePort` or `LoadBalancer` type exposes workload to a Node. Broader attack surface. |
+
+## Storage Edges
+
+| Edge Type | Label | Description |
+|-----------|-------|-------------|
+| `USES_PVC` | `uses_pvc` | Pod uses a PersistentVolumeClaim. |
+| `BINDS_PV` | `binds_pv` | PersistentVolumeClaim binds to a PersistentVolume. |
+
+## Edge Risk Intuition
+
+| Risk Level | Typical Edge Types |
+|------------|-------------------|
+| **Very High** | `NODE_ESCAPE`, `EXEC_INTO`, `MINTS_TOKEN` |
+| **High** | `USES_SA`, `BOUND_TO`, `CAN_ACCESS` (wildcard verbs) |
+| **Medium** | `MOUNTS_SECRET`, `HOST_PATH_ACCESS`, `EXPOSES` |
+| **Lower** | `MANAGES`, `ENV_FROM_CONFIGMAP`, `USES_PVC` |
+
+> **Note:** Edge risk is always contextual — a `CAN_ACCESS` edge to a ClusterRole with wildcard verbs
+> is far more dangerous than one granting `get` on a single ConfigMap. The `EdgeRiskScorer` accounts
+> for the target node's sensitivity when computing friction.

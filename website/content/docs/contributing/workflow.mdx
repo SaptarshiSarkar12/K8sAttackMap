@@ -1,0 +1,110 @@
+---
+title: Development Workflow
+description: Branching strategy, making changes, running tests, and native image builds.
+---
+
+## Branching Strategy
+
+All work happens off `main`. Create a dedicated branch for each contribution:
+
+```bash
+# Sync your fork with upstream first
+git fetch upstream
+git checkout main
+git merge upstream/main
+
+# Create a focused branch
+git checkout -b fix/privilege-loop-false-positive
+git checkout -b feat/add-ingress-edge-type
+git checkout -b docs/improve-cli-reference
+```
+
+### Branch Naming Conventions
+
+| Prefix | Use For |
+|--------|---------|
+| `feat/` | New features or enhancements |
+| `fix/` | Bug fixes |
+| `docs/` | Documentation-only changes |
+| `refactor/` | Code restructuring without behaviour changes |
+| `test/` | Adding or improving tests |
+| `chore/` | Build scripts, dependency updates, tooling |
+
+## Making Changes
+
+A few pointers before you start coding:
+
+- **One concern per PR.** A fix and an unrelated refactor belong in separate PRs.
+- **Understand the graph model first.** Changes to `GraphNode`, `GraphEdge`, or `EdgeType` ripple
+  across parsing, analysis, and export. Read those classes before touching them.
+- **Edge weights matter.** If you add a new edge type or change `EdgeRiskScorer` weights,
+  document the rationale. The Dijkstra path-of-least-resistance result changes with every weight adjustment.
+- **GraalVM reflection.** If you add new classes accessed via reflection, serialisation, or dynamic proxy,
+  regenerate the GraalVM metadata and commit the updated files.
+- **Test with a real snapshot.** Before submitting, run your change against an actual cluster JSON.
+  The ingestion layer handles many edge cases that are hard to catch with unit tests alone.
+
+## Testing
+
+We use Maven + JUnit Jupiter (JUnit 6) for automated unit testing. Test classes live under `src/test/`
+mirroring the main package structure.
+
+```bash
+# Run all tests
+mvn test
+
+# Run a specific test class
+mvn -Dtest=ChokePointIdentifierTest test
+
+# Run Checkstyle
+mvn checkstyle:check
+
+# Auto-fix some style issues (via OpenRewrite)
+mvn rewrite:run
+```
+
+### Writing Tests
+
+- Use `TestGraphHelper` for reusable test fixtures (mock nodes, edges, graphs)
+- Follow the `*Test.java` naming convention
+- Each analysis module should have tests for: normal case, empty graph, boundary conditions
+
+```java
+// Example test using TestGraphHelper
+@Test
+void testChokePointRanking() {
+    var graph = TestGraphHelper.buildThreeNodeGraph();
+    var result = ChokePointIdentifier.identify(graph, paths);
+    assertEquals("ServiceAccount:default:ci-runner", result.top().nodeId());
+}
+```
+
+## Native Image Builds
+
+The full native image build runs automatically during `mvn clean package`.
+
+If you add new code paths using reflection, serialisation, or dynamic class loading, regenerate
+the GraalVM metadata:
+
+```bash
+# Run the tool under the GraalVM agent to capture runtime reflection usage
+mvn -P generate-graalvm-metadata exec:exec@java-agent
+
+# The agent writes updated metadata to:
+# src/main/resources/META-INF/native-image/
+```
+
+Commit any updated metadata files alongside your code change.
+
+## Checkstyle
+
+This project uses Sun Checks via the Maven Checkstyle plugin. Run before committing:
+
+```bash
+mvn checkstyle:check
+```
+
+Configure your IDE:
+1. Install the Checkstyle plugin
+2. Point it to `sun_checks.xml` in the repository root
+3. Enable "Optimize imports" on save

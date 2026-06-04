@@ -1,0 +1,189 @@
+---
+title: Examples
+description: Real-world K8sAttackMap command examples for common security analysis scenarios.
+---
+
+## Basic Analysis
+
+### Live Cluster (Auto-Discovery)
+
+Requires `kubectl` access. K8sAttackMap captures the cluster state and auto-discovers all entry points and targets:
+
+```bash
+./k8sattackmap
+```
+
+### Offline Snapshot
+
+Pass a pre-captured JSON file directly:
+
+```bash
+./k8sattackmap -k cluster-state.json
+```
+
+---
+
+## Targeting Specific Nodes
+
+### Single Source → Single Target
+
+```bash
+./k8sattackmap -k cluster-state.json \
+  -s Pod:default:compromised-app \
+  -t Secret:production:db-password
+```
+
+### Multiple Sources and Multiple Targets
+
+Comma-separate the IDs (wrap in quotes to prevent shell splitting):
+
+```bash
+./k8sattackmap -k cluster-state.json \
+  -s "Pod:default:api-server,ServiceAccount:default:ci-runner" \
+  -t "Secret:default:jwt-key,Secret:prod:stripe-key"
+```
+
+### Cluster-Scoped Resources
+
+Use `cluster-scoped` as the namespace for `ClusterRole`, `ClusterRoleBinding`, `Node`, etc.:
+
+```bash
+./k8sattackmap -k cluster-state.json \
+  -s ServiceAccount:kube-system:coredns \
+  -t ClusterRole:cluster-scoped:cluster-admin
+```
+
+---
+
+## Path Discovery Modes
+
+### Show Only the Worst Path (Default)
+
+The highest-risk single path from each source→target pair:
+
+```bash
+./k8sattackmap -k cluster-state.json \
+  -s Pod:default:web-app \
+  -t Secret:production:db-password
+```
+
+### Show All Discovered Paths
+
+Surface every simple path, grouped by source→target pair:
+
+```bash
+./k8sattackmap -k cluster-state.json \
+  -s Pod:default:web-app \
+  -t Secret:production:db-password \
+  --show-all-paths
+```
+
+---
+
+## Blast Radius Tuning
+
+### Default Depth (3 Hops)
+
+```bash
+./k8sattackmap -k cluster-state.json
+```
+
+### Deeper Analysis (5 Hops)
+
+```bash
+./k8sattackmap -k cluster-state.json -m 5
+```
+
+### Very Deep Analysis (10 Hops) — Large Clusters
+
+```bash
+./k8sattackmap -k cluster-state.json -m 10
+```
+
+> **Note:** Higher hop depths increase analysis time roughly quadratically with cluster size.
+> For very large clusters (1000+ pods), start with the default depth and increase as needed.
+
+---
+
+## Output Formats
+
+### HTML Visualisation Only
+
+```bash
+./k8sattackmap -k cluster-state.json -o html
+# Produces: k8s-threat-map.html (open in browser)
+```
+
+### PDF Audit Report Only
+
+```bash
+./k8sattackmap -k cluster-state.json -o pdf
+# Produces: k8s-threat-report.pdf
+```
+
+### Both Outputs
+
+```bash
+./k8sattackmap -k cluster-state.json -o html,pdf
+```
+
+---
+
+## Scripting & CI/CD Integration
+
+### Disable Colour Output
+
+```bash
+# Using the flag
+./k8sattackmap -k cluster-state.json --no-color
+
+# Using the standard NO_COLOR environment variable
+NO_COLOR=1 ./k8sattackmap -k cluster-state.json
+```
+
+### Verbose Debug Logging
+
+```bash
+./k8sattackmap -k cluster-state.json --verbose
+```
+
+### GitHub Actions Example
+
+```yaml
+- name: Capture cluster state
+  run: |
+    kubectl get pods,services,serviceaccounts,roles,clusterroles,\
+      rolebindings,clusterrolebindings,secrets,configmaps,\
+      deployments,replicasets,daemonsets,statefulsets,nodes \
+      -A -o json > cluster-state.json
+
+- name: Run K8sAttackMap
+  run: |
+    chmod +x k8sattackmap
+    NO_COLOR=1 ./k8sattackmap -k cluster-state.json -o pdf
+
+- name: Upload threat report
+  uses: actions/upload-artifact@v4
+  with:
+    name: k8s-threat-report
+    path: k8s-threat-report.pdf
+```
+
+---
+
+## Red-Team Validation
+
+Use K8sAttackMap to validate whether a specific suspected attack path is reachable in your cluster:
+
+```bash
+# Does the CI runner service account have a path to the production database secret?
+./k8sattackmap -k cluster-state.json \
+  -s ServiceAccount:default:ci-runner \
+  -t Secret:production:db-credentials \
+  --show-all-paths --verbose
+
+# Can any pod in the default namespace reach the cluster-admin ClusterRole?
+./k8sattackmap -k cluster-state.json \
+  -t ClusterRole:cluster-scoped:cluster-admin \
+  --show-all-paths
+```
