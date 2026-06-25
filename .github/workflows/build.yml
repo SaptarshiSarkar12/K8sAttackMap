@@ -22,7 +22,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up JDK 25
         uses: actions/setup-java@v5
         with:
@@ -53,7 +53,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up Oracle GraalVM 25
         uses: graalvm/setup-graalvm@v1
         with:
@@ -103,7 +103,7 @@ jobs:
       contents: write # Required for SBOM generation from setup-graalvm action
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up Oracle GraalVM 25
         uses: graalvm/setup-graalvm@v1
         with:
@@ -148,7 +148,7 @@ jobs:
       contents: write # Required for creating releases and uploading assets
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Download Artifacts
         uses: actions/download-artifact@v8
         with:
