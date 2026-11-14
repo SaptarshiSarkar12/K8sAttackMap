@@ -58,8 +58,12 @@ public class K8sAttackMapApplication {
 
         Set<String> sourceNodeIds = cli.getSourceNodes();
         Set<String> targetNodeIds = cli.getTargetNodes();
+        Set<String> criticalEndpointIds = cli.getCriticalEndpointIds();
         Set<GraphNode> sourceNodes = findNodesById(nodeLookup, sourceNodeIds);
         Set<GraphNode> targetNodes = findNodesById(nodeLookup, targetNodeIds);
+        if (!criticalEndpointIds.isEmpty()) {
+            targetNodes.addAll(findNodesById(nodeLookup, criticalEndpointIds));
+        }
 
         boolean needsAutoDiscovery = sourceNodeIds.isEmpty() || targetNodeIds.isEmpty();
         if (needsAutoDiscovery) {
@@ -80,7 +84,7 @@ public class K8sAttackMapApplication {
             }
         }
 
-        AnalysisInput input = new AnalysisInput(graph, sourceNodes, targetNodes, cli.getMaxHops());
+        AnalysisInput input = new AnalysisInput(graph, sourceNodes, targetNodes, cli.getMaxHops(), criticalEndpointIds);
         AnalysisResult result = AnalysisOrchestrator.performAnalysis(input);
 
         Set<String> outputFormats = cli.getOutputFormats();

@@ -8,6 +8,8 @@ import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.RankedChokeP
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.PathDiscoveryResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.ImpactRemediationAdvisor;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.RemediationPlan;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.endpoint.CriticalEndpointExposure;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.endpoint.CriticalEndpointStatus;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.RiskConfig;
@@ -49,12 +51,38 @@ public class AnalysisSummaryPrinter {
 
         printExecutiveSummary(pathResult, chokeResult, privilegeLoops, blastResults);
         printAttackPathAnalysis(graph, pathResult, showAllPaths);
+        printCriticalEndpointAnalysis(result.criticalEndpointExposures());
         printChokePointAnalysis(chokeResult);
         printPrivilegeLoopAnalysis(privilegeLoops);
         printBlastRadiusAnalysis(blastResults);
         printPodVulnerabilityDetails(podCVEIds);
         printRemediationPlans(result.remediationPlans());
         printFooter(hasExports);
+    }
+
+    private static void printCriticalEndpointAnalysis(List<CriticalEndpointExposure> exposures) {
+        if (exposures.isEmpty()) {
+            return;
+        }
+        log.info("{}--- CRITICAL ENDPOINT EXPOSURE ---{}", CYAN, RESET);
+        for (CriticalEndpointExposure exposure : exposures) {
+            if (exposure.status() == CriticalEndpointStatus.NOT_FOUND) {
+                log.info("  {}[NOT FOUND]{} {}", YELLOW, RESET, exposure.endpointId());
+                continue;
+            }
+            if (exposure.status() == CriticalEndpointStatus.UNREACHABLE) {
+                log.info("  {}[UNREACHABLE]{} {} (present in snapshot, no known path from selected sources)",
+                        GREEN, RESET, exposure.endpointId());
+                continue;
+            }
+            String path = exposure.contributingNodes().stream().map(GraphNode::getId).collect(Collectors.joining(" -> "));
+            log.info("  {}[REACHABLE]{} {} | depth={} | cost={} | alternatives={} | patch-priority={}",
+                    BOLD_RED, RESET, exposure.endpointId(), exposure.depth(),
+                    String.format("%.2f", exposure.pathCost()), exposure.alternativePathCount(),
+                    String.format("%.2f", exposure.patchPriorityScore()));
+            log.info("     Path: {}", path);
+        }
+        System.out.println();
     }
 
     private static void printHeader() {

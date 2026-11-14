@@ -32,6 +32,7 @@ src/main/java/io/github/SaptarshiSarkar12/k8sattackmap/
 │       └── TrivyJsonParser.java      # (test: TrivyJsonParserTest.java)
 │
 ├── analysis/                      # Core analysis algorithms
+│   ├── endpoint/                  # Critical endpoint exposure and patch-priority analysis
 │   ├── AnalysisOrchestrator.java  # Coordinates all analysis stages
 │   ├── AnalysisInput.java
 │   ├── AnalysisResult.java

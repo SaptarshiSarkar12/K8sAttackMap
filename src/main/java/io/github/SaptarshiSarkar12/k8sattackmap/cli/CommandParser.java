@@ -21,6 +21,7 @@ import java.util.Set;
  *   <li>{@code -k, --k8s-json <path>}: Path to Kubernetes cluster JSON export (optional; defaults to kubectl)</li>
  *   <li>{@code -s, --source-node <list>}: Comma-separated attack entry points (format: {@code Type:namespace:name})</li>
  *   <li>{@code -t, --target-node <list>}: Comma-separated high-value targets</li>
+ *   <li>{@code --critical-endpoint <list>}: Comma-separated endpoints to prioritize for patching</li>
  *   <li>{@code -m, --max-hops <n>}: Max hops for blast radius analysis (default: 3)</li>
  *   <li>{@code -a, --show-all-paths}: Display all discovered attack paths (default: only top-risk path)</li>
  *   <li>{@code -o, --output <formats>}: Export formats (comma-separated: {@code html}, {@code pdf})</li>
@@ -39,6 +40,7 @@ public class CommandParser {
     private Path k8sJsonPath;
     private Set<String> sourceNodes = new HashSet<>();
     private Set<String> targetNodes = new HashSet<>();
+    private Set<String> criticalEndpointIds = new HashSet<>();
     private int maxHops = 3;
     private boolean showAllPaths = false;
     private boolean verbose;
@@ -49,6 +51,11 @@ public class CommandParser {
         options.addOption("v", "version", false, "Print version");
         options.addOption("s", "source-node", true, "Comma-separated list of source node IDs for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Pod:default:web\"");
         options.addOption("t", "target-node", true, "Comma-separated list of target node IDs for pathfinding. Format: <type>:<namespace>:<name>. Example: \"Secret:default:my-secret\"");
+        options.addOption(Option.builder()
+                .longOpt("critical-endpoint")
+                .hasArg()
+                .desc("Comma-separated critical endpoint node IDs to assess for reachability and patch priority")
+                .get());
         options.addOption("k", "k8s-json", true, "Path to Kubernetes cluster configuration JSON file");
         options.addOption(Option.builder("m")
                 .longOpt("max-hops")
@@ -83,6 +90,9 @@ public class CommandParser {
             }
             if (cmd.hasOption("target-node")) {
                 this.targetNodes = parseCommaSeparatedValues(cmd.getOptionValue("target-node"));
+            }
+            if (cmd.hasOption("critical-endpoint")) {
+                this.criticalEndpointIds = parseCommaSeparatedValues(cmd.getOptionValue("critical-endpoint"));
             }
             this.showAllPaths = cmd.hasOption("show-all-paths");
             this.verbose = cmd.hasOption("verbose");

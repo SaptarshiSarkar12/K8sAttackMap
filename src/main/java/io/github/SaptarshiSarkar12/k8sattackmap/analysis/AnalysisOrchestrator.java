@@ -9,6 +9,8 @@ import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.AttackPathDiscove
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.PathDiscoveryResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.PrivilegeLoopDetector;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.RemediationPlan;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.endpoint.CriticalEndpointAnalyzer;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.endpoint.CriticalEndpointExposure;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphEdge;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 import io.github.SaptarshiSarkar12.k8sattackmap.util.ProgressReporter;
@@ -43,6 +45,16 @@ public class AnalysisOrchestrator {
         List<GraphPath<GraphNode, GraphEdge>> allPaths = pathDiscoveryResult.allPossiblePaths();
         PROGRESS_REPORTER.success("Attack Path Discovery Completed. " + allPaths.size() + " paths found.");
 
+        List<CriticalEndpointExposure> endpointExposures = input.criticalEndpointIds().isEmpty()
+                ? List.of()
+                : CriticalEndpointAnalyzer.analyze(
+                        input.clusterGraph(), input.sourceNodes(), input.criticalEndpointIds(),
+                        allPaths, pathDiscoveryResult.edgeRiskScores());
+        if (!endpointExposures.isEmpty()) {
+            PROGRESS_REPORTER.success("Critical Endpoint Analysis Completed. "
+                    + endpointExposures.size() + " endpoint(s) assessed.");
+        }
+
         PROGRESS_REPORTER.stage("Identifying Choke Points...");
         ChokePointResult chokePointResult = ChokePointIdentifier.identifyChokePoints(allPaths);
         int chokePointCount = chokePointResult.rankedChokePoints().size();
@@ -65,6 +77,7 @@ public class AnalysisOrchestrator {
         List<RemediationPlan> remediationPlans = ChokePointRemediationAdvisor.buildPlans(chokePointResult, 5);
         PROGRESS_REPORTER.success("Remediation Plan Generation Completed. " + remediationPlans.size() + " plans created.");
 
-        return new AnalysisResult(pathDiscoveryResult, blastRadiusResults, chokePointResult, privilegeLoops, remediationPlans);
+        return new AnalysisResult(pathDiscoveryResult, blastRadiusResults, chokePointResult, privilegeLoops,
+                remediationPlans, endpointExposures);
     }
 }

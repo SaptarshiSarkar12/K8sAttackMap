@@ -4,6 +4,7 @@ import io.github.SaptarshiSarkar12.k8sattackmap.analysis.blast.BlastRadiusResult
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.chokepoint.ChokePointResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.graph.PathDiscoveryResult;
 import io.github.SaptarshiSarkar12.k8sattackmap.analysis.remediation.RemediationPlan;
+import io.github.SaptarshiSarkar12.k8sattackmap.analysis.endpoint.CriticalEndpointExposure;
 import io.github.SaptarshiSarkar12.k8sattackmap.model.GraphNode;
 
 import java.util.List;
@@ -20,12 +21,23 @@ import java.util.List;
  * @param chokePointResult detected choke points (resources that block or filter multiple paths)
  * @param privilegeLoops detected cycles enabling privilege escalation loops
  * @param remediationPlans actionable remediation strategies for blocking paths or hardening resources
+ * @param criticalEndpointExposures depth and remediation priority for selected endpoints
  */
 public record AnalysisResult(
         PathDiscoveryResult pathDiscoveryResult,
         List<BlastRadiusResult> blastRadiusResults,
         ChokePointResult chokePointResult,
         List<List<GraphNode>> privilegeLoops,
-        List<RemediationPlan> remediationPlans
+        List<RemediationPlan> remediationPlans,
+        List<CriticalEndpointExposure> criticalEndpointExposures
 ) {
+    public AnalysisResult(PathDiscoveryResult pathDiscoveryResult, List<BlastRadiusResult> blastRadiusResults,
+                          ChokePointResult chokePointResult, List<List<GraphNode>> privilegeLoops,
+                          List<RemediationPlan> remediationPlans) {
+        this(pathDiscoveryResult, blastRadiusResults, chokePointResult, privilegeLoops, remediationPlans, List.of());
+    }
+
+    public AnalysisResult {
+        criticalEndpointExposures = criticalEndpointExposures == null ? List.of() : List.copyOf(criticalEndpointExposures);
+    }
 }
