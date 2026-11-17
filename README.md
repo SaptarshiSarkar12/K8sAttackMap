@@ -32,6 +32,7 @@ relationships, then surfaces the most dangerous paths, choke points, and remedia
 - [Usage](#usage)
     - [CLI Reference](#cli-reference)
     - [Examples](#examples)
+      - [Critical endpoints and patch priority](#critical-endpoints-and-patch-priority)
 - [Output Formats](#output-formats)
 - [Architecture](#architecture)
 - [Contributing](#contributing)
@@ -289,6 +290,8 @@ Options:
                                Example: Secret:default:db-credentials
   -o, --output <FORMATS>       Comma-separated output formats: html, pdf
   -m, --max-hops <N>           Blast radius hop depth (default: 3)
+      --critical-endpoint <IDS> Comma-separated critical endpoints to assess
+                                for reachability and patch priority
   -a, --show-all-paths         Show all discovered paths grouped by
                                source-target pair, not just the worst path
       --no-color               Disable colored output (respects NO_COLOR env var)
@@ -323,6 +326,22 @@ Options:
 # Or use the NO_COLOR env var
 NO_COLOR=1 ./k8sattackmap -k cluster-state.json
 ```
+
+### Critical endpoints and patch priority
+
+The optional `--critical-endpoint` flag assesses one or more high-value nodes separately from the normal target list.
+When the flag is omitted, the existing source/target autodiscovery and attack-path analysis are unchanged. The report
+shows the shortest attack depth, accumulated friction, alternative paths, and a relative patch-priority score.
+
+```bash
+./k8sattackmap -k cluster-state.json \
+  -s Pod:default:compromised-app \
+  --critical-endpoint Service:production:payments,Secret:production:db-password
+```
+
+Each endpoint is reported as `REACHABLE`, `UNREACHABLE` (present in the snapshot but with no known path from the
+selected sources), or `NOT FOUND` (not present in the snapshot). The score is a triage aid, not a replacement for
+severity or exploitability assessment.
 
 ---
 

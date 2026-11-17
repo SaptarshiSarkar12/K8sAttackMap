@@ -39,6 +39,27 @@ class CommandParserTest {
     }
 
     @Test
+    @DisplayName("parses critical endpoint identifiers")
+    void shouldParseCriticalEndpoints() {
+        CommandParser parser = new CommandParser();
+        parser.parse(new String[]{"--critical-endpoint", "Service:prod:payments,Secret:prod:db"});
+
+        Assertions.assertEquals(2, parser.getCriticalEndpointIds().size());
+        Assertions.assertTrue(parser.getCriticalEndpointIds().contains("Service:prod:payments"));
+        Assertions.assertTrue(parser.getCriticalEndpointIds().contains("Secret:prod:db"));
+    }
+
+    @Test
+    @DisplayName("does not enable critical endpoint analysis when the option is omitted")
+    void shouldLeaveCriticalEndpointsEmptyByDefault() {
+        CommandParser parser = new CommandParser();
+
+        Assertions.assertTrue(parser.parse(new String[]{"-k", "cluster.json"}));
+
+        Assertions.assertTrue(parser.getCriticalEndpointIds().isEmpty());
+    }
+
+    @Test
     @DisplayName("parses -o flag and accepts html and pdf as valid output formats")
     void shouldParseOutputFormats() {
         CommandParser parser = new CommandParser();
